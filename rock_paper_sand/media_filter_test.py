@@ -168,28 +168,37 @@ class MediaFilterTest(parameterized.TestCase):
         media_item: config_pb2.MediaItem = config_pb2.MediaItem(name="foo"),
         expected_result: media_filter.FilterResult,
     ):
-        test_filter = media_filter.from_config(
-            json_format.ParseDict(filter_config, config_pb2.Filter()),
-            filter_by_name=filter_by_name,
+        registry = media_filter.Registry()
+        for name, filter_ in filter_by_name.items():
+            registry.register(name, filter_)
+        test_filter = registry.parse(
+            json_format.ParseDict(filter_config, config_pb2.Filter())
         )
         result = test_filter.filter(media_item)
         self.assertEqual(expected_result, result)
 
     def test_unspecified_filter(self):
         with self.assertRaisesRegex(ValueError, "Unknown filter type"):
-            media_filter.from_config(config_pb2.Filter(), filter_by_name={})
+            media_filter.Registry().parse(config_pb2.Filter())
 
     def test_unspecified_string_match(self):
-        test_filter = media_filter.from_config(
+        test_filter = media_filter.Registry().parse(
             json_format.ParseDict(
                 {"customAvailability": {}}, config_pb2.Filter()
-            ),
-            filter_by_name={},
+            )
         )
         with self.assertRaisesRegex(
             ValueError, "Unknown string field match type"
         ):
             test_filter.filter(config_pb2.MediaItem(name="foo"))
+
+    def test_registry_unique(self):
+        registry = media_filter.Registry()
+        registry.register("foo", media_filter.And())
+        with self.assertRaisesRegex(
+            ValueError, "Filter 'foo' is defined multiple times"
+        ):
+            registry.register("foo", media_filter.And())
 
 
 if __name__ == "__main__":

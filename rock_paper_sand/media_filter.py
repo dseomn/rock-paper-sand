@@ -116,33 +116,39 @@ class StringFieldMatcher(Filter):
                 )
 
 
-def from_config(
-    filter_config: config_pb2.Filter,
-    *,
-    filter_by_name: Mapping[str, Filter],
-) -> Filter:
-    """Returns a Filter instance from its configuration.
+class Registry:
+    """Registry of filters."""
 
-    Args:
-        filter_config: Config for the filter.
-        filter_by_name: Other filters that are already defined.
-    """
-    recurse = functools.partial(from_config, filter_by_name=filter_by_name)
-    match filter_config.WhichOneof("filter"):
-        case "all":
-            return And()
-        case "ref":
-            return filter_by_name[filter_config.ref]
-        case "not":
-            return Not(recurse(getattr(filter_config, "not")))
-        case "and":
-            return And(*map(recurse, getattr(filter_config, "and").filters))
-        case "or":
-            return Or(*map(recurse, getattr(filter_config, "or").filters))
-        case "custom_availability":
-            return StringFieldMatcher(
-                lambda media_item: media_item.custom_availability,
-                filter_config.custom_availability,
-            )
-        case _:
-            raise ValueError(f"Unknown filter type: {filter_config!r}")
+    def __init__(self):
+        self._filter_by_name = {}
+
+    def register(self, name: str, filter_: Filter):
+        """Registers a named filter."""
+        if name in self._filter_by_name:
+            raise ValueError(f"Filter {name!r} is defined multiple times.")
+        self._filter_by_name[name] = filter_
+
+    def parse(self, filter_config: config_pb2.Filter) -> Filter:
+        """Returns a Filter instance from its configuration."""
+        match filter_config.WhichOneof("filter"):
+            case "all":
+                return And()
+            case "ref":
+                return self._filter_by_name[filter_config.ref]
+            case "not":
+                return Not(self.parse(getattr(filter_config, "not")))
+            case "and":
+                return And(
+                    *map(self.parse, getattr(filter_config, "and").filters)
+                )
+            case "or":
+                return Or(
+                    *map(self.parse, getattr(filter_config, "or").filters)
+                )
+            case "custom_availability":
+                return StringFieldMatcher(
+                    lambda media_item: media_item.custom_availability,
+                    filter_config.custom_availability,
+                )
+            case _:
+                raise ValueError(f"Unknown filter type: {filter_config!r}")
