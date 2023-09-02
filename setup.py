@@ -12,22 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-[build-system]
-requires = ["setuptools", "setuptools-protobuf"]
-build-backend = "setuptools.build_meta"
+import setuptools
+import setuptools_protobuf
 
-[tool.black]
-line-length = 80
-
-[tool.coverage.run]
-omit = [
-  "**/*_pb2.py",
-  "**/*_test.py",
-]
-
-[tool.pytest.ini_options]
-addopts = """\
-  --cov=. \
-  --cov-branch \
-  --cov-report=term-missing \
-  """
+setuptools.setup(
+    protobufs=(setuptools_protobuf.Protobuf("rock_paper_sand/config.proto"),)
+)

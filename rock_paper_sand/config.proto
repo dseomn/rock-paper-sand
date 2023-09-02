@@ -1,0 +1,60 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+
+package rock_paper_sand;
+
+import "google/protobuf/empty.proto";
+
+// 0 or more filters, mainly for use as config for filters like `and` and `or`.
+message Filters { repeated Filter filters = 1; }
+
+// A filter for media items.
+message Filter {
+  // Required. Configuration for the specific filter type.
+  oneof filter {
+    // Matches all media items.
+    google.protobuf.Empty all = 1;
+
+    // References another, named, filter.
+    string ref = 2;
+
+    // Inverts another filter.
+    Filter not = 3;
+
+    // Intersects other filters.
+    Filters and = 4;
+
+    // Unions other filters.
+    Filters or = 5;
+  }
+}
+
+// A (possibly composite) item of media, e.g., a movie, TV show, or book, or
+// fictional universe in which media is set.
+message MediaItem {
+  // Required. Name of the item.
+  string name = 1;
+
+  // Any additional information that might be useful to a human reading the
+  // data.
+  string comment = 2;
+
+  // Parts of a media item. E.g., if the outer item is a fictional universe, the
+  // parts could be movies in that universe.
+  repeated MediaItem parts = 3;
+}
