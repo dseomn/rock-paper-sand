@@ -1,1 +1,3 @@
 *_pb2.py
+.coverage
+__pycache__/
