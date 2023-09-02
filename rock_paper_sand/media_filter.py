@@ -14,7 +14,7 @@
 """Filters for media items."""
 
 import abc
-from collections.abc import Mapping, Set
+from collections.abc import Callable, Mapping, Set
 import dataclasses
 import functools
 
@@ -91,6 +91,31 @@ class Or(Filter):
         return FilterResult(False, extra=extra)
 
 
+class StringFieldMatcher(Filter):
+    """Matches a string field."""
+
+    def __init__(
+        self,
+        field_getter: Callable[[config_pb2.MediaItem], str],
+        matcher_config: config_pb2.StringFieldMatcher,
+    ):
+        self._field_getter = field_getter
+        self._matcher_config = matcher_config
+
+    def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
+        """See base class."""
+        value = self._field_getter(media_item)
+        match self._matcher_config.WhichOneof("method"):
+            case "empty":
+                return FilterResult(bool(value) != self._matcher_config.empty)
+            case "equals":
+                return FilterResult(value == self._matcher_config.equals)
+            case _:
+                raise ValueError(
+                    f"Unknown string field match type: {self._matcher_config!r}"
+                )
+
+
 def from_config(
     filter_config: config_pb2.Filter,
     *,
@@ -114,5 +139,10 @@ def from_config(
             return And(*map(recurse, getattr(filter_config, "and").filters))
         case "or":
             return Or(*map(recurse, getattr(filter_config, "or").filters))
+        case "custom_availability":
+            return StringFieldMatcher(
+                lambda media_item: media_item.custom_availability,
+                filter_config.custom_availability,
+            )
         case _:
             raise ValueError(f"Unknown filter type: {filter_config!r}")

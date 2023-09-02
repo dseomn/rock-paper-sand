@@ -120,24 +120,76 @@ class MediaFilterTest(parameterized.TestCase):
             },
             expected_result=media_filter.FilterResult(False),
         ),
+        dict(
+            testcase_name="custom_availability_empty_matches",
+            filter_by_name={},
+            filter_config={"customAvailability": {"empty": True}},
+            media_item=config_pb2.MediaItem(name="foo"),
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="custom_availability_not_empty_matches",
+            filter_by_name={},
+            filter_config={"customAvailability": {"empty": False}},
+            media_item=config_pb2.MediaItem(
+                name="foo", custom_availability="bar"
+            ),
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="custom_availability_not_empty_no_match",
+            filter_by_name={},
+            filter_config={"customAvailability": {"empty": False}},
+            media_item=config_pb2.MediaItem(name="foo"),
+            expected_result=media_filter.FilterResult(False),
+        ),
+        dict(
+            testcase_name="custom_availability_equals_matches",
+            filter_by_name={},
+            filter_config={"customAvailability": {"equals": "bar"}},
+            media_item=config_pb2.MediaItem(
+                name="foo", custom_availability="bar"
+            ),
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="custom_availability_equals_no_match",
+            filter_by_name={},
+            filter_config={"customAvailability": {"equals": "bar"}},
+            media_item=config_pb2.MediaItem(name="foo"),
+            expected_result=media_filter.FilterResult(False),
+        ),
     )
     def test_basic_filter(
         self,
         *,
         filter_by_name: Mapping[str, media_filter.Filter],
         filter_config: ...,
+        media_item: config_pb2.MediaItem = config_pb2.MediaItem(name="foo"),
         expected_result: media_filter.FilterResult,
     ):
         test_filter = media_filter.from_config(
             json_format.ParseDict(filter_config, config_pb2.Filter()),
             filter_by_name=filter_by_name,
         )
-        result = test_filter.filter(config_pb2.MediaItem(name="foo"))
+        result = test_filter.filter(media_item)
         self.assertEqual(expected_result, result)
 
     def test_unspecified_filter(self):
         with self.assertRaisesRegex(ValueError, "Unknown filter type"):
             media_filter.from_config(config_pb2.Filter(), filter_by_name={})
+
+    def test_unspecified_string_match(self):
+        test_filter = media_filter.from_config(
+            json_format.ParseDict(
+                {"customAvailability": {}}, config_pb2.Filter()
+            ),
+            filter_by_name={},
+        )
+        with self.assertRaisesRegex(
+            ValueError, "Unknown string field match type"
+        ):
+            test_filter.filter(config_pb2.MediaItem(name="foo"))
 
 
 if __name__ == "__main__":

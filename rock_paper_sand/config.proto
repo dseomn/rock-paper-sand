@@ -23,6 +23,18 @@ import "google/protobuf/empty.proto";
 // 0 or more filters, mainly for use as config for filters like `and` and `or`.
 message Filters { repeated Filter filters = 1; }
 
+// Ways to match a string field in a filter.
+message StringFieldMatcher {
+  // Required. How to match the field.
+  oneof method {
+    // Matches if the field is empty or not.
+    bool empty = 1;
+
+    // Matches if the field is exactly equal to the specified string.
+    string equals = 2;
+  }
+}
+
 // A filter for media items.
 message Filter {
   // Required. Configuration for the specific filter type.
@@ -41,6 +53,9 @@ message Filter {
 
     // Unions other filters.
     Filters or = 5;
+
+    // Matches on the custom_availability field.
+    StringFieldMatcher custom_availability = 6;
   }
 }
 
@@ -53,6 +68,10 @@ message MediaItem {
   // Any additional information that might be useful to a human reading the
   // data.
   string comment = 2;
+
+  // Info about where the media is available, e.g., "bookshelf 5 shelf 2" or a
+  // URL.
+  string custom_availability = 4;
 
   // Parts of a media item. E.g., if the outer item is a fictional universe, the
   // parts could be movies in that universe.
