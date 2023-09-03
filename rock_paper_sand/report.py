@@ -14,6 +14,7 @@
 """Reports about media."""
 
 from collections.abc import Mapping, Sequence
+from typing import Any
 
 from rock_paper_sand import config_pb2
 from rock_paper_sand import media_filter
@@ -22,32 +23,33 @@ from rock_paper_sand import media_filter
 def _filter_media_item(
     filter_: media_filter.Filter,
     item: config_pb2.MediaItem,
-) -> config_pb2.MediaItem | None:
-    """Returns the item with extra info if it matches, or None if it doesn't."""
-    matched_parts = []
-    unmatched_part_names = []
+) -> Mapping[str, Any] | None:
+    """Returns info about the item if it matches, or None if it doesn't."""
+    parts = []
+    matched_any_part = False
     for part in item.parts:
         part_result = _filter_media_item(filter_, part)
         if part_result is None:
-            unmatched_part_names.append(part.name)
+            parts.append(f"unmatched part: {part.name}")
         else:
-            matched_parts.append(part_result)
+            matched_any_part = True
+            parts.append(part_result)
     item_result = filter_.filter(item)
-    if not item_result.matches and not matched_parts:
+    if not item_result.matches and not matched_any_part:
         return None
-    result = config_pb2.MediaItem()
-    result.CopyFrom(item)
-    del result.extra_information[:]
+    result = {"name": item.name}
+    if item.comment:
+        result["comment"] = item.comment
+    if item.custom_availability:
+        result["customAvailability"] = item.custom_availability
+    extra_information = []
     if not item_result.matches:
-        result.extra_information.append(
-            "parent did not match, but children did"
-        )
-    result.extra_information.extend(
-        f"unmatched part: {part_name!r}" for part_name in unmatched_part_names
-    )
-    result.extra_information.extend(sorted(item_result.extra))
-    del result.parts[:]
-    result.parts.extend(matched_parts)
+        extra_information.append("parent did not match, but children did")
+    extra_information.extend(sorted(item_result.extra))
+    if extra_information:
+        result["extraInformation"] = extra_information
+    if parts:
+        result["parts"] = parts
     return result
 
 
@@ -66,7 +68,7 @@ class Report:
 
     def generate(
         self, media: Sequence[config_pb2.MediaItem]
-    ) -> Mapping[str, Sequence[config_pb2.MediaItem]]:
+    ) -> Mapping[str, Any]:
         """Returns a mapping from section name to results of the section."""
         result = {}
         for section_name, section_filter in self._sections.items():

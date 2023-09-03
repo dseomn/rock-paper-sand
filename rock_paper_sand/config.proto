@@ -89,6 +89,9 @@ message Report {
 // A (possibly composite) item of media, e.g., a movie, TV show, or book, or
 // fictional universe in which media is set.
 message MediaItem {
+  reserved 5;
+  reserved "extra_information";
+
   // Required. Name of the item.
   string name = 1;
 
@@ -99,9 +102,6 @@ message MediaItem {
   // Info about where the media is available, e.g., "bookshelf 5 shelf 2" or a
   // URL.
   string custom_availability = 4;
-
-  // Output only. Extra information about the item.
-  repeated string extra_information = 5;
 
   // Parts of a media item. E.g., if the outer item is a fictional universe, the
   // parts could be movies in that universe.

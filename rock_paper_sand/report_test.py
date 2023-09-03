@@ -45,12 +45,12 @@ class ReportTest(parameterized.TestCase):
                 ]
             },
             media=[
-                {"name": "foo"},
+                {"name": "foo", "comment": "FOO!"},
                 {"name": "bar", "parts": [{"name": "quux"}]},
             ],
             expected_result={
                 "all": [
-                    {"name": "foo"},
+                    {"name": "foo", "comment": "FOO!"},
                     {"name": "bar", "parts": [{"name": "quux"}]},
                 ],
                 "none": [],
@@ -101,26 +101,24 @@ class ReportTest(parameterized.TestCase):
                         "name": "unmatched_parent",
                         "extraInformation": [
                             "parent did not match, but children did",
-                            "unmatched part: 'unmatched_child'",
                         ],
                         "parts": [
                             {
                                 "name": "matched_child",
                                 "customAvailability": "yes",
                             },
+                            "unmatched part: unmatched_child",
                         ],
                     },
                     {
                         "name": "matched_parent",
                         "customAvailability": "yes",
-                        "extraInformation": [
-                            "unmatched part: 'unmatched_child'",
-                        ],
                         "parts": [
                             {
                                 "name": "matched_child",
                                 "customAvailability": "yes",
                             },
+                            "unmatched part: unmatched_child",
                         ],
                     },
                 ],
@@ -147,13 +145,7 @@ class ReportTest(parameterized.TestCase):
                 for item in media
             )
         )
-        self.assertEqual(
-            expected_result,
-            {
-                section_name: list(map(json_format.MessageToDict, items))
-                for section_name, items in result.items()
-            },
-        )
+        self.assertEqual(expected_result, result)
 
 
 if __name__ == "__main__":
