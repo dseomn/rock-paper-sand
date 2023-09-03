@@ -22,8 +22,8 @@ class NetworkTest(parameterized.TestCase):
     def test_requests_session(self):
         # For now this is basicaly just a smoke test, because it's probably not
         # worth the effort to really test this function.
-        session = network.requests_session()
-        self.assertIn("User-Agent", session.headers)
+        with network.requests_session() as session:
+            self.assertIn("User-Agent", session.headers)
 
 
 if __name__ == "__main__":

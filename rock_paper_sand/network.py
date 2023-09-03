@@ -13,6 +13,8 @@
 # limitations under the License.
 """Utilities for accessing network resources."""
 
+from collections.abc import Generator
+import contextlib
 import os.path
 
 import cachecontrol
@@ -23,20 +25,21 @@ import urllib3.util
 from rock_paper_sand import config
 
 
-def requests_session() -> requests.Session:
-    """Returns a requests session."""
-    session = requests.session()
-    http_adapter = cachecontrol.CacheControlAdapter(
-        cache=file_cache.FileCache(
-            directory=os.path.join(config.CACHE_DIR.value, "cachecontrol")
-        ),
-        max_retries=urllib3.util.Retry(
-            status_forcelist=urllib3.util.Retry.RETRY_AFTER_STATUS_CODES,
-            backoff_factor=0.1,
-        ),
-    )
-    session.mount("http://", http_adapter)
-    session.mount("https://", http_adapter)
-    # TODO(dseomn): Add GitHub URL?
-    session.headers["User-Agent"] = "rock_paper_sand/0"
-    return session
+@contextlib.contextmanager
+def requests_session() -> Generator[requests.Session, None, None]:
+    """Returns a context manager for a requests session."""
+    with requests.session() as session:
+        http_adapter = cachecontrol.CacheControlAdapter(
+            cache=file_cache.FileCache(
+                directory=os.path.join(config.CACHE_DIR.value, "cachecontrol")
+            ),
+            max_retries=urllib3.util.Retry(
+                status_forcelist=urllib3.util.Retry.RETRY_AFTER_STATUS_CODES,
+                backoff_factor=0.1,
+            ),
+        )
+        session.mount("http://", http_adapter)
+        session.mount("https://", http_adapter)
+        # TODO(dseomn): Add GitHub URL?
+        session.headers["User-Agent"] = "rock_paper_sand/0"
+        yield session
