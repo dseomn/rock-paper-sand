@@ -59,8 +59,20 @@ message Filter {
   }
 }
 
+// A filter with a name.
+message NamedFilter {
+  // Required, must be unique. Name of the filter.
+  string name = 1;
+
+  // Required. Filter.
+  Filter filter = 2;
+}
+
 // A report about the media.
 message Report {
+  // Required, must be unique. Name of the report.
+  string name = 2;
+
   // A section of a report.
   message Section {
     // Required, must be unique. Name of the section.
@@ -94,4 +106,16 @@ message MediaItem {
   // Parts of a media item. E.g., if the outer item is a fictional universe, the
   // parts could be movies in that universe.
   repeated MediaItem parts = 3;
+}
+
+// Top-level config.
+message Config {
+  // Filters, which can be referenced by other filters or in reports.
+  repeated NamedFilter filters = 1;
+
+  // Reports.
+  repeated Report reports = 2;
+
+  // Media.
+  repeated MediaItem media = 3;
 }

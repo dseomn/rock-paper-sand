@@ -19,8 +19,11 @@ from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
+from google.protobuf import json_format
+import yaml
 
 from rock_paper_sand import config
+from rock_paper_sand import config_pb2
 
 
 class ConfigTest(parameterized.TestCase):
@@ -55,6 +58,15 @@ class ConfigTest(parameterized.TestCase):
                     xdg_variable_name="XDG_FOO_HOME",
                     relative_fallback_path=pathlib.Path("foo"),
                 )
+
+    def test_example_config(self):
+        with open(
+            pathlib.Path(__file__).parent.parent / "config.example.yaml",
+            mode="rb",
+        ) as config_file:
+            json_format.ParseDict(
+                yaml.safe_load(config_file), config_pb2.Config()
+            )
 
 
 if __name__ == "__main__":
