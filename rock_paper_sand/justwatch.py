@@ -67,6 +67,7 @@ class Api:
         self._session = session
         self._base_url = base_url
         self._cache = {}
+        self._provider_name_by_short_name_by_locale = {}
 
     def get(self, relative_url: str) -> Any:
         """Returns the decoded JSON response."""
@@ -77,6 +78,18 @@ class Api:
         response_json = response.json()
         self._cache[relative_url] = response_json
         return response_json
+
+    def provider_name(self, short_name: str, *, locale: str) -> str:
+        """Returns the human-readable provider name."""
+        if locale not in self._provider_name_by_short_name_by_locale:
+            self._provider_name_by_short_name_by_locale[locale] = {
+                provider["short_name"]: provider["clear_name"]
+                for provider in self.get(f"providers/locale/{locale}")
+                if "clear_name" in provider
+            }
+        return self._provider_name_by_short_name_by_locale[locale].get(
+            short_name, short_name
+        )
 
 
 class Filter(media_filter.Filter):
@@ -98,6 +111,9 @@ class Filter(media_filter.Filter):
         now = datetime.datetime.now(tz=datetime.timezone.utc)
         for offer in content.get("offers", ()):
             provider = offer["package_short_name"]
+            provider_name = self._api.provider_name(
+                provider, locale=self._config.locale
+            )
             monetization_type = offer["monetization_type"]
             if (
                 self._config.providers
@@ -120,9 +136,7 @@ class Filter(media_filter.Filter):
                 comments.append(f"starting {available_from}")
             if available_to is not None:
                 comments.append(f"until {available_to}")
-            # TODO(dseomn): Show the human-readable provider name instead of the
-            # short name.
-            availability.add(f"{provider} ({', '.join(comments)})")
+            availability.add(f"{provider_name} ({', '.join(comments)})")
         return availability
 
     def filter(

@@ -83,11 +83,42 @@ class JustWatchApiTest(parameterized.TestCase):
         self.assertEqual("foo", data)
         self.assertEmpty(self._mock_session.mock_calls)
 
+    def test_provider_name(self):
+        self._mock_session.get.return_value.json.return_value = [
+            {"short_name": "foo", "clear_name": "Foo+"},
+        ]
+
+        provider_name = self._api.provider_name("foo", locale="en_US")
+
+        self.assertEqual("Foo+", provider_name)
+        self._mock_session.get.assert_called_once_with(
+            f"{self._base_url}/providers/locale/en_US"
+        )
+
+    def test_provider_name_cached(self):
+        self._mock_session.get.return_value.json.return_value = [
+            {"short_name": "foo", "clear_name": "Foo+"},
+        ]
+        self._api.provider_name("bar", locale="en_US")
+        self._mock_session.reset_mock()
+
+        provider_name = self._api.provider_name("foo", locale="en_US")
+
+        self.assertEqual("Foo+", provider_name)
+        self.assertEmpty(self._mock_session.mock_calls)
+
+    def test_provider_name_not_found(self):
+        self._mock_session.get.return_value.json.return_value = []
+        self.assertEqual("foo", self._api.provider_name("foo", locale="en_US"))
+
 
 class FilterTest(parameterized.TestCase):
     def setUp(self):
         self._mock_api = mock.create_autospec(
             justwatch.Api, spec_set=True, instance=True
+        )
+        self._mock_api.provider_name.side_effect = (
+            lambda short_name, locale: f"{short_name.capitalize()}+"
         )
 
     @parameterized.named_parameters(
@@ -135,9 +166,9 @@ class FilterTest(parameterized.TestCase):
             expected_result=media_filter.FilterResult(
                 True,
                 extra={
-                    "foo (bar)",
+                    "Foo+ (bar)",
                     (
-                        f"quux (baz, starting {_TIME_IN_FUTURE_1}, until "
+                        f"Quux+ (baz, starting {_TIME_IN_FUTURE_1}, until "
                         f"{_TIME_IN_FUTURE_2})"
                     ),
                 },
@@ -174,7 +205,7 @@ class FilterTest(parameterized.TestCase):
                 },
             },
             expected_result=media_filter.FilterResult(
-                True, extra={"foo (bar)"}
+                True, extra={"Foo+ (bar)"}
             ),
         ),
     )
@@ -226,7 +257,7 @@ class FilterTest(parameterized.TestCase):
                 )
             )
         self.assertEqual(
-            media_filter.FilterResult(True, extra={"foo (bar)"}), result
+            media_filter.FilterResult(True, extra={"Foo+ (bar)"}), result
         )
 
 
