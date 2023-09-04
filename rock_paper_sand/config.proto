@@ -35,6 +35,32 @@ message StringFieldMatcher {
   }
 }
 
+// Filters using the JustWatch API. In general, all specified/non-default fields
+// must match the same thing for the filter to match the media item. E.g., if
+// providers has "foo" and monetization_types has "bar", the media must be
+// available on "foo" with monetization type "bar", not on "foo" with another
+// monetization type and also on another service with monetization type "bar".
+message JustWatchFilter {
+  // Required. The full_locale field from
+  // https://apis.justwatch.com/content/locales/state
+  string locale = 1;
+
+  // Which services provide the media. Possible values are the short_name fields
+  // at https://apis.justwatch.com/content/providers/locale/{locale}
+  repeated string providers = 2;
+
+  // How the media is monetized. To see the possible values:
+  //  curl https://apis.justwatch.com/content/providers/locale/{locale} | \
+  //    jq '[.[] | .monetization_types | .[]?] | unique'
+  repeated string monetization_types = 3;
+
+  // Match if the media is available in any way. It probably makes more sense to
+  // use the providers and/or monetization_types fields instead in most cases,
+  // but this can be useful to find media that might not be available anywhere
+  // online.
+  bool any_availability = 4;
+}
+
 // A filter for media items.
 message Filter {
   // Required. Configuration for the specific filter type.
@@ -102,6 +128,9 @@ message MediaItem {
   // Info about where the media is available, e.g., "bookshelf 5 shelf 2" or a
   // URL.
   string custom_availability = 4;
+
+  // JustWatch type and id, e.g., "show/22164" or "movie/127384".
+  string justwatch_id = 6;
 
   // Parts of a media item. E.g., if the outer item is a fictional universe, the
   // parts could be movies in that universe.
