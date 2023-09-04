@@ -23,6 +23,7 @@ line-length = 80
 omit = [
   "**/*_pb2.py",
   "**/*_test.py",
+  "**/conftest.py",
 ]
 
 [tool.pytest.ini_options]
