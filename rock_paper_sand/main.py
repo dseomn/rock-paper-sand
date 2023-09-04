@@ -59,7 +59,11 @@ def main(args: Sequence[str]) -> None:
             name: report_.generate(config_.media)
             for name, report_ in reports.items()
         }
-        print(yaml.safe_dump(results, sort_keys=False, allow_unicode=True))
+        print(
+            yaml.safe_dump(
+                results, sort_keys=False, allow_unicode=True, width=float("inf")
+            )
+        )
 
 
 if __name__ == "__main__":
