@@ -124,9 +124,7 @@ class Filter(media_filter.Filter):
                 comments.append(f"until {available_to}")
             # TODO(dseomn): Show the human-readable provider name instead of the
             # short name.
-            availability.add(
-                f"{provider} ({', '.join(comments)})" if comments else provider
-            )
+            availability.add(f"{provider} ({', '.join(comments)})")
         return availability
 
     def filter(
