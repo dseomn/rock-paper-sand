@@ -14,6 +14,7 @@
 """Entrypoint for rock_paper_sand."""
 
 from collections.abc import Sequence
+import functools
 
 from absl import app
 from absl import flags
@@ -22,7 +23,9 @@ import yaml
 
 from rock_paper_sand import config
 from rock_paper_sand import config_pb2
+from rock_paper_sand import justwatch
 from rock_paper_sand import media_filter
+from rock_paper_sand import network
 from rock_paper_sand import report
 
 flags.adopt_module_key_flags(config)
@@ -35,22 +38,28 @@ def main(args: Sequence[str]) -> None:
         config_ = json_format.ParseDict(
             yaml.safe_load(config_file), config_pb2.Config()
         )
-    filter_registry = media_filter.Registry()
-    for filter_config in config_.filters:
-        filter_registry.register(
-            filter_config.name, filter_registry.parse(filter_config.filter)
+    with network.requests_session() as session:
+        justwatch_api = justwatch.Api(session=session)
+        filter_registry = media_filter.Registry(
+            justwatch_factory=functools.partial(
+                justwatch.Filter, api=justwatch_api
+            ),
         )
-    reports = {
-        report_config.name: report.Report(
-            report_config, filter_registry=filter_registry
-        )
-        for report_config in config_.reports
-    }
-    results = {
-        name: report_.generate(config_.media)
-        for name, report_ in reports.items()
-    }
-    print(yaml.safe_dump(results, sort_keys=False, allow_unicode=True))
+        for filter_config in config_.filters:
+            filter_registry.register(
+                filter_config.name, filter_registry.parse(filter_config.filter)
+            )
+        reports = {
+            report_config.name: report.Report(
+                report_config, filter_registry=filter_registry
+            )
+            for report_config in config_.reports
+        }
+        results = {
+            name: report_.generate(config_.media)
+            for name, report_ in reports.items()
+        }
+        print(yaml.safe_dump(results, sort_keys=False, allow_unicode=True))
 
 
 if __name__ == "__main__":
