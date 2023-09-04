@@ -41,11 +41,12 @@ def _parse_datetime(
     value = dateutil.parser.isoparse(raw_value)
     if value in (datetime.datetime(1, 1, 1, tzinfo=datetime.timezone.utc),):
         return None
-    if value < datetime.datetime(1990, 1, 1, tzinfo=datetime.timezone.utc):
-        # https://en.wikipedia.org/wiki/Video_on_demand says "As ... in the
-        # 1990s ... which culminated in the arrival of VOD ..." so it seems
-        # unlikely that any date before 1990 is valid in the context of when
-        # JustWatch thinks something was available to stream online.
+    if value < datetime.datetime(1800, 1, 1, tzinfo=datetime.timezone.utc):
+        # It looks like some of JustWatch's data uses the original release date
+        # for the available_from field, despite the original release date being
+        # before video streaming on the internet existed. From
+        # https://en.wikipedia.org/wiki/Film#History it looks unlikely that any
+        # original release date predates 1800 though.
         warnings.warn(
             f"{_BASE_URL}/{relative_url} has a date field that's improbably "
             f"old, {raw_value!r}. If it looks like it might be a placeholder, "

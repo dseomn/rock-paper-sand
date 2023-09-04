@@ -237,7 +237,7 @@ class FilterTest(parameterized.TestCase):
                 _offer(
                     package_short_name="foo",
                     monetization_type="bar",
-                    available_from="1970-01-01T00:00:00Z",
+                    available_from="0042-01-01T00:00:00Z",
                 )
             ]
         }
@@ -249,7 +249,7 @@ class FilterTest(parameterized.TestCase):
             api=self._mock_api,
         )
 
-        with self.assertWarnsRegex(UserWarning, "1970.*might be a placeholder"):
+        with self.assertWarnsRegex(UserWarning, "0042.*might be a placeholder"):
             result = test_filter.filter(
                 json_format.ParseDict(
                     {"name": "foo", "justwatchId": "movie/1"},
