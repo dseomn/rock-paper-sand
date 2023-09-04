@@ -122,6 +122,23 @@ class MediaFilterTest(parameterized.TestCase):
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
+            testcase_name="has_parts_true_matches",
+            filter_by_name={},
+            filter_config={"has_parts": True},
+            media_item=config_pb2.MediaItem(
+                name="foo",
+                parts=[config_pb2.MediaItem(name="bar")],
+            ),
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="has_parts_true_no_match",
+            filter_by_name={},
+            filter_config={"has_parts": True},
+            media_item=config_pb2.MediaItem(name="foo"),
+            expected_result=media_filter.FilterResult(False),
+        ),
+        dict(
             testcase_name="custom_availability_empty_matches",
             filter_by_name={},
             filter_config={"customAvailability": {"empty": True}},

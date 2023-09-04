@@ -80,6 +80,9 @@ message Filter {
     // Unions other filters.
     Filters or = 5;
 
+    // Whether the media item has children.
+    bool has_parts = 8;
+
     // Matches on the custom_availability field.
     StringFieldMatcher custom_availability = 6;
 

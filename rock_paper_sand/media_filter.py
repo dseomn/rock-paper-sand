@@ -91,6 +91,17 @@ class Or(Filter):
         return FilterResult(False, extra=extra)
 
 
+class HasParts(Filter):
+    """Matches based on whether there are any child parts."""
+
+    def __init__(self, has_parts: bool):
+        self._has_parts = has_parts
+
+    def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
+        """See base class."""
+        return FilterResult(bool(media_item.parts) == self._has_parts)
+
+
 class StringFieldMatcher(Filter):
     """Matches a string field."""
 
@@ -158,6 +169,8 @@ class Registry:
                 return Or(
                     *map(self.parse, getattr(filter_config, "or").filters)
                 )
+            case "has_parts":
+                return HasParts(filter_config.has_parts)
             case "custom_availability":
                 return StringFieldMatcher(
                     lambda media_item: media_item.custom_availability,
