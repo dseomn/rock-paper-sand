@@ -35,9 +35,10 @@ from rock_paper_sand import media_filter
 _BASE_URL = "https://apis.justwatch.com/content"
 
 
-def _convert_placeholder_datetime_to_none(
-    value: datetime.datetime, *, relative_url: str
+def _parse_datetime(
+    raw_value: str, *, relative_url: str
 ) -> datetime.datetime | None:
+    value = dateutil.parser.isoparse(raw_value)
     if value in (datetime.datetime(1, 1, 1, tzinfo=datetime.timezone.utc),):
         return None
     if value < datetime.datetime(1990, 1, 1, tzinfo=datetime.timezone.utc):
@@ -47,9 +48,8 @@ def _convert_placeholder_datetime_to_none(
         # JustWatch thinks something was available to stream online.
         warnings.warn(
             f"{_BASE_URL}/{relative_url} has a date field that's improbably "
-            f"old, {value!r}. If it looks like it might be a placeholder, "
-            "consider adding it to the _convert_placeholder_datetime_to_none "
-            "function.",
+            f"old, {raw_value!r}. If it looks like it might be a placeholder, "
+            "consider adding it to the _parse_datetime function.",
             UserWarning,
         )
     return value
@@ -107,13 +107,11 @@ class Filter(media_filter.Filter):
                 and monetization_type not in self._config.monetization_types
             ):
                 continue
-            available_from = _convert_placeholder_datetime_to_none(
-                dateutil.parser.isoparse(offer["available_from"]),
-                relative_url=relative_url,
+            available_from = _parse_datetime(
+                offer["available_from"], relative_url=relative_url
             )
-            available_to = _convert_placeholder_datetime_to_none(
-                dateutil.parser.isoparse(offer["available_to"]),
-                relative_url=relative_url,
+            available_to = _parse_datetime(
+                offer["available_to"], relative_url=relative_url
             )
             if available_to is not None and now > available_to:
                 continue
