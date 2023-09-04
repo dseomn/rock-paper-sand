@@ -15,8 +15,13 @@
 filters:
 - name: available
   filter:
-    customAvailability:
-      empty: false
+    or:
+      filters:
+      - justwatch:
+          locale: en_US
+          anyAvailability: true
+      - customAvailability:
+          empty: false
 reports:
 - name: default
   sections:
@@ -34,3 +39,7 @@ media:
   - name: "Rock, Paper, Sand! the Movie"
     customAvailability: "Coming to theaters next Undecimber!"
   - name: "Rock, Paper, Sand! the Sequel"
+- name: "Monty Python's Flying Circus (1969)"
+  justwatchId: show/22164  # https://www.justwatch.com/us/tv-show/monty-pythons-flying-circus
+- name: "Monty Python and the Holy Grail (1975)"
+  justwatchId: movie/127384  # https://www.justwatch.com/us/movie/monty-python-and-the-holy-grail

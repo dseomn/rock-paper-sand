@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from collections.abc import Mapping, Set
+from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
@@ -176,6 +177,28 @@ class MediaFilterTest(parameterized.TestCase):
         )
         result = test_filter.filter(media_item)
         self.assertEqual(expected_result, result)
+
+    def test_justwatch_filter(self):
+        mock_filter = mock.create_autospec(
+            media_filter.Filter, spec_set=True, instance=True
+        )
+        justwatch_factory = mock.Mock(spec_set=(), return_value=mock_filter)
+        registry = media_filter.Registry(justwatch_factory=justwatch_factory)
+        filter_config = json_format.ParseDict(
+            {"justwatch": {"locale": "en_US"}}, config_pb2.Filter()
+        )
+
+        returned_filter = registry.parse(filter_config)
+
+        justwatch_factory.assert_called_once_with(filter_config.justwatch)
+        self.assertIs(mock_filter, returned_filter)
+
+    def test_justwatch_filter_unsupported(self):
+        registry = media_filter.Registry(justwatch_factory=None)
+        with self.assertRaisesRegex(ValueError, "JustWatch.*no callback"):
+            registry.parse(
+                json_format.ParseDict({"justwatch": {}}, config_pb2.Filter())
+            )
 
     def test_unspecified_filter(self):
         with self.assertRaisesRegex(ValueError, "Unknown filter type"):

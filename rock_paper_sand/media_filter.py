@@ -119,7 +119,20 @@ class StringFieldMatcher(Filter):
 class Registry:
     """Registry of filters."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        *,
+        justwatch_factory: (
+            Callable[[config_pb2.JustWatchFilter], Filter] | None
+        ) = None,
+    ):
+        """Initializer.
+
+        Args:
+            justwatch_factory: Callback to create a JustWatch filter, or None to
+                raise an error if there are any JustWatch filters.
+        """
+        self._justwatch_factory = justwatch_factory
         self._filter_by_name = {}
 
     def register(self, name: str, filter_: Filter):
@@ -150,5 +163,12 @@ class Registry:
                     lambda media_item: media_item.custom_availability,
                     filter_config.custom_availability,
                 )
+            case "justwatch":
+                if self._justwatch_factory is None:
+                    raise ValueError(
+                        "A JustWatch filter was specified, but no callback to "
+                        "handle those was provided."
+                    )
+                return self._justwatch_factory(filter_config.justwatch)
             case _:
                 raise ValueError(f"Unknown filter type: {filter_config!r}")

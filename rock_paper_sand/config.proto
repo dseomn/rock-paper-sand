@@ -82,6 +82,9 @@ message Filter {
 
     // Matches on the custom_availability field.
     StringFieldMatcher custom_availability = 6;
+
+    // Filters using the JustWatch API.
+    JustWatchFilter justwatch = 7;
   }
 }
 
