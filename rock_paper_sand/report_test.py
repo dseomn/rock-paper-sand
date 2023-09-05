@@ -45,12 +45,12 @@ class ReportTest(parameterized.TestCase):
                 ]
             },
             media=[
-                {"name": "foo", "comment": "FOO!"},
+                {"name": "foo", "comment": "FOO!", "done": "all"},
                 {"name": "bar", "parts": [{"name": "quux"}]},
             ],
             expected_result={
                 "all": [
-                    {"name": "foo", "comment": "FOO!"},
+                    {"name": "foo", "comment": "FOO!", "done": "all"},
                     {"name": "bar", "parts": [{"name": "quux"}]},
                 ],
                 "none": [],

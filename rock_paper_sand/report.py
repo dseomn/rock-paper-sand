@@ -40,6 +40,8 @@ def _filter_media_item(
     result = {"name": item.name}
     if item.comment:
         result["comment"] = item.comment
+    if item.done:
+        result["done"] = item.done
     if item.custom_availability:
         result["customAvailability"] = item.custom_availability
     extra_information = []

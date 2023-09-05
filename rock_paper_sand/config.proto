@@ -131,6 +131,31 @@ message MediaItem {
   // data.
   string comment = 2;
 
+  // Whether the item has already been watched/read/etc., and if so, how much.
+  // For simple items, this should either be the empty string (not done) or the
+  // string "all" (done). For TV shows, this is a comma-separated list of ranges
+  // of season and episode numbers. Examples:
+  //
+  // "" / absent: Not done.
+  // "all": All done.
+  // "1 - 5": Seasons 1 to 5 done.
+  // "1 - 2.2, 2.4 - 5": Seasons 1 to 5 done, except for season 2 episode 3.
+  // "1 - 5, all": All done. This could be useful in a few cases:
+  //    1. The show only has 5 seasons, and this can prevent an API call to
+  //       check that each time.
+  //    2. The show only has 5 seasons, and there isn't an API that can provide
+  //       that information, so adding "all" makes it clear that the show is
+  //       entirely done.
+  //    3. The show has more than 5 seasons, but the user wants to pretend that
+  //       seasons after 5 don't exist. E.g., to remove the show from a to-watch
+  //       report section despite not having watched all of it.
+  //
+  // Note that there can be reasons to set this field to values other than
+  // what's actually done. E.g., if you want to rewatch something, you might set
+  // this field to what's done the second time, and use the comment field to
+  // track what's actually been watched already.
+  string done = 7;
+
   // Info about where the media is available, e.g., "bookshelf 5 shelf 2" or a
   // URL.
   string custom_availability = 4;
