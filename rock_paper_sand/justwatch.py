@@ -28,11 +28,13 @@ from collections.abc import Set
 from typing import Any
 import warnings
 
+import cachecontrol.heuristics
 import dateutil.parser
 import requests
 
 from rock_paper_sand import config_pb2
 from rock_paper_sand import media_filter
+from rock_paper_sand import network
 
 _BASE_URL = "https://apis.justwatch.com/content"
 
@@ -71,6 +73,17 @@ class Api:
         self._base_url = base_url
         self._cache = {}
         self._provider_name_by_short_name_by_locale = {}
+
+        # JustWatch seems to rate-limit the API enough to make this code pretty
+        # slow when the requests are all cache misses, and they only tell
+        # clients to cache for 10 minutes. Increasing that makes the code much
+        # more responsive when called less often than every 10 minutes.
+        self._session.mount(
+            f"{self._base_url}/",
+            network.requests_http_adapter(
+                cache_heuristic=cachecontrol.heuristics.ExpiresAfter(hours=20)
+            ),
+        )
 
     def get(self, relative_url: str) -> Any:
         """Returns the decoded JSON response."""

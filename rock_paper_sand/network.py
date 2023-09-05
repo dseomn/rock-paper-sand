@@ -19,25 +19,36 @@ import os.path
 
 import cachecontrol
 from cachecontrol.caches import file_cache
+import cachecontrol.heuristics
 import requests
+import requests.adapters
 import urllib3.util
 
 from rock_paper_sand import config
+
+
+def requests_http_adapter(
+    *,
+    cache_heuristic: cachecontrol.heuristics.BaseHeuristic | None = None,
+) -> requests.adapters.HTTPAdapter:
+    """Returns an HTTPAdapter for requests."""
+    return cachecontrol.CacheControlAdapter(
+        cache=file_cache.FileCache(
+            directory=os.path.join(config.CACHE_DIR.value, "cachecontrol")
+        ),
+        heuristic=cache_heuristic,
+        max_retries=urllib3.util.Retry(
+            status_forcelist=urllib3.util.Retry.RETRY_AFTER_STATUS_CODES,
+            backoff_factor=0.1,
+        ),
+    )
 
 
 @contextlib.contextmanager
 def requests_session() -> Generator[requests.Session, None, None]:
     """Returns a context manager for a requests session."""
     with requests.session() as session:
-        http_adapter = cachecontrol.CacheControlAdapter(
-            cache=file_cache.FileCache(
-                directory=os.path.join(config.CACHE_DIR.value, "cachecontrol")
-            ),
-            max_retries=urllib3.util.Retry(
-                status_forcelist=urllib3.util.Retry.RETRY_AFTER_STATUS_CODES,
-                backoff_factor=0.1,
-            ),
-        )
+        http_adapter = requests_http_adapter()
         session.mount("http://", http_adapter)
         session.mount("https://", http_adapter)
         # TODO(dseomn): Add GitHub URL?

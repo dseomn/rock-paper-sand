@@ -57,6 +57,7 @@ class JustWatchApiTest(parameterized.TestCase):
         self._api = justwatch.Api(
             session=self._mock_session, base_url=self._base_url
         )
+        self._mock_session.reset_mock()
 
     def test_get(self):
         self._mock_session.get.return_value.json.return_value = "foo"

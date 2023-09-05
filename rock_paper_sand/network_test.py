@@ -14,11 +14,19 @@
 
 from absl.testing import absltest
 from absl.testing import parameterized
+import requests.adapters
 
 from rock_paper_sand import network
 
 
 class NetworkTest(parameterized.TestCase):
+    def test_requests_http_adapter(self):
+        # For now this is basicaly just a smoke test, because it's probably not
+        # worth the effort to really test this function.
+        self.assertIsInstance(
+            network.requests_http_adapter(), requests.adapters.HTTPAdapter
+        )
+
     def test_requests_session(self):
         # For now this is basicaly just a smoke test, because it's probably not
         # worth the effort to really test this function.
