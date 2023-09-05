@@ -19,6 +19,31 @@ from rock_paper_sand import multi_level_set
 
 
 class MultiLevelSetTest(parameterized.TestCase):
+    @parameterized.parameters(
+        ("all", ()),
+        ("1", (1,)),
+        ("1.2", (1, 2)),
+    )
+    def test_parse_number_valid(
+        self,
+        number_str: str,
+        number: tuple[int, ...],
+    ):
+        self.assertEqual(number, multi_level_set.parse_number(number_str))
+
+    @parameterized.parameters(
+        "",
+        ".",
+        "foo",
+        "1..2",
+        ".1",
+        "1.",
+        "1.-2",
+    )
+    def test_parse_number_invalid(self, number_str: str):
+        with self.assertRaisesRegex(ValueError, "MultiLevelNumber"):
+            multi_level_set.parse_number(number_str)
+
     @parameterized.named_parameters(
         dict(
             testcase_name="trivial_member",
@@ -165,7 +190,7 @@ class MultiLevelSetTest(parameterized.TestCase):
             is_member=False,
         ),
     )
-    def test_valid(
+    def test_valid_set(
         self,
         *,
         set_str: str,
@@ -193,7 +218,7 @@ class MultiLevelSetTest(parameterized.TestCase):
         ",1",
         "1,",
     )
-    def test_invalid(self, set_str: str):
+    def test_invalid_set(self, set_str: str):
         with self.assertRaisesRegex(ValueError, "Invalid multi level set"):
             multi_level_set.MultiLevelSet.from_string(set_str)
 

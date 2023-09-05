@@ -29,22 +29,31 @@ MultiLevelRange = NewType(
 )
 
 
-def _parse_multi_level_number(number_str: str) -> MultiLevelNumber:
+def parse_number(number_str: str, /) -> MultiLevelNumber:
+    """Returns a MultiLevelNumber parsed from a string."""
     if number_str == "all":
         return MultiLevelNumber(())
-    return MultiLevelNumber(tuple(map(int, number_str.split("."))))
+    if "-" in number_str:
+        raise ValueError(
+            "MultiLevelNumber cannot have negative components: "
+            f"{number_str!r}"
+        )
+    try:
+        return MultiLevelNumber(tuple(map(int, number_str.split("."))))
+    except ValueError as parse_error:
+        raise ValueError(
+            f"Invalid MultiLevelNumber: {number_str!r}"
+        ) from parse_error
 
 
 def _parse_multi_level_range(range_str: str) -> MultiLevelRange:
     start_str, sep, end_str = range_str.partition("-")
     if not sep:
         end_str = start_str
-    if "-" in end_str:
-        raise ValueError("Multiple hyphens in a range.")
     return MultiLevelRange(
         (
-            _parse_multi_level_number(start_str.strip()),
-            _parse_multi_level_number(end_str.strip()),
+            parse_number(start_str.strip()),
+            parse_number(end_str.strip()),
         )
     )
 
