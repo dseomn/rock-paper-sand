@@ -139,6 +139,20 @@ class MediaFilterTest(parameterized.TestCase):
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
+            testcase_name="done_true",
+            filter_by_name={},
+            filter_config={"done": "all"},
+            media_item=config_pb2.MediaItem(name="foo", done="1 - 5, all"),
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="done_false",
+            filter_by_name={},
+            filter_config={"done": "5.10"},
+            media_item=config_pb2.MediaItem(name="foo", done="1 - 5.9"),
+            expected_result=media_filter.FilterResult(False),
+        ),
+        dict(
             testcase_name="custom_availability_empty_matches",
             filter_by_name={},
             filter_config={"customAvailability": {"empty": True}},

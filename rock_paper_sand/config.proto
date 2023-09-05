@@ -83,6 +83,10 @@ message Filter {
     // Whether the media item has children.
     bool has_parts = 8;
 
+    // Matches media items that have this dotted number (or "all") included in
+    // their `done` field.
+    string done = 9;
+
     // Matches on the custom_availability field.
     StringFieldMatcher custom_availability = 6;
 

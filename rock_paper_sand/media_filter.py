@@ -19,6 +19,7 @@ import dataclasses
 import functools
 
 from rock_paper_sand import config_pb2
+from rock_paper_sand import multi_level_set
 
 
 @dataclasses.dataclass(frozen=True)
@@ -102,6 +103,20 @@ class HasParts(Filter):
         return FilterResult(bool(media_item.parts) == self._has_parts)
 
 
+class Done(Filter):
+    """Matches based on the `done` field."""
+
+    def __init__(self, done: str):
+        self._done = multi_level_set.parse_number(done)
+
+    def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
+        """See base class."""
+        return FilterResult(
+            self._done
+            in multi_level_set.MultiLevelSet.from_string(media_item.done)
+        )
+
+
 class StringFieldMatcher(Filter):
     """Matches a string field."""
 
@@ -171,6 +186,8 @@ class Registry:
                 )
             case "has_parts":
                 return HasParts(filter_config.has_parts)
+            case "done":
+                return Done(filter_config.done)
             case "custom_availability":
                 return StringFieldMatcher(
                     lambda media_item: media_item.custom_availability,
