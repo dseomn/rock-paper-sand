@@ -208,6 +208,44 @@ class FilterTest(parameterized.TestCase):
                 True, extra={"Foo+ (bar)"}
             ),
         ),
+        dict(
+            testcase_name="partial_availability",
+            filter_config={"locale": "en_US", "anyAvailability": True},
+            media_item={"name": "foo", "justwatchId": "show/1"},
+            api_data={
+                "titles/show/1/locale/en_US": {
+                    "seasons": [
+                        {"object_type": "show_season", "id": 1},
+                        {"object_type": "show_season", "id": 2},
+                    ],
+                },
+                "titles/show_season/1/locale/en_US": {
+                    "episodes": [
+                        {
+                            "offers": [
+                                _offer(
+                                    package_short_name="foo",
+                                    monetization_type="bar",
+                                ),
+                            ],
+                        },
+                        {
+                            # This represents an episode that's unavailable.
+                        },
+                    ],
+                },
+                "titles/show_season/2/locale/en_US": {
+                    # This represents an upcoming season with no episodes yet.
+                },
+            },
+            expected_result=media_filter.FilterResult(
+                True,
+                # Showing "1/3 episodes" isn't ideal because it counts the
+                # upcoming season as an episode, but I'm not sure it's worth the
+                # effort to improve it.
+                extra={"Foo+ (1/3 episodes, bar)"},
+            ),
+        ),
     )
     def test_filter(
         self,

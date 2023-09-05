@@ -22,6 +22,8 @@ to enable useful things like caching and retrying specific errors.
 """
 
 import datetime
+import dataclasses
+import collections
 from collections.abc import Set
 from typing import Any
 import warnings
@@ -93,6 +95,42 @@ class Api:
         )
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _Offer:
+    provider_name: str
+    comments: tuple[str, ...]
+
+
+@dataclasses.dataclass(kw_only=True)
+class _Availability:
+    total_episode_count: int = 0
+    episode_count_by_offer: collections.Counter[_Offer] = dataclasses.field(
+        default_factory=collections.Counter
+    )
+
+    def update(self, other: "_Availability"):
+        self.total_episode_count += other.total_episode_count
+        self.episode_count_by_offer.update(other.episode_count_by_offer)
+
+    def to_extra_information(self) -> Set[str]:
+        extra_information = set()
+        for (
+            offer,
+            episode_count,
+        ) in self.episode_count_by_offer.items():
+            if episode_count == self.total_episode_count:
+                comments = offer.comments
+            else:
+                comments = (
+                    f"{episode_count}/{self.total_episode_count} episodes",
+                    *offer.comments,
+                )
+            extra_information.add(
+                f"{offer.provider_name} ({', '.join(comments)})"
+            )
+        return extra_information
+
+
 class Filter(media_filter.Filter):
     """Filter based on JustWatch's API."""
 
@@ -105,11 +143,38 @@ class Filter(media_filter.Filter):
         self._config = filter_config
         self._api = api
 
-    def _availability(self, content: Any, *, relative_url: str) -> Set[str]:
-        # TODO(dseomn): Detect and handle partial availability, e.g., when only
-        # some seasons or episodes are available.
-        availability = set()
-        now = datetime.datetime.now(tz=datetime.timezone.utc)
+    def _availability(
+        self,
+        content: Any,
+        *,
+        relative_url: str,
+        now: datetime.timedelta,
+    ) -> _Availability:
+        if "seasons" in content:
+            availability = _Availability()
+            for season in content["seasons"]:
+                season_relative_url = (
+                    f"titles/{season['object_type']}/{season['id']}/locale/"
+                    f"{self._config.locale}"
+                )
+                availability.update(
+                    self._availability(
+                        self._api.get(season_relative_url),
+                        relative_url=season_relative_url,
+                        now=now,
+                    )
+                )
+            return availability
+        elif "episodes" in content:
+            availability = _Availability()
+            for episode in content["episodes"]:
+                availability.update(
+                    self._availability(
+                        episode, relative_url=relative_url, now=now
+                    )
+                )
+            return availability
+        availability = _Availability(total_episode_count=1)
         for offer in content.get("offers", ()):
             provider = offer["package_short_name"]
             provider_name = self._api.provider_name(
@@ -137,13 +202,16 @@ class Filter(media_filter.Filter):
                 comments.append(f"starting {available_from}")
             if available_to is not None:
                 comments.append(f"until {available_to}")
-            availability.add(f"{provider_name} ({', '.join(comments)})")
+            availability.episode_count_by_offer[
+                _Offer(provider_name=provider_name, comments=tuple(comments))
+            ] = 1
         return availability
 
     def filter(
         self, media_item: config_pb2.MediaItem
     ) -> media_filter.FilterResult:
         """See base class."""
+        now = datetime.datetime.now(tz=datetime.timezone.utc)
         if not media_item.justwatch_id:
             return media_filter.FilterResult(False)
         relative_url = (
@@ -157,9 +225,9 @@ class Filter(media_filter.Filter):
             or self._config.any_availability
         ):
             availability = self._availability(
-                content, relative_url=relative_url
+                content, relative_url=relative_url, now=now
             )
-            if not availability:
+            if not availability.episode_count_by_offer:
                 return media_filter.FilterResult(False)
-            extra_information.update(availability)
+            extra_information.update(availability.to_extra_information())
         return media_filter.FilterResult(True, extra=extra_information)
