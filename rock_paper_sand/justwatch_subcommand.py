@@ -14,6 +14,7 @@
 """JustWatch commands."""
 
 import argparse
+import json
 
 import yaml
 
@@ -72,6 +73,37 @@ class Providers(subcommand.Subcommand):
             print(yaml.safe_dump(api.providers(locale=args.locale)), end="")
 
 
+class Search(subcommand.Subcommand):
+    """Searches for a media item."""
+
+    def __init__(self, parser: argparse.ArgumentParser):
+        """See base class."""
+        super().__init__(parser)
+        _add_locale_arg(parser)
+        parser.add_argument("query", help="Search terms.", nargs="+")
+
+    def run(self, args: argparse.Namespace):
+        """See base class."""
+        with network.requests_session() as session:
+            api = justwatch.Api(session=session)
+            results = api.post(
+                f"titles/{args.locale}/popular",
+                {"query": " ".join(args.query)},
+            )
+            for result in results["items"]:
+                original_release_year = result.get("original_release_year", "?")
+                years = (
+                    original_release_year
+                    if result["object_type"] == "movie"
+                    else f"{original_release_year} - ?"
+                )
+                name = f"{result['title']} ({years})"
+                justwatch_id = f"{result['object_type']}/{result['id']}"
+                url = f"https://www.justwatch.com{result['full_path']}"
+                print(f"- name: {json.dumps(name)}")
+                print(f"  justwatchId: {justwatch_id}  # {url}")
+
+
 class Main(subcommand.ContainerSubcommand):
     """Main JustWatch API command."""
 
@@ -96,4 +128,10 @@ class Main(subcommand.ContainerSubcommand):
             Providers,
             "providers",
             help="Print the available JustWatch providers.",
+        )
+        self.add_subcommand(
+            subparsers,
+            Search,
+            "search",
+            help="Search for a media item.",
         )

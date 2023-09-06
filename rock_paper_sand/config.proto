@@ -174,7 +174,8 @@ message MediaItem {
   // URL.
   string custom_availability = 4;
 
-  // JustWatch type and id, e.g., "show/22164" or "movie/127384".
+  // JustWatch type and id, e.g., "show/22164" or "movie/127384". Run
+  // `rock-paper-sand justwatch search` to find these values.
   string justwatch_id = 6;
 
   // Parts of a media item. E.g., if the outer item is a fictional universe, the
