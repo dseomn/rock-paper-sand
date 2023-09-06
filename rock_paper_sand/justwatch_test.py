@@ -325,6 +325,50 @@ class FilterTest(parameterized.TestCase):
                 True, extra={"Foo+ (bar)"}
             ),
         ),
+        dict(
+            testcase_name="all_done_true",
+            filter_config={
+                "locale": "en_US",
+                "allDone": True,
+            },
+            media_item={"name": "foo", "done": "1", "justwatchId": "show/1"},
+            api_data={
+                "titles/show/1/locale/en_US": {
+                    "seasons": [
+                        {"object_type": "show_season", "id": 1},
+                    ],
+                },
+                "titles/show_season/1/locale/en_US": {
+                    "episodes": [
+                        {"season_number": 1, "episode_number": 1},
+                        {"season_number": 1, "episode_number": 2},
+                    ],
+                },
+            },
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="all_done_false",
+            filter_config={
+                "locale": "en_US",
+                "allDone": True,
+            },
+            media_item={"name": "foo", "done": "1.1", "justwatchId": "show/1"},
+            api_data={
+                "titles/show/1/locale/en_US": {
+                    "seasons": [
+                        {"object_type": "show_season", "id": 1},
+                    ],
+                },
+                "titles/show_season/1/locale/en_US": {
+                    "episodes": [
+                        {"season_number": 1, "episode_number": 1},
+                        {"season_number": 1, "episode_number": 2},
+                    ],
+                },
+            },
+            expected_result=media_filter.FilterResult(False),
+        ),
     )
     def test_filter(
         self,

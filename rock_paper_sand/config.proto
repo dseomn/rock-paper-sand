@@ -63,6 +63,13 @@ message JustWatchFilter {
   // but this can be useful to find media that might not be available anywhere
   // online.
   bool any_availability = 4;
+
+  // Match if the media is completely done already. This is different from using
+  // the filter {"done": "all"} because it uses JustWatch's API to check
+  // specific seasons/episodes. E.g., if a 5 season show has its `done` field
+  // set to "1 - 5", the {"done": "all"} filter would not match it because it
+  // doesn't know that there are only 5 seasons, but this filter would.
+  bool all_done = 6;
 }
 
 // A filter for media items.

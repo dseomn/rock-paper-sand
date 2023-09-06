@@ -232,6 +232,20 @@ class Filter(media_filter.Filter):
             ] = 1
         return availability
 
+    def _all_done(
+        self,
+        content: Any,
+        *,
+        relative_url: str,
+        done: multi_level_set.MultiLevelSet,
+    ) -> bool:
+        for episode, _ in self._iter_episodes_and_relative_url(
+            content, relative_url=relative_url
+        ):
+            if _content_number(episode) not in done:
+                return False
+        return True
+
     def filter(
         self, media_item: config_pb2.MediaItem
     ) -> media_filter.FilterResult:
@@ -268,4 +282,10 @@ class Filter(media_filter.Filter):
             if not availability.episode_count_by_offer:
                 return media_filter.FilterResult(False)
             extra_information.update(availability.to_extra_information())
+        if self._config.all_done and not self._all_done(
+            content,
+            done=done,
+            relative_url=relative_url,
+        ):
+            return media_filter.FilterResult(False)
         return media_filter.FilterResult(True, extra=extra_information)
