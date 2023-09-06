@@ -24,7 +24,8 @@ to enable useful things like caching and retrying specific errors.
 import datetime
 import dataclasses
 import collections
-from collections.abc import Iterable, Set
+from collections.abc import Collection, Iterable, Mapping, Set
+import itertools
 from typing import Any
 import warnings
 
@@ -96,16 +97,33 @@ class Api:
         self._cache[relative_url] = response_json
         return response_json
 
-    def provider_name(self, short_name: str, *, locale: str) -> str:
-        """Returns the human-readable provider name."""
+    def locales(self) -> Collection[str]:
+        """Returns the the JustWatch locale names."""
+        return frozenset(
+            locale["full_locale"] for locale in self.get("locales/state")
+        )
+
+    def providers(self, *, locale: str) -> Mapping[str, str]:
+        """Returns a mapping from provider short name to human-readable name."""
         if locale not in self._provider_name_by_short_name_by_locale:
             self._provider_name_by_short_name_by_locale[locale] = {
                 provider["short_name"]: provider["clear_name"]
                 for provider in self.get(f"providers/locale/{locale}")
-                if "clear_name" in provider
             }
-        return self._provider_name_by_short_name_by_locale[locale].get(
-            short_name, short_name
+        return self._provider_name_by_short_name_by_locale[locale]
+
+    def provider_name(self, short_name: str, *, locale: str) -> str:
+        """Returns the human-readable provider name."""
+        return self.providers(locale=locale).get(short_name, short_name)
+
+    def monetization_types(self, *, locale: str) -> Collection[str]:
+        """Returns the monetization types."""
+        return frozenset(
+            itertools.chain.from_iterable(
+                provider["monetization_types"]
+                for provider in self.get(f"providers/locale/{locale}")
+                if provider["monetization_types"] is not None
+            )
         )
 
 

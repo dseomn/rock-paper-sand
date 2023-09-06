@@ -84,6 +84,43 @@ class JustWatchApiTest(parameterized.TestCase):
         self.assertEqual("foo", data)
         self.assertEmpty(self._mock_session.mock_calls)
 
+    def test_locales(self):
+        self._mock_session.get.return_value.json.return_value = [
+            {"full_locale": "foo"},
+            {"full_locale": "bar"},
+        ]
+
+        locales = self._api.locales()
+
+        self.assertCountEqual(("foo", "bar"), locales)
+        self._mock_session.get.assert_called_once_with(
+            f"{self._base_url}/locales/state"
+        )
+
+    def test_providers(self):
+        self._mock_session.get.return_value.json.return_value = [
+            {"short_name": "foo", "clear_name": "Foo+"},
+        ]
+
+        providers = self._api.providers(locale="en_US")
+
+        self.assertEqual({"foo": "Foo+"}, providers)
+        self._mock_session.get.assert_called_once_with(
+            f"{self._base_url}/providers/locale/en_US"
+        )
+
+    def test_providers_cached(self):
+        self._mock_session.get.return_value.json.return_value = [
+            {"short_name": "foo", "clear_name": "Foo+"},
+        ]
+        self._api.providers(locale="en_US")
+        self._mock_session.reset_mock()
+
+        providers = self._api.providers(locale="en_US")
+
+        self.assertEqual({"foo": "Foo+"}, providers)
+        self.assertEmpty(self._mock_session.mock_calls)
+
     def test_provider_name(self):
         self._mock_session.get.return_value.json.return_value = [
             {"short_name": "foo", "clear_name": "Foo+"},
@@ -92,25 +129,24 @@ class JustWatchApiTest(parameterized.TestCase):
         provider_name = self._api.provider_name("foo", locale="en_US")
 
         self.assertEqual("Foo+", provider_name)
-        self._mock_session.get.assert_called_once_with(
-            f"{self._base_url}/providers/locale/en_US"
-        )
-
-    def test_provider_name_cached(self):
-        self._mock_session.get.return_value.json.return_value = [
-            {"short_name": "foo", "clear_name": "Foo+"},
-        ]
-        self._api.provider_name("bar", locale="en_US")
-        self._mock_session.reset_mock()
-
-        provider_name = self._api.provider_name("foo", locale="en_US")
-
-        self.assertEqual("Foo+", provider_name)
-        self.assertEmpty(self._mock_session.mock_calls)
 
     def test_provider_name_not_found(self):
         self._mock_session.get.return_value.json.return_value = []
         self.assertEqual("foo", self._api.provider_name("foo", locale="en_US"))
+
+    def test_monetization_types(self):
+        self._mock_session.get.return_value.json.return_value = [
+            {"monetization_types": ["foo"]},
+            {"monetization_types": ["bar", "quux"]},
+            {"monetization_types": None},
+        ]
+
+        monetization_types = self._api.monetization_types(locale="en_US")
+
+        self.assertCountEqual(("foo", "bar", "quux"), monetization_types)
+        self._mock_session.get.assert_called_once_with(
+            f"{self._base_url}/providers/locale/en_US"
+        )
 
 
 class FilterTest(parameterized.TestCase):
