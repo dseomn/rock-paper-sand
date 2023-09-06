@@ -62,7 +62,7 @@ class Report:
         self,
         report_config: config_pb2.Report,
         *,
-        filter_registry=media_filter.Registry,
+        filter_registry: media_filter.Registry,
     ):
         self._sections = {}
         for section in report_config.sections:
