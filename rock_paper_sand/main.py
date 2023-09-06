@@ -14,19 +14,14 @@
 """Entrypoint for rock_paper_sand."""
 
 from collections.abc import Sequence
-import functools
 
 from absl import app
 from absl import flags
-from google.protobuf import json_format
 import yaml
 
-from rock_paper_sand import config_pb2
+from rock_paper_sand import config
 from rock_paper_sand import flags_and_constants
-from rock_paper_sand import justwatch
-from rock_paper_sand import media_filter
 from rock_paper_sand import network
-from rock_paper_sand import report
 
 flags.adopt_module_key_flags(flags_and_constants)
 
@@ -34,30 +29,11 @@ flags.adopt_module_key_flags(flags_and_constants)
 def main(args: Sequence[str]) -> None:
     if len(args) > 1:
         raise app.UsageError(f"Too many arguments: {args!r}")
-    with open(flags_and_constants.CONFIG_FILE.value, "rb") as config_file:
-        config_ = json_format.ParseDict(
-            yaml.safe_load(config_file), config_pb2.Config()
-        )
     with network.requests_session() as session:
-        justwatch_api = justwatch.Api(session=session)
-        filter_registry = media_filter.Registry(
-            justwatch_factory=functools.partial(
-                justwatch.Filter, api=justwatch_api
-            ),
-        )
-        for filter_config in config_.filters:
-            filter_registry.register(
-                filter_config.name, filter_registry.parse(filter_config.filter)
-            )
-        reports = {
-            report_config.name: report.Report(
-                report_config, filter_registry=filter_registry
-            )
-            for report_config in config_.reports
-        }
+        config_ = config.Config.from_config_file(session=session)
         results = {
-            name: report_.generate(config_.media)
-            for name, report_ in reports.items()
+            name: report_.generate(config_.proto.media)
+            for name, report_ in config_.reports.items()
         }
         print(
             yaml.safe_dump(
