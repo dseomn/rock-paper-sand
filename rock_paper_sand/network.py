@@ -56,3 +56,10 @@ def requests_session() -> Generator[requests.Session, None, None]:
         # TODO(dseomn): Add GitHub URL?
         session.headers["User-Agent"] = "rock_paper_sand/0"
         yield session
+
+def null_requests_session() -> requests.Session:
+    """Returns a requests session that can't do anything, mainly for testing."""
+    session = requests.session()
+    session.close()
+    session.adapters.clear()
+    return session

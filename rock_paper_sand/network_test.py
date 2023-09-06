@@ -15,6 +15,7 @@
 from absl.testing import absltest
 from absl.testing import parameterized
 import requests.adapters
+import requests.exceptions
 
 from rock_paper_sand import network
 
@@ -32,6 +33,15 @@ class NetworkTest(parameterized.TestCase):
         # worth the effort to really test this function.
         with network.requests_session() as session:
             self.assertIn("User-Agent", session.headers)
+
+    @parameterized.parameters(
+        "http://example.com",
+        "https://example.com",
+    )
+    def test_null_requests_session(self, url: str):
+        session = network.null_requests_session()
+        with self.assertRaises(requests.exceptions.InvalidSchema):
+            session.get(url)
 
 
 if __name__ == "__main__":
