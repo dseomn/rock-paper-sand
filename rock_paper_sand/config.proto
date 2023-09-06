@@ -41,21 +41,20 @@ message StringFieldMatcher {
 // available on "foo" with monetization type "bar", not on "foo" with another
 // monetization type and also on another service with monetization type "bar".
 message JustWatchFilter {
-  // Required. The full_locale field from
-  // https://apis.justwatch.com/content/locales/state
+  // Required. Run `rock-paper-sand justwatch locales` to see the possible
+  // values.
   string locale = 1;
 
   // For the conditions below that match on availability, whether they should
   // include already done episodes or not.
   bool include_done = 5;
 
-  // Which services provide the media. Possible values are the short_name fields
-  // at https://apis.justwatch.com/content/providers/locale/{locale}
+  // Which services provide the media. Run `rock-paper-sand justwatch providers`
+  // to see the possible values.
   repeated string providers = 2;
 
-  // How the media is monetized. To see the possible values:
-  //  curl https://apis.justwatch.com/content/providers/locale/{locale} | \
-  //    jq '[.[] | .monetization_types | .[]?] | unique'
+  // How the media is monetized. Run `rock-paper-sand justwatch
+  // monetizationTypes` to see the possible values.
   repeated string monetization_types = 3;
 
   // Match if the media is available in any way. It probably makes more sense to

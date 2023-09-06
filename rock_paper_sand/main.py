@@ -19,6 +19,7 @@ from absl import flags
 from absl.flags import argparse_flags
 
 from rock_paper_sand import flags_and_constants
+from rock_paper_sand import justwatch_subcommand
 from rock_paper_sand import reports_subcommand
 from rock_paper_sand import subcommand
 
@@ -30,6 +31,12 @@ class MainCommand(subcommand.ContainerSubcommand):
         """See base class."""
         super().__init__(parser)
         subparsers = parser.add_subparsers()
+        self.add_subcommand(
+            subparsers,
+            justwatch_subcommand.Main,
+            "justwatch",
+            help="Subcommand for working with the JustWatch API.",
+        )
         self.add_subcommand(
             subparsers,
             reports_subcommand.Main,
