@@ -14,7 +14,11 @@
 """Reports about media."""
 
 from collections.abc import Mapping, Sequence
+import email.message
+import subprocess
 from typing import Any
+
+import yaml
 
 from rock_paper_sand import config_pb2
 from rock_paper_sand import media_filter
@@ -64,6 +68,7 @@ class Report:
         *,
         filter_registry: media_filter.Registry,
     ):
+        self._config = report_config
         self._sections = {}
         for section in report_config.sections:
             self._sections[section.name] = filter_registry.parse(section.filter)
@@ -81,3 +86,43 @@ class Report:
                     section_results.append(item_result)
             result[section_name] = section_results
         return result
+
+    def notify(
+        self,
+        results: Mapping[str, Any],
+        *,
+        subprocess_run: ... = subprocess.run,
+    ):
+        """Sends any notifications defined in the report.
+
+        Args:
+            results: Return value from self.generate().
+            subprocess_run: subprocess.run or a mock of it.
+        """
+        if not self._config.email_headers:
+            return
+        message = email.message.EmailMessage()
+        message["Subject"] = f"rock-paper-sand report {self._config.name}"
+        for header, value in self._config.email_headers.items():
+            message[header] = value
+        message["Rock-Paper-Sand-Report-Name"] = self._config.name
+        message.add_attachment('', disposition="inline")
+        for section_name, section_results in results.items():
+            # This uses text/plain (default for str arguments) instead of
+            # application/yaml so that email clients actually show the text
+            # instead of offering to download the attachment.
+            message.add_attachment(
+                yaml.safe_dump(
+                    section_results,
+                    sort_keys=False,
+                    allow_unicode=True,
+                    width=float("inf"),
+                ),
+                disposition="inline",
+                filename=f"{section_name}.yaml",
+            )
+        subprocess_run(
+            ("/usr/sbin/sendmail", "-i", "-t"),
+            check=True,
+            input=bytes(message),
+        )

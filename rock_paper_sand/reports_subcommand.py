@@ -22,6 +22,18 @@ from rock_paper_sand import network
 from rock_paper_sand import subcommand
 
 
+class Notify(subcommand.Subcommand):
+    """Sends report notifications."""
+
+    def run(self, args: argparse.Namespace):
+        """See base class."""
+        del args  # Unused.
+        with network.requests_session() as session:
+            config_ = config.Config.from_config_file(session=session)
+            for report_ in config_.reports.values():
+                report_.notify(report_.generate(config_.proto.media))
+
+
 class Print(subcommand.Subcommand):
     """Prints the output of reports."""
 
@@ -51,6 +63,12 @@ class Main(subcommand.ContainerSubcommand):
         """See base class."""
         super().__init__(parser)
         subparsers = parser.add_subparsers()
+        self.add_subcommand(
+            subparsers,
+            Notify,
+            "notify",
+            help="Send report notifications.",
+        )
         self.add_subcommand(
             subparsers,
             Print,

@@ -119,6 +119,11 @@ message Report {
   // Required, must be unique. Name of the report.
   string name = 2;
 
+  // Sends an email with these headers when the report changes. Should include a
+  // To header or similar for the email to be sent anywhere. If empty, no email
+  // notifications are sent for this report.
+  map<string, string> email_headers = 3;
+
   // A section of a report.
   message Section {
     // Required, must be unique. Name of the section.
