@@ -13,34 +13,37 @@
 # limitations under the License.
 """Entrypoint for rock_paper_sand."""
 
-from collections.abc import Sequence
+import argparse
 
-from absl import app
 from absl import flags
-import yaml
+from absl.flags import argparse_flags
 
-from rock_paper_sand import config
 from rock_paper_sand import flags_and_constants
-from rock_paper_sand import network
+from rock_paper_sand import reports_subcommand
+from rock_paper_sand import subcommand
 
 flags.adopt_module_key_flags(flags_and_constants)
 
 
-def main(args: Sequence[str]) -> None:
-    if len(args) > 1:
-        raise app.UsageError(f"Too many arguments: {args!r}")
-    with network.requests_session() as session:
-        config_ = config.Config.from_config_file(session=session)
-        results = {
-            name: report_.generate(config_.proto.media)
-            for name, report_ in config_.reports.items()
-        }
-        print(
-            yaml.safe_dump(
-                results, sort_keys=False, allow_unicode=True, width=float("inf")
-            )
+class MainCommand(subcommand.ContainerSubcommand):
+    def __init__(self, parser: argparse.ArgumentParser):
+        """See base class."""
+        super().__init__(parser)
+        subparsers = parser.add_subparsers()
+        self.add_subcommand(
+            subparsers,
+            reports_subcommand.Main,
+            "reports",
+            help="Subcommand for working with reports.",
         )
 
 
+def main():
+    parser = argparse_flags.ArgumentParser()
+    main_command = MainCommand(parser)
+    args = parser.parse_args()
+    main_command.run(args)
+
+
 if __name__ == "__main__":
-    app.run(main)
+    main()
