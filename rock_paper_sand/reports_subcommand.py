@@ -39,7 +39,8 @@ class ReportsPrint(subcommand.Subcommand):
                     sort_keys=False,
                     allow_unicode=True,
                     width=float("inf"),
-                )
+                ),
+                end="",
             )
 
 
