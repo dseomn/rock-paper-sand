@@ -18,6 +18,7 @@ import argparse
 from absl import flags
 from absl.flags import argparse_flags
 
+from rock_paper_sand import config_subcommand
 from rock_paper_sand import flags_and_constants
 from rock_paper_sand import justwatch_subcommand
 from rock_paper_sand import reports_subcommand
@@ -31,6 +32,12 @@ class MainCommand(subcommand.ContainerSubcommand):
         """See base class."""
         super().__init__(parser)
         subparsers = parser.add_subparsers()
+        self.add_subcommand(
+            subparsers,
+            config_subcommand.Main,
+            "config",
+            help="Subcommand for working with the config file.",
+        )
         self.add_subcommand(
             subparsers,
             justwatch_subcommand.Main,
