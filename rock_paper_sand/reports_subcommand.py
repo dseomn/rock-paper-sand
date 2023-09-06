@@ -22,7 +22,7 @@ from rock_paper_sand import network
 from rock_paper_sand import subcommand
 
 
-class ReportsPrint(subcommand.Subcommand):
+class Print(subcommand.Subcommand):
     """Prints the output of reports."""
 
     def run(self, args: argparse.Namespace):
@@ -53,7 +53,7 @@ class Main(subcommand.ContainerSubcommand):
         subparsers = parser.add_subparsers()
         self.add_subcommand(
             subparsers,
-            ReportsPrint,
+            Print,
             "print",
             help="Print the result of reports.",
         )
