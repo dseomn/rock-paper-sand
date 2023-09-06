@@ -24,7 +24,7 @@ to enable useful things like caching and retrying specific errors.
 import datetime
 import dataclasses
 import collections
-from collections.abc import Set
+from collections.abc import Iterable, Set
 from typing import Any
 import warnings
 
@@ -167,6 +167,28 @@ class Filter(media_filter.Filter):
         self._config = filter_config
         self._api = api
 
+    def _iter_episodes_and_relative_url(
+        self,
+        content: Any,
+        *,
+        relative_url: str,
+    ) -> Iterable[tuple[Any, str]]:
+        if "seasons" in content:
+            for season in content["seasons"]:
+                season_relative_url = (
+                    f"titles/{season['object_type']}/{season['id']}/locale/"
+                    f"{self._config.locale}"
+                )
+                yield from self._iter_episodes_and_relative_url(
+                    self._api.get(season_relative_url),
+                    relative_url=season_relative_url,
+                )
+        elif "episodes" in content:
+            for episode in content["episodes"]:
+                yield episode, relative_url
+        else:
+            yield content, relative_url
+
     def _availability(
         self,
         content: Any,
@@ -175,31 +197,6 @@ class Filter(media_filter.Filter):
         now: datetime.timedelta,
         done: multi_level_set.MultiLevelSet,
     ) -> _Availability:
-        if "seasons" in content:
-            availability = _Availability()
-            for season in content["seasons"]:
-                season_relative_url = (
-                    f"titles/{season['object_type']}/{season['id']}/locale/"
-                    f"{self._config.locale}"
-                )
-                availability.update(
-                    self._availability(
-                        self._api.get(season_relative_url),
-                        relative_url=season_relative_url,
-                        now=now,
-                        done=done,
-                    )
-                )
-            return availability
-        elif "episodes" in content:
-            availability = _Availability()
-            for episode in content["episodes"]:
-                availability.update(
-                    self._availability(
-                        episode, relative_url=relative_url, now=now, done=done
-                    )
-                )
-            return availability
         if not self._config.include_done and _content_number(content) in done:
             return _Availability()
         availability = _Availability(total_episode_count=1)
@@ -242,6 +239,7 @@ class Filter(media_filter.Filter):
         now = datetime.datetime.now(tz=datetime.timezone.utc)
         if not media_item.justwatch_id:
             return media_filter.FilterResult(False)
+        done = multi_level_set.MultiLevelSet.from_string(media_item.done)
         relative_url = (
             f"titles/{media_item.justwatch_id}/locale/{self._config.locale}"
         )
@@ -252,12 +250,21 @@ class Filter(media_filter.Filter):
             or self._config.monetization_types
             or self._config.any_availability
         ):
-            availability = self._availability(
-                content,
-                relative_url=relative_url,
-                now=now,
-                done=multi_level_set.MultiLevelSet.from_string(media_item.done),
-            )
+            availability = _Availability()
+            for (
+                episode,
+                episode_relative_url,
+            ) in self._iter_episodes_and_relative_url(
+                content, relative_url=relative_url
+            ):
+                availability.update(
+                    self._availability(
+                        episode,
+                        relative_url=episode_relative_url,
+                        now=now,
+                        done=done,
+                    )
+                )
             if not availability.episode_count_by_offer:
                 return media_filter.FilterResult(False)
             extra_information.update(availability.to_extra_information())
