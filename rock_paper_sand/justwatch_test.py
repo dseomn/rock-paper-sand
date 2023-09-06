@@ -247,6 +247,84 @@ class FilterTest(parameterized.TestCase):
                 extra={"Foo+ (1/3 episodes, bar)"},
             ),
         ),
+        dict(
+            testcase_name="exclude_done",
+            filter_config={
+                "locale": "en_US",
+                "includeDone": False,
+                "anyAvailability": True,
+            },
+            media_item={"name": "foo", "done": "all", "justwatchId": "movie/1"},
+            api_data={"titles/movie/1/locale/en_US": {"offers": [_offer()]}},
+            expected_result=media_filter.FilterResult(False),
+        ),
+        dict(
+            testcase_name="exclude_done_partial",
+            filter_config={
+                "locale": "en_US",
+                "includeDone": False,
+                "anyAvailability": True,
+            },
+            media_item={
+                "name": "foo",
+                "done": "1-2.1",
+                "justwatchId": "show/1",
+            },
+            api_data={
+                "titles/show/1/locale/en_US": {
+                    "seasons": [
+                        {"object_type": "show_season", "id": 1},
+                        {"object_type": "show_season", "id": 2},
+                    ],
+                },
+                "titles/show_season/1/locale/en_US": {
+                    "episodes": [
+                        {"season_number": 1, "episode_number": 1},
+                    ],
+                },
+                "titles/show_season/2/locale/en_US": {
+                    "episodes": [
+                        {"season_number": 2, "episode_number": 1},
+                        {"season_number": 2, "episode_number": 2},
+                        {
+                            "season_number": 2,
+                            "episode_number": 3,
+                            "offers": [
+                                _offer(
+                                    package_short_name="foo",
+                                    monetization_type="bar",
+                                ),
+                            ],
+                        },
+                    ],
+                },
+            },
+            expected_result=media_filter.FilterResult(
+                True, extra={"Foo+ (1/2 episodes, bar)"}
+            ),
+        ),
+        dict(
+            testcase_name="include_done",
+            filter_config={
+                "locale": "en_US",
+                "includeDone": True,
+                "anyAvailability": True,
+            },
+            media_item={"name": "foo", "done": "all", "justwatchId": "movie/1"},
+            api_data={
+                "titles/movie/1/locale/en_US": {
+                    "offers": [
+                        _offer(
+                            package_short_name="foo",
+                            monetization_type="bar",
+                        )
+                    ]
+                }
+            },
+            expected_result=media_filter.FilterResult(
+                True, extra={"Foo+ (bar)"}
+            ),
+        ),
     )
     def test_filter(
         self,

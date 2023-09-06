@@ -45,6 +45,10 @@ message JustWatchFilter {
   // https://apis.justwatch.com/content/locales/state
   string locale = 1;
 
+  // For the conditions below that match on availability, whether they should
+  // include already done episodes or not.
+  bool include_done = 5;
+
   // Which services provide the media. Possible values are the short_name fields
   // at https://apis.justwatch.com/content/providers/locale/{locale}
   repeated string providers = 2;

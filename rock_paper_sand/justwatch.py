@@ -34,6 +34,7 @@ import requests
 
 from rock_paper_sand import config_pb2
 from rock_paper_sand import media_filter
+from rock_paper_sand import multi_level_set
 from rock_paper_sand import network
 
 _BASE_URL = "https://apis.justwatch.com/content"
@@ -144,6 +145,16 @@ class _Availability:
         return extra_information
 
 
+def _content_number(content: Any) -> multi_level_set.MultiLevelNumber:
+    parts = []
+    for part_key in ("season_number", "episode_number"):
+        if part_key in content:
+            parts.append(content[part_key])
+        else:
+            break
+    return multi_level_set.MultiLevelNumber(tuple(parts))
+
+
 class Filter(media_filter.Filter):
     """Filter based on JustWatch's API."""
 
@@ -162,6 +173,7 @@ class Filter(media_filter.Filter):
         *,
         relative_url: str,
         now: datetime.timedelta,
+        done: multi_level_set.MultiLevelSet,
     ) -> _Availability:
         if "seasons" in content:
             availability = _Availability()
@@ -175,6 +187,7 @@ class Filter(media_filter.Filter):
                         self._api.get(season_relative_url),
                         relative_url=season_relative_url,
                         now=now,
+                        done=done,
                     )
                 )
             return availability
@@ -183,10 +196,12 @@ class Filter(media_filter.Filter):
             for episode in content["episodes"]:
                 availability.update(
                     self._availability(
-                        episode, relative_url=relative_url, now=now
+                        episode, relative_url=relative_url, now=now, done=done
                     )
                 )
             return availability
+        if not self._config.include_done and _content_number(content) in done:
+            return _Availability()
         availability = _Availability(total_episode_count=1)
         for offer in content.get("offers", ()):
             provider = offer["package_short_name"]
@@ -238,7 +253,10 @@ class Filter(media_filter.Filter):
             or self._config.any_availability
         ):
             availability = self._availability(
-                content, relative_url=relative_url, now=now
+                content,
+                relative_url=relative_url,
+                now=now,
+                done=multi_level_set.MultiLevelSet.from_string(media_item.done),
             )
             if not availability.episode_count_by_offer:
                 return media_filter.FilterResult(False)
