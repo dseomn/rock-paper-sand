@@ -106,7 +106,7 @@ class Report:
         for header, value in self._config.email_headers.items():
             message[header] = value
         message["Rock-Paper-Sand-Report-Name"] = self._config.name
-        message.add_attachment('', disposition="inline")
+        message.add_attachment("", disposition="inline")
         for section_name, section_results in results.items():
             # This uses text/plain (default for str arguments) instead of
             # application/yaml so that email clients actually show the text
