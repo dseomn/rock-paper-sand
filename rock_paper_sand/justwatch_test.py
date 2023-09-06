@@ -50,6 +50,7 @@ def _offer(
 
 class JustWatchApiTest(parameterized.TestCase):
     def setUp(self):
+        super().setUp()
         self._mock_session = mock.create_autospec(
             requests.Session, spec_set=True, instance=True
         )
