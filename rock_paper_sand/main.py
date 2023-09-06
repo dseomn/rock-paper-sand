@@ -21,20 +21,20 @@ from absl import flags
 from google.protobuf import json_format
 import yaml
 
-from rock_paper_sand import config
 from rock_paper_sand import config_pb2
+from rock_paper_sand import flags_and_constants
 from rock_paper_sand import justwatch
 from rock_paper_sand import media_filter
 from rock_paper_sand import network
 from rock_paper_sand import report
 
-flags.adopt_module_key_flags(config)
+flags.adopt_module_key_flags(flags_and_constants)
 
 
 def main(args: Sequence[str]) -> None:
     if len(args) > 1:
         raise app.UsageError(f"Too many arguments: {args!r}")
-    with open(config.CONFIG_FILE.value, "rb") as config_file:
+    with open(flags_and_constants.CONFIG_FILE.value, "rb") as config_file:
         config_ = json_format.ParseDict(
             yaml.safe_load(config_file), config_pb2.Config()
         )

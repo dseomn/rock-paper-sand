@@ -24,7 +24,7 @@ import requests
 import requests.adapters
 import urllib3.util
 
-from rock_paper_sand import config
+from rock_paper_sand import flags_and_constants
 
 
 def requests_http_adapter(
@@ -34,7 +34,9 @@ def requests_http_adapter(
     """Returns an HTTPAdapter for requests."""
     return cachecontrol.CacheControlAdapter(
         cache=file_cache.FileCache(
-            directory=os.path.join(config.CACHE_DIR.value, "cachecontrol")
+            directory=os.path.join(
+                flags_and_constants.CACHE_DIR.value, "cachecontrol"
+            )
         ),
         heuristic=cache_heuristic,
         max_retries=urllib3.util.Retry(
