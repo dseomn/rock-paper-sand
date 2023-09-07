@@ -16,8 +16,8 @@ from absl import flags
 import pytest
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def _parse_absl_flags():
     # absltest doesn't work well without absl flags being parsed, which pytest
     # doesn't do. This fixture works around that.
-    flags.FLAGS(('pytest',))
+    flags.FLAGS(("pytest",))

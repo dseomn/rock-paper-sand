@@ -57,6 +57,7 @@ def requests_session() -> Generator[requests.Session, None, None]:
         session.headers["User-Agent"] = "rock_paper_sand/0"
         yield session
 
+
 def null_requests_session() -> requests.Session:
     """Returns a requests session that can't do anything, mainly for testing."""
     session = requests.session()
