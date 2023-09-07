@@ -19,6 +19,7 @@ import yaml
 
 from rock_paper_sand import config
 from rock_paper_sand import network
+from rock_paper_sand import state
 from rock_paper_sand import subcommand
 
 
@@ -30,8 +31,13 @@ class Notify(subcommand.Subcommand):
         del args  # Unused.
         with network.requests_session() as session:
             config_ = config.Config.from_config_file(session=session)
-            for report_ in config_.reports.values():
-                report_.notify(report_.generate(config_.proto.media))
+            state_ = state.from_file()
+            for report_name, report_ in config_.reports.items():
+                report_.notify(
+                    report_.generate(config_.proto.media),
+                    report_state=state_.reports[report_name],
+                )
+                state.to_file(state_)
 
 
 class Print(subcommand.Subcommand):

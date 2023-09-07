@@ -13,9 +13,12 @@
 # limitations under the License.
 
 from collections.abc import Set
+import copy
 import email.parser
 import email.policy
+import json
 import subprocess
+import textwrap
 from unittest import mock
 
 from absl.testing import absltest
@@ -25,6 +28,7 @@ from google.protobuf import json_format
 from rock_paper_sand import config_pb2
 from rock_paper_sand import media_filter
 from rock_paper_sand import report
+from rock_paper_sand import state_pb2
 
 
 class _ExtraInfoFilter(media_filter.Filter):
@@ -151,34 +155,143 @@ class ReportTest(parameterized.TestCase):
         )
         self.assertEqual(expected_result, result)
 
-    def test_report_notify_not_configured(self):
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="not_configured",
+            report_config={"name": "foo"},
+            previous_results={"section-name": "foo"},
+            current_results={"section-name": "bar"},
+        ),
+        dict(
+            testcase_name="no_changes",
+            report_config={
+                "name": "foo",
+                "emailHeaders": {"To": "alice@example.com"},
+            },
+            previous_results={"section-name": "foo"},
+            current_results={"section-name": "foo"},
+        ),
+    )
+    def test_report_notify_noop(
+        self,
+        *,
+        report_config: ...,
+        previous_results: ...,
+        current_results: ...,
+    ):
         report_ = report.Report(
-            config_pb2.Report(name="foo"),
+            json_format.ParseDict(report_config, config_pb2.Report()),
             filter_registry=media_filter.Registry(),
         )
+        actual_state = state_pb2.ReportState(
+            previous_results_by_section_name={
+                k: json.dumps(v) for k, v in previous_results.items()
+            }
+        )
+        expected_state = copy.deepcopy(actual_state)
         mock_subprocess_run = mock.create_autospec(
             subprocess.run, spec_set=True
         )
 
-        report_.notify({}, subprocess_run=mock_subprocess_run)
+        report_.notify(
+            current_results,
+            subprocess_run=mock_subprocess_run,
+            report_state=actual_state,
+        )
 
         mock_subprocess_run.assert_not_called()
+        self.assertEqual(expected_state, actual_state)
 
-    def test_report_notify(self):
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="partial_changes",
+            previous_results={"unchanged": ["foo"], "changed": ["foo"]},
+            current_results={"unchanged": ["foo"], "changed": ["not-foo"]},
+            expected_message_parts=(
+                (
+                    "changed.diff",
+                    textwrap.dedent(
+                        """\
+                        --- changed.yaml.old
+                        +++ changed.yaml
+                        @@ -1 +1 @@
+                        -- foo
+                        +- not-foo
+                        """
+                    ),
+                ),
+                ("unchanged.yaml", "- foo\n"),
+                ("changed.yaml", "- not-foo\n"),
+            ),
+        ),
+        dict(
+            testcase_name="new_section",
+            previous_results={},
+            current_results={"foo": ["bar"]},
+            expected_message_parts=(
+                (
+                    "foo.diff",
+                    textwrap.dedent(
+                        """\
+                        --- /dev/null
+                        +++ foo.yaml
+                        @@ -0,0 +1 @@
+                        +- bar
+                        """
+                    ),
+                ),
+                ("foo.yaml", "- bar\n"),
+            ),
+        ),
+        dict(
+            testcase_name="deleted_section",
+            previous_results={"foo": ["bar"]},
+            current_results={},
+            expected_message_parts=(
+                (
+                    "foo.diff",
+                    textwrap.dedent(
+                        """\
+                        --- foo.yaml.old
+                        +++ /dev/null
+                        @@ -1 +0,0 @@
+                        -- bar
+                        """
+                    ),
+                ),
+            ),
+        ),
+    )
+    def test_report_notify(
+        self,
+        *,
+        previous_results: ...,
+        current_results: ...,
+        expected_message_parts: ...,
+    ):
         report_ = report.Report(
             json_format.ParseDict(
-                {"name": "foo", "emailHeaders": {"To": "alice@example.com"}},
+                {
+                    "name": "some-report-name",
+                    "emailHeaders": {"To": "alice@example.com"},
+                },
                 config_pb2.Report(),
             ),
             filter_registry=media_filter.Registry(),
+        )
+        report_state = state_pb2.ReportState(
+            previous_results_by_section_name={
+                k: json.dumps(v) for k, v in previous_results.items()
+            }
         )
         mock_subprocess_run = mock.create_autospec(
             subprocess.run, spec_set=True
         )
 
         report_.notify(
-            {"section-name": ["section-contents"]},
+            current_results,
             subprocess_run=mock_subprocess_run,
+            report_state=report_state,
         )
 
         mock_subprocess_run.assert_called_once_with(
@@ -189,16 +302,30 @@ class ReportTest(parameterized.TestCase):
         message = email.parser.BytesParser(
             policy=email.policy.default
         ).parsebytes(mock_subprocess_run.mock_calls[0].kwargs["input"])
-        self.assertIn("foo", message["Subject"])
+        self.assertIn("some-report-name", message["Subject"])
         self.assertEqual("alice@example.com", message["To"])
-        self.assertEqual("foo", message["Rock-Paper-Sand-Report-Name"])
+        self.assertEqual(
+            "some-report-name", message["Rock-Paper-Sand-Report-Name"]
+        )
         self.assertEqual("multipart/mixed", message.get_content_type())
-        message_parts = tuple(message.iter_parts())
-        self.assertLen(message_parts, 2)
-        body_part, results_part = message_parts
-        self.assertEmpty(body_part.get_content().strip())
-        self.assertEqual("section-name.yaml", results_part.get_filename())
-        self.assertEqual("- section-contents\n", results_part.get_content())
+        self.assertSequenceEqual(
+            (
+                (None, "\n"),  # The message body.
+                *expected_message_parts,
+            ),
+            tuple(
+                (part.get_filename(), part.get_content())
+                for part in message.iter_parts()
+            ),
+        )
+        self.assertEqual(
+            state_pb2.ReportState(
+                previous_results_by_section_name={
+                    k: json.dumps(v) for k, v in current_results.items()
+                }
+            ),
+            report_state,
+        )
 
 
 if __name__ == "__main__":

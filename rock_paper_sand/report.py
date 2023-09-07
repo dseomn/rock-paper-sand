@@ -14,7 +14,9 @@
 """Reports about media."""
 
 from collections.abc import Mapping, Sequence
+import difflib
 import email.message
+import json
 import subprocess
 from typing import Any
 
@@ -22,6 +24,7 @@ import yaml
 
 from rock_paper_sand import config_pb2
 from rock_paper_sand import media_filter
+from rock_paper_sand import state_pb2
 
 
 def _filter_media_item(
@@ -59,6 +62,36 @@ def _filter_media_item(
     return result
 
 
+def _dump_for_email(results: Any) -> str:
+    return yaml.safe_dump(
+        results,
+        sort_keys=False,
+        allow_unicode=True,
+        width=float("inf"),
+    )
+
+
+def _add_diff_attachment(
+    *,
+    message: email.message.EmailMessage,
+    name: str,
+    old: str | None,
+    new: str | None,
+):
+    message.add_attachment(
+        "".join(
+            difflib.unified_diff(
+                ("" if old is None else old).splitlines(keepends=True),
+                ("" if new is None else new).splitlines(keepends=True),
+                fromfile=("/dev/null" if old is None else f"{name}.yaml.old"),
+                tofile=("/dev/null" if new is None else f"{name}.yaml"),
+            )
+        ),
+        disposition="inline",
+        filename=f"{name}.diff",
+    )
+
+
 class Report:
     """A report about the media."""
 
@@ -91,15 +124,27 @@ class Report:
         self,
         results: Mapping[str, Any],
         *,
+        report_state: state_pb2.ReportState,
         subprocess_run: ... = subprocess.run,
     ):
         """Sends any notifications defined in the report.
 
         Args:
             results: Return value from self.generate().
+            report_state: State for the report, which this function will modify
+                as needed.
             subprocess_run: subprocess.run or a mock of it.
         """
+        # Note that this function uses text/plain (default for str arguments)
+        # instead of more specific mime types so that email clients actually
+        # show the text instead of (only) offering to download the attachment.
         if not self._config.email_headers:
+            return
+        previous_results = {
+            k: json.loads(d)
+            for k, d in report_state.previous_results_by_section_name.items()
+        }
+        if results == previous_results:
             return
         message = email.message.EmailMessage()
         message["Subject"] = f"rock-paper-sand report {self._config.name}"
@@ -108,16 +153,31 @@ class Report:
         message["Rock-Paper-Sand-Report-Name"] = self._config.name
         message.add_attachment("", disposition="inline")
         for section_name, section_results in results.items():
-            # This uses text/plain (default for str arguments) instead of
-            # application/yaml so that email clients actually show the text
-            # instead of offering to download the attachment.
+            if section_name not in previous_results:
+                section_previous_results = None
+            elif section_results == previous_results[section_name]:
+                continue
+            else:
+                section_previous_results = _dump_for_email(
+                    previous_results[section_name]
+                )
+            _add_diff_attachment(
+                message=message,
+                name=section_name,
+                old=section_previous_results,
+                new=_dump_for_email(section_results),
+            )
+        for section_name, section_results in previous_results.items():
+            if section_name not in results:
+                _add_diff_attachment(
+                    message=message,
+                    name=section_name,
+                    old=_dump_for_email(section_results),
+                    new=None,
+                )
+        for section_name, section_results in results.items():
             message.add_attachment(
-                yaml.safe_dump(
-                    section_results,
-                    sort_keys=False,
-                    allow_unicode=True,
-                    width=float("inf"),
-                ),
+                _dump_for_email(section_results),
                 disposition="inline",
                 filename=f"{section_name}.yaml",
             )
@@ -125,4 +185,9 @@ class Report:
             ("/usr/sbin/sendmail", "-i", "-t"),
             check=True,
             input=bytes(message),
+        )
+        report_state.previous_results_by_section_name.clear()
+        report_state.previous_results_by_section_name.update(
+            (section_name, json.dumps(section_results))
+            for section_name, section_results in results.items()
         )
