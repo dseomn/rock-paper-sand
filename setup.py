@@ -16,5 +16,8 @@ import setuptools
 import setuptools_protobuf
 
 setuptools.setup(
-    protobufs=(setuptools_protobuf.Protobuf("rock_paper_sand/config.proto"),)
+    protobufs=(
+        setuptools_protobuf.Protobuf("rock_paper_sand/config.proto"),
+        setuptools_protobuf.Protobuf("rock_paper_sand/state.proto"),
+    )
 )

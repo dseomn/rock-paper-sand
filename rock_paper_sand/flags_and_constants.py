@@ -41,6 +41,14 @@ CONFIG_FILE = flags.DEFINE_string(
     ),
     help="Path to config file.",
 )
+STATE_FILE = flags.DEFINE_string(
+    "state_file",
+    default=str(
+        _get_app_dir("XDG_DATA_HOME", pathlib.Path(".local/share"))
+        / "state.binpb"
+    ),
+    help="Path to state file.",
+)
 CACHE_DIR = flags.DEFINE_string(
     "cache_dir",
     default=str(_get_app_dir("XDG_CACHE_HOME", pathlib.Path(".cache"))),
