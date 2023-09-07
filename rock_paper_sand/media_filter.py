@@ -14,9 +14,10 @@
 """Filters for media items."""
 
 import abc
-from collections.abc import Callable, Mapping, Set
+from collections.abc import Callable, Iterable, Mapping, Set
 import dataclasses
 import functools
+import itertools
 import re
 
 from rock_paper_sand import config_pb2
@@ -59,38 +60,24 @@ class Not(Filter):
         return FilterResult(not child_result.matches, extra=child_result.extra)
 
 
-class And(Filter):
-    """Intersects other filters."""
+class BinaryLogic(Filter):
+    """Binary logic filter, i.e., "and" and "or"."""
 
-    def __init__(self, *children: Filter):
+    def __init__(self, *children: Filter, op: Callable[[Iterable[bool]], bool]):
         self._children = children
+        self._op = op
 
     def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
         """See base class."""
-        extra = set()
-        for child in self._children:
-            child_result = child.filter(media_item)
-            extra.update(child_result.extra)
-            if not child_result.matches:
-                return FilterResult(False, extra=extra)
-        return FilterResult(True, extra=extra)
-
-
-class Or(Filter):
-    """Unions other filters."""
-
-    def __init__(self, *children: Filter):
-        self._children = children
-
-    def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
-        """See base class."""
-        extra = set()
-        for child in self._children:
-            child_result = child.filter(media_item)
-            extra.update(child_result.extra)
-            if child_result.matches:
-                return FilterResult(True, extra=extra)
-        return FilterResult(False, extra=extra)
+        results = tuple(child.filter(media_item) for child in self._children)
+        return FilterResult(
+            self._op(result.matches for result in results),
+            extra=frozenset(
+                itertools.chain.from_iterable(
+                    result.extra for result in results
+                )
+            ),
+        )
 
 
 class HasParts(Filter):
@@ -176,18 +163,20 @@ class Registry:
         """Returns a Filter instance from its configuration."""
         match filter_config.WhichOneof("filter"):
             case "all":
-                return And()
+                return BinaryLogic(op=all)
             case "ref":
                 return self._filter_by_name[filter_config.ref]
             case "not":
                 return Not(self.parse(getattr(filter_config, "not")))
             case "and":
-                return And(
-                    *map(self.parse, getattr(filter_config, "and").filters)
+                return BinaryLogic(
+                    *map(self.parse, getattr(filter_config, "and").filters),
+                    op=all,
                 )
             case "or":
-                return Or(
-                    *map(self.parse, getattr(filter_config, "or").filters)
+                return BinaryLogic(
+                    *map(self.parse, getattr(filter_config, "or").filters),
+                    op=any,
                 )
             case "has_parts":
                 return HasParts(filter_config.has_parts)

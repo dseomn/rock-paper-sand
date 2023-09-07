@@ -79,7 +79,7 @@ class MediaFilterTest(parameterized.TestCase):
             ),
         ),
         dict(
-            testcase_name="and_false_with_short_circuit",
+            testcase_name="and_false_without_short_circuit",
             filter_by_name=dict(foo=_ExtraInfoFilter({"foo"})),
             filter_config={
                 "and": {
@@ -89,10 +89,10 @@ class MediaFilterTest(parameterized.TestCase):
                     ]
                 }
             },
-            expected_result=media_filter.FilterResult(False),
+            expected_result=media_filter.FilterResult(False, extra={"foo"}),
         ),
         dict(
-            testcase_name="or_true_with_short_circuit",
+            testcase_name="or_true_without_short_circuit",
             filter_by_name=dict(
                 foo=_ExtraInfoFilter({"foo"}),
                 bar=_ExtraInfoFilter({"bar"}),
@@ -106,7 +106,9 @@ class MediaFilterTest(parameterized.TestCase):
                     ]
                 }
             },
-            expected_result=media_filter.FilterResult(True, extra={"foo"}),
+            expected_result=media_filter.FilterResult(
+                True, extra={"foo", "bar"}
+            ),
         ),
         dict(
             testcase_name="or_false",
@@ -273,11 +275,11 @@ class MediaFilterTest(parameterized.TestCase):
 
     def test_registry_unique(self):
         registry = media_filter.Registry()
-        registry.register("foo", media_filter.And())
+        registry.register("foo", media_filter.BinaryLogic(op=all))
         with self.assertRaisesRegex(
             ValueError, "Filter 'foo' is defined multiple times"
         ):
-            registry.register("foo", media_filter.And())
+            registry.register("foo", media_filter.BinaryLogic(op=all))
 
 
 if __name__ == "__main__":
