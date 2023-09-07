@@ -32,6 +32,10 @@ message StringFieldMatcher {
 
     // Matches if the field is exactly equal to the specified string.
     string equals = 2;
+
+    // Matches against the regex using python's re.search() function. See
+    // https://docs.python.org/3/library/re.html for the syntax.
+    string regex = 3;
   }
 }
 

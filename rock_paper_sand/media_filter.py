@@ -17,6 +17,7 @@ import abc
 from collections.abc import Callable, Mapping, Set
 import dataclasses
 import functools
+import re
 
 from rock_paper_sand import config_pb2
 from rock_paper_sand import multi_level_set
@@ -136,6 +137,10 @@ class StringFieldMatcher(Filter):
                 return FilterResult(bool(value) != self._matcher_config.empty)
             case "equals":
                 return FilterResult(value == self._matcher_config.equals)
+            case "regex":
+                return FilterResult(
+                    re.search(self._matcher_config.regex, value) is not None
+                )
             case _:
                 raise ValueError(
                     f"Unknown string field match type: {self._matcher_config!r}"

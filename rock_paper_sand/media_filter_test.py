@@ -191,6 +191,24 @@ class MediaFilterTest(parameterized.TestCase):
             media_item=config_pb2.MediaItem(name="foo"),
             expected_result=media_filter.FilterResult(False),
         ),
+        dict(
+            testcase_name="custom_availability_regex_matches",
+            filter_by_name={},
+            filter_config={"customAvailability": {"regex": r"[Aa]"}},
+            media_item=config_pb2.MediaItem(
+                name="foo", custom_availability="bar"
+            ),
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="custom_availability_regex_no_match",
+            filter_by_name={},
+            filter_config={"customAvailability": {"regex": r"[Zz]"}},
+            media_item=config_pb2.MediaItem(
+                name="foo", custom_availability="bar"
+            ),
+            expected_result=media_filter.FilterResult(False),
+        ),
     )
     def test_basic_filter(
         self,
