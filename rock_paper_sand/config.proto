@@ -101,6 +101,9 @@ message Filter {
     // their `done` field.
     string done = 9;
 
+    // Matches on the name field.
+    StringFieldMatcher name = 10;
+
     // Matches on the custom_availability field.
     StringFieldMatcher custom_availability = 6;
 

@@ -153,6 +153,13 @@ class MediaFilterTest(parameterized.TestCase):
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
+            testcase_name="name_matches",
+            filter_by_name={},
+            filter_config={"name": {"equals": "foo"}},
+            media_item=config_pb2.MediaItem(name="foo"),
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
             testcase_name="custom_availability_empty_matches",
             filter_by_name={},
             filter_config={"customAvailability": {"empty": True}},

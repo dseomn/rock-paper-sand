@@ -193,6 +193,10 @@ class Registry:
                 return HasParts(filter_config.has_parts)
             case "done":
                 return Done(filter_config.done)
+            case "name":
+                return StringFieldMatcher(
+                    lambda media_item: media_item.name, filter_config.name
+                )
             case "custom_availability":
                 return StringFieldMatcher(
                     lambda media_item: media_item.custom_availability,
