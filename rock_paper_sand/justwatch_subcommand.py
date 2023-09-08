@@ -98,9 +98,10 @@ class Search(subcommand.Subcommand):
                     else f"{original_release_year} - ?"
                 )
                 name = f"{result['title']} ({years})"
+                name_json = json.dumps(name, ensure_ascii=False)
                 justwatch_id = f"{result['object_type']}/{result['id']}"
                 url = f"https://www.justwatch.com{result['full_path']}"
-                print(f"- name: {json.dumps(name)}")
+                print(f"- name: {name_json}")
                 print(f"  justwatchId: {justwatch_id}  # {url}")
 
 
