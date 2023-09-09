@@ -197,20 +197,28 @@ class Filter(media_filter.Filter):
         self,
         content: Any,
         *,
+        exclude: multi_level_set.MultiLevelSet,
         relative_url: str,
     ) -> Iterable[tuple[Any, str]]:
-        if "seasons" in content:
+        if _content_number(content) in exclude:
+            return
+        elif "seasons" in content:
             for season in content["seasons"]:
+                if _content_number(season) in exclude:
+                    continue
                 season_relative_url = (
                     f"titles/{season['object_type']}/{season['id']}/locale/"
                     f"{self._config.locale}"
                 )
                 yield from self._iter_episodes_and_relative_url(
                     self._api.get(season_relative_url),
+                    exclude=exclude,
                     relative_url=season_relative_url,
                 )
         elif "episodes" in content:
             for episode in content["episodes"]:
+                if _content_number(episode) in exclude:
+                    continue
                 yield episode, relative_url
         else:
             yield content, relative_url
@@ -223,8 +231,6 @@ class Filter(media_filter.Filter):
         now: datetime.timedelta,
         done: multi_level_set.MultiLevelSet,
     ) -> _Availability:
-        if not self._config.include_done and _content_number(content) in done:
-            return _Availability()
         availability = _Availability(total_episode_count=1)
         for offer in content.get("offers", ()):
             provider = offer["package_short_name"]
@@ -265,11 +271,10 @@ class Filter(media_filter.Filter):
         relative_url: str,
         done: multi_level_set.MultiLevelSet,
     ) -> bool:
-        for episode, _ in self._iter_episodes_and_relative_url(
-            content, relative_url=relative_url
+        for _ in self._iter_episodes_and_relative_url(
+            content, relative_url=relative_url, exclude=done
         ):
-            if _content_number(episode) not in done:
-                return False
+            return False
         return True
 
     def filter(
@@ -295,7 +300,13 @@ class Filter(media_filter.Filter):
                 episode,
                 episode_relative_url,
             ) in self._iter_episodes_and_relative_url(
-                content, relative_url=relative_url
+                content,
+                relative_url=relative_url,
+                exclude=(
+                    multi_level_set.MultiLevelSet(())
+                    if self._config.include_done
+                    else done
+                ),
             ):
                 availability.update(
                     self._availability(

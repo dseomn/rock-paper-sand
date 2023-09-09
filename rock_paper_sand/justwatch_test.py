@@ -325,16 +325,20 @@ class FilterTest(parameterized.TestCase):
             api_data={
                 "titles/show/1/locale/en_US": {
                     "seasons": [
-                        {"object_type": "show_season", "id": 1},
-                        {"object_type": "show_season", "id": 2},
-                    ],
-                },
-                "titles/show_season/1/locale/en_US": {
-                    "episodes": [
-                        {"season_number": 1, "episode_number": 1},
+                        {
+                            "object_type": "show_season",
+                            "id": 1,
+                            "season_number": 1,
+                        },
+                        {
+                            "object_type": "show_season",
+                            "id": 2,
+                            "season_number": 2,
+                        },
                     ],
                 },
                 "titles/show_season/2/locale/en_US": {
+                    "season_number": 2,
                     "episodes": [
                         {"season_number": 2, "episode_number": 1},
                         {"season_number": 2, "episode_number": 2},
@@ -383,17 +387,30 @@ class FilterTest(parameterized.TestCase):
                 "locale": "en_US",
                 "allDone": True,
             },
-            media_item={"name": "foo", "done": "1", "justwatchId": "show/1"},
+            media_item={
+                "name": "foo",
+                "done": "1-2.1",
+                "justwatchId": "show/1",
+            },
             api_data={
                 "titles/show/1/locale/en_US": {
                     "seasons": [
-                        {"object_type": "show_season", "id": 1},
+                        {
+                            "object_type": "show_season",
+                            "id": 1,
+                            "season_number": 1,
+                        },
+                        {
+                            "object_type": "show_season",
+                            "id": 2,
+                            "season_number": 2,
+                        },
                     ],
                 },
-                "titles/show_season/1/locale/en_US": {
+                "titles/show_season/2/locale/en_US": {
+                    "season_number": 2,
                     "episodes": [
-                        {"season_number": 1, "episode_number": 1},
-                        {"season_number": 1, "episode_number": 2},
+                        {"season_number": 2, "episode_number": 1},
                     ],
                 },
             },
