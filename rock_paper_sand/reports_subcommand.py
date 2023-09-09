@@ -43,14 +43,29 @@ class Notify(subcommand.Subcommand):
 class Print(subcommand.Subcommand):
     """Prints the output of reports."""
 
+    def __init__(self, parser: argparse.ArgumentParser):
+        """See base class."""
+        super().__init__(parser)
+        parser.add_argument(
+            "report",
+            default=None,
+            help="Report to print. Default: all.",
+            nargs="?",
+        )
+
     def run(self, args: argparse.Namespace):
         """See base class."""
         with network.requests_session() as session:
             config_ = config.Config.from_config_file(session=session)
-            results = {
-                name: report_.generate(config_.proto.media)
-                for name, report_ in config_.reports.items()
-            }
+            if args.report is None:
+                results = {
+                    name: report_.generate(config_.proto.media)
+                    for name, report_ in config_.reports.items()
+                }
+            else:
+                results = config_.reports[args.report].generate(
+                    config_.proto.media
+                )
             print(
                 yaml.safe_dump(
                     results,
