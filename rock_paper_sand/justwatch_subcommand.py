@@ -15,6 +15,8 @@
 
 import argparse
 import json
+import sys
+from typing import IO
 
 import yaml
 
@@ -82,10 +84,17 @@ class Search(subcommand.Subcommand):
         _add_locale_arg(parser)
         parser.add_argument("query", help="Search terms.", nargs="+")
 
-    def run(self, args: argparse.Namespace):
+    def run(
+        self,
+        args: argparse.Namespace,
+        *,
+        out_file: IO[str] = sys.stdout,
+        api: justwatch.Api | None = None,
+    ):
         """See base class."""
         with network.requests_session() as session:
-            api = justwatch.Api(session=session)
+            if api is None:
+                api = justwatch.Api(session=session)
             results = api.post(
                 f"titles/{args.locale}/popular",
                 {"query": " ".join(args.query)},
@@ -101,8 +110,8 @@ class Search(subcommand.Subcommand):
                 name_json = json.dumps(name, ensure_ascii=False)
                 justwatch_id = f"{result['object_type']}/{result['id']}"
                 url = f"https://www.justwatch.com{result['full_path']}"
-                print(f"- name: {name_json}")
-                print(f"  justwatchId: {justwatch_id}  # {url}")
+                print(f"- name: {name_json}", file=out_file)
+                print(f"  justwatchId: {justwatch_id}  # {url}", file=out_file)
 
 
 class Main(subcommand.ContainerSubcommand):
