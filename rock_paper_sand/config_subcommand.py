@@ -16,6 +16,7 @@
 import argparse
 import difflib
 import sys
+from typing import IO
 
 import yaml
 
@@ -27,13 +28,13 @@ from rock_paper_sand import subcommand
 class MediaIsSorted(subcommand.Subcommand):
     """Checks if the media list is sorted."""
 
-    def run(self, args: argparse.Namespace):
+    def run(self, args: argparse.Namespace, *, out_file: IO[str] = sys.stdout):
         """See base class."""
         del args  # Unused.
         with network.null_requests_session() as session:
             config_ = config.Config.from_config_file(session=session)
             names = tuple(item.name for item in config_.proto.media)
-        sys.stdout.writelines(
+        out_file.writelines(
             difflib.unified_diff(
                 yaml.safe_dump(
                     names, allow_unicode=True, width=float("inf")
