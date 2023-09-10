@@ -33,10 +33,10 @@ import cachecontrol.heuristics
 import dateutil.parser
 import requests
 
-from rock_paper_sand import config_pb2
 from rock_paper_sand import media_filter
 from rock_paper_sand import multi_level_set
 from rock_paper_sand import network
+from rock_paper_sand.proto import config_pb2
 
 _BASE_URL = "https://apis.justwatch.com/content"
 

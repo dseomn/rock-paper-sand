@@ -23,9 +23,9 @@ from google.protobuf import json_format
 import immutabledict
 import requests
 
-from rock_paper_sand import config_pb2
 from rock_paper_sand import justwatch
 from rock_paper_sand import media_filter
+from rock_paper_sand.proto import config_pb2
 
 _NOW = datetime.datetime.now(tz=datetime.timezone.utc)
 _TIME_IN_PAST_1 = _NOW - datetime.timedelta(days=1)

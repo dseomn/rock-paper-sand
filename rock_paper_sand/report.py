@@ -22,9 +22,9 @@ from typing import Any
 
 import yaml
 
-from rock_paper_sand import config_pb2
 from rock_paper_sand import media_filter
-from rock_paper_sand import state_pb2
+from rock_paper_sand.proto import config_pb2
+from rock_paper_sand.proto import state_pb2
 
 
 def _filter_media_item(

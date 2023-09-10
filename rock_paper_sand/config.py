@@ -21,11 +21,11 @@ from google.protobuf import json_format
 import requests
 import yaml
 
-from rock_paper_sand import config_pb2
 from rock_paper_sand import flags_and_constants
 from rock_paper_sand import justwatch
 from rock_paper_sand import media_filter
 from rock_paper_sand import report
+from rock_paper_sand.proto import config_pb2
 
 _T = TypeVar("_T")
 

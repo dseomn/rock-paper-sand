@@ -20,8 +20,8 @@ import functools
 import itertools
 import re
 
-from rock_paper_sand import config_pb2
 from rock_paper_sand import multi_level_set
+from rock_paper_sand.proto import config_pb2
 
 
 @dataclasses.dataclass(frozen=True)

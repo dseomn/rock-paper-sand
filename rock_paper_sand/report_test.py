@@ -25,10 +25,10 @@ from absl.testing import absltest
 from absl.testing import parameterized
 from google.protobuf import json_format
 
-from rock_paper_sand import config_pb2
 from rock_paper_sand import media_filter
 from rock_paper_sand import report
-from rock_paper_sand import state_pb2
+from rock_paper_sand.proto import config_pb2
+from rock_paper_sand.proto import state_pb2
 
 
 class _ExtraInfoFilter(media_filter.Filter):

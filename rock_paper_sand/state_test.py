@@ -20,7 +20,7 @@ from absl.testing import parameterized
 
 from rock_paper_sand import flags_and_constants
 from rock_paper_sand import state
-from rock_paper_sand import state_pb2
+from rock_paper_sand.proto import state_pb2
 
 
 class StateTest(parameterized.TestCase):
