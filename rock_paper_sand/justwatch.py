@@ -89,6 +89,15 @@ class Api:
 
     def get(self, relative_url: str) -> Any:
         """Returns the decoded JSON response."""
+        # While this cache *might* help with performance, the main reason to use
+        # one here is to avoid race conditions. Without this, if a report were
+        # generated around the time that data was expiring from the cachecontrol
+        # cache, it would be possible for a section with {"justwatch": ...} and
+        # another with {"not": {"justwatch": ...}} to either both match the same
+        # media item or neither match the item. This cache makes sure that those
+        # two filters see identical data, so that the mutual exclusion can be
+        # preserved. NOTE: If this code is ever used in a long-running process,
+        # this might need more work to avoid stale data.
         if relative_url in self._cache:
             return self._cache[relative_url]
         response = self._session.get(f"{self._base_url}/{relative_url}")
