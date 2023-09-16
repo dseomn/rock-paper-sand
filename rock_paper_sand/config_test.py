@@ -85,6 +85,38 @@ class ConfigTest(parameterized.TestCase):
                 ),
             },
         ),
+        dict(
+            testcase_name="issues_report_empty",
+            config_data={
+                "reports": [
+                    {
+                        "name": "foo",
+                        "sections": [
+                            {"name": "bar", "filter": {"not": {"all": {}}}},
+                        ],
+                    }
+                ],
+                "lint": {"issuesReport": "foo"},
+                "media": [{"name": "a"}],
+            },
+            expected_results={},
+        ),
+        dict(
+            testcase_name="issues_report_not_empty",
+            config_data={
+                "reports": [
+                    {
+                        "name": "foo",
+                        "sections": [
+                            {"name": "bar", "filter": {"all": {}}},
+                        ],
+                    }
+                ],
+                "lint": {"issuesReport": "foo"},
+                "media": [{"name": "a"}],
+            },
+            expected_results={"issuesReport": {"bar": [{"name": "a"}]}},
+        ),
     )
     def test_lint(
         self,

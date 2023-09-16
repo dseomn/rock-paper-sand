@@ -110,6 +110,16 @@ class Config:
             ),
         }
 
+    def _lint_issues_report(self) -> Mapping[str, Any]:
+        if not self.proto.lint.issues_report:
+            return {}
+        results = self.reports[self.proto.lint.issues_report].generate(
+            self.proto.media
+        )
+        if not any(results.values()):
+            return {}
+        return {"issuesReport": results}
+
     def lint(self) -> Mapping[str, Any]:
         """Returns lint issues, if there are any."""
-        return self._lint_sort()
+        return self._lint_sort() | self._lint_issues_report()

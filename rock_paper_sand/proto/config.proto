@@ -155,6 +155,10 @@ message Lint {
   // If present, requires that the media list be sorted by name at the top
   // level.
   Sort sort = 1;
+
+  // If present, the name of a report that should be empty if there are no
+  // issues.
+  string issues_report = 2;
 }
 
 // A (possibly composite) item of media, e.g., a movie, TV show, or book, or
