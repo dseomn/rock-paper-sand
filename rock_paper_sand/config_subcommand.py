@@ -14,6 +14,7 @@
 """Config commands."""
 
 import argparse
+import sys
 
 import yaml
 
@@ -41,6 +42,7 @@ class Lint(subcommand.Subcommand):
                     ),
                     end="",
                 )
+                sys.exit(1)
 
 
 class Main(subcommand.ContainerSubcommand):
