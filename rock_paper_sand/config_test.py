@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import pathlib
+import textwrap
 
 from absl.testing import absltest
 from absl.testing import flagsaver
@@ -27,6 +29,87 @@ from rock_paper_sand import network
 
 
 class ConfigTest(parameterized.TestCase):
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="no_lint_config",
+            config_data={},
+            expected_results={},
+        ),
+        dict(
+            testcase_name="sort_no_diff",
+            config_data={
+                "lint": {"sort": {}},
+                "media": [{"name": "a"}, {"name": "b"}],
+            },
+            expected_results={},
+        ),
+        dict(
+            testcase_name="sort_case_sensitive",
+            config_data={
+                "lint": {"sort": {"caseSensitive": True}},
+                "media": [{"name": "b"}, {"name": "aa"}, {"name": "Az"}],
+            },
+            expected_results={
+                "sort": textwrap.dedent(
+                    """\
+                    --- media-names
+                    +++ media-names-sorted
+                    @@ -1,3 +1,3 @@
+                    +- Az
+                    +- aa
+                     - b
+                    -- aa
+                    -- Az
+                    """
+                ),
+            },
+        ),
+        dict(
+            testcase_name="sort_case_insensitive",
+            config_data={
+                "lint": {"sort": {"caseSensitive": False}},
+                "media": [{"name": "Az"}, {"name": "aa"}, {"name": "AA"}],
+            },
+            expected_results={
+                "sort": textwrap.dedent(
+                    """\
+                    --- media-names
+                    +++ media-names-sorted
+                    @@ -1,3 +1,3 @@
+                    +- AA
+                    +- aa
+                     - Az
+                    -- aa
+                    -- AA
+                    """
+                ),
+            },
+        ),
+    )
+    def test_lint(
+        self,
+        *,
+        config_data: ...,
+        expected_results: ...,
+    ):
+        self.enter_context(
+            flagsaver.flagsaver(
+                (
+                    flags_and_constants.CONFIG_FILE,
+                    self.create_tempfile(
+                        content=json.dumps(config_data)
+                    ).full_path,
+                )
+            )
+        )
+        config_ = config.Config.from_config_file(
+            session=self.enter_context(network.null_requests_session())
+        )
+
+        results = config_.lint()
+
+        self.assertEqual(expected_results, results)
+
     def test_example_config(self):
         with flagsaver.flagsaver(
             (
@@ -41,6 +124,7 @@ class ConfigTest(parameterized.TestCase):
             )
             for item in config_.proto.media:
                 multi_level_set.MultiLevelSet.from_string(item.done)
+            self.assertEmpty(config_.lint())
 
 
 if __name__ == "__main__":

@@ -14,8 +14,9 @@
 
 from collections.abc import Mapping
 import dataclasses
+import difflib
 import functools
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from google.protobuf import json_format
 import requests
@@ -79,3 +80,36 @@ class Config:
             filter_registry=filter_registry,
             reports=reports,
         )
+
+    def _lint_sort(self) -> Mapping[str, Any]:
+        if not self.proto.lint.HasField("sort"):
+            return {}
+        names = [item.name for item in self.proto.media]
+        names_sorted = sorted(
+            names,
+            key=(
+                None
+                if self.proto.lint.sort.case_sensitive
+                else lambda name: (name.casefold(), name)
+            ),
+        )
+        if names == names_sorted:
+            return {}
+        return {
+            "sort": "".join(
+                difflib.unified_diff(
+                    yaml.safe_dump(
+                        names, allow_unicode=True, width=float("inf")
+                    ).splitlines(keepends=True),
+                    yaml.safe_dump(
+                        names_sorted, allow_unicode=True, width=float("inf")
+                    ).splitlines(keepends=True),
+                    fromfile="media-names",
+                    tofile="media-names-sorted",
+                )
+            ),
+        }
+
+    def lint(self) -> Mapping[str, Any]:
+        """Returns lint issues, if there are any."""
+        return self._lint_sort()

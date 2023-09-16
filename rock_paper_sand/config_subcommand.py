@@ -14,9 +14,6 @@
 """Config commands."""
 
 import argparse
-import difflib
-import sys
-from typing import IO
 
 import yaml
 
@@ -25,27 +22,25 @@ from rock_paper_sand import network
 from rock_paper_sand import subcommand
 
 
-class MediaIsSorted(subcommand.Subcommand):
-    """Checks if the media list is sorted."""
+class Lint(subcommand.Subcommand):
+    """Lints the config file."""
 
-    def run(self, args: argparse.Namespace, *, out_file: IO[str] = sys.stdout):
+    def run(self, args: argparse.Namespace):
         """See base class."""
         del args  # Unused.
         with network.null_requests_session() as session:
             config_ = config.Config.from_config_file(session=session)
-            names = tuple(item.name for item in config_.proto.media)
-        out_file.writelines(
-            difflib.unified_diff(
-                yaml.safe_dump(
-                    names, allow_unicode=True, width=float("inf")
-                ).splitlines(keepends=True),
-                yaml.safe_dump(
-                    sorted(names), allow_unicode=True, width=float("inf")
-                ).splitlines(keepends=True),
-                fromfile="media-names",
-                tofile="media-names-sorted",
-            )
-        )
+            if results := config_.lint():
+                print(
+                    yaml.safe_dump(
+                        results,
+                        default_style="|",
+                        sort_keys=False,
+                        allow_unicode=True,
+                        width=float("inf"),
+                    ),
+                    end="",
+                )
 
 
 class Main(subcommand.ContainerSubcommand):
@@ -57,9 +52,7 @@ class Main(subcommand.ContainerSubcommand):
         subparsers = parser.add_subparsers()
         self.add_subcommand(
             subparsers,
-            MediaIsSorted,
-            "media-is-sorted",
-            help=(
-                "Checks if the media list is sorted, and prints a diff if not."
-            ),
+            Lint,
+            "lint",
+            help="Lint the config file.",
         )

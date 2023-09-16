@@ -144,6 +144,19 @@ message Report {
   repeated Section sections = 1;
 }
 
+// Lint configuration.
+message Lint {
+  // Media sorting options.
+  message Sort {
+    // Whether sorting should be case sensitive or not.
+    bool case_sensitive = 1;
+  }
+
+  // If present, requires that the media list be sorted by name at the top
+  // level.
+  Sort sort = 1;
+}
+
 // A (possibly composite) item of media, e.g., a movie, TV show, or book, or
 // fictional universe in which media is set.
 message MediaItem {
@@ -202,6 +215,9 @@ message Config {
 
   // Reports.
   repeated Report reports = 2;
+
+  // Lint configuration.
+  Lint lint = 4;
 
   // Media.
   repeated MediaItem media = 3;
