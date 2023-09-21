@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from collections.abc import Mapping, Set
+import re
 from unittest import mock
 
 from absl.testing import absltest
@@ -258,20 +259,37 @@ class MediaFilterTest(parameterized.TestCase):
                 json_format.ParseDict({"justwatch": {}}, config_pb2.Filter())
             )
 
-    def test_unspecified_filter(self):
-        with self.assertRaisesRegex(ValueError, "Unknown filter type"):
-            media_filter.Registry().parse(config_pb2.Filter())
-
-    def test_unspecified_string_match(self):
-        test_filter = media_filter.Registry().parse(
-            json_format.ParseDict(
-                {"customAvailability": {}}, config_pb2.Filter()
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="unspecified_filter",
+            filter_config={},
+            error_class=ValueError,
+            error_regex="Unknown filter type",
+        ),
+        dict(
+            testcase_name="unspecified_string_match",
+            filter_config={"customAvailability": {}},
+            error_class=ValueError,
+            error_regex="Unknown string field match type",
+        ),
+        dict(
+            testcase_name="invalid_regex",
+            filter_config={"customAvailability": {"regex": "("}},
+            error_class=re.error,
+            error_regex="",
+        ),
+    )
+    def test_parse_error(
+        self,
+        *,
+        filter_config: ...,
+        error_class: type[Exception],
+        error_regex: str,
+    ):
+        with self.assertRaisesRegex(error_class, error_regex):
+            media_filter.Registry().parse(
+                json_format.ParseDict(filter_config, config_pb2.Filter())
             )
-        )
-        with self.assertRaisesRegex(
-            ValueError, "Unknown string field match type"
-        ):
-            test_filter.filter(config_pb2.MediaItem(name="foo"))
 
     def test_registry_unique(self):
         registry = media_filter.Registry()

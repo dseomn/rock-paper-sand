@@ -114,24 +114,24 @@ class StringFieldMatcher(Filter):
         matcher_config: config_pb2.StringFieldMatcher,
     ):
         self._field_getter = field_getter
-        self._matcher_config = matcher_config
+        match matcher_config.WhichOneof("method"):
+            case "empty":
+                self._matcher = (
+                    lambda value: bool(value) != matcher_config.empty
+                )
+            case "equals":
+                self._matcher = lambda value: value == matcher_config.equals
+            case "regex":
+                compiled = re.compile(matcher_config.regex)
+                self._matcher = lambda value: compiled.search(value) is not None
+            case _:
+                raise ValueError(
+                    f"Unknown string field match type: {matcher_config!r}"
+                )
 
     def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
         """See base class."""
-        value = self._field_getter(media_item)
-        match self._matcher_config.WhichOneof("method"):
-            case "empty":
-                return FilterResult(bool(value) != self._matcher_config.empty)
-            case "equals":
-                return FilterResult(value == self._matcher_config.equals)
-            case "regex":
-                return FilterResult(
-                    re.search(self._matcher_config.regex, value) is not None
-                )
-            case _:
-                raise ValueError(
-                    f"Unknown string field match type: {self._matcher_config!r}"
-                )
+        return FilterResult(self._matcher(self._field_getter(media_item)))
 
 
 class Registry:
