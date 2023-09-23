@@ -41,3 +41,7 @@ Potential future goals:
 *   Better support for other types of media, like books.
 *   Some sort of graphical user interface.
 *   Recommendations for other media to watch/read/etc.
+
+## Disclaimer
+
+This is not an officially supported Google product.
