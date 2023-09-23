@@ -13,11 +13,5 @@
 # limitations under the License.
 
 import setuptools
-import setuptools_protobuf
 
-setuptools.setup(
-    protobufs=(
-        setuptools_protobuf.Protobuf("rock_paper_sand/proto/config.proto"),
-        setuptools_protobuf.Protobuf("rock_paper_sand/proto/state.proto"),
-    )
-)
+setuptools.setup()
