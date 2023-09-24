@@ -13,7 +13,7 @@
 # limitations under the License.
 """Configuration handling code."""
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 import dataclasses
 import difflib
 import functools
@@ -27,6 +27,7 @@ import yaml
 from rock_paper_sand import flags_and_constants
 from rock_paper_sand import justwatch
 from rock_paper_sand import media_filter
+from rock_paper_sand import media_item
 from rock_paper_sand import report
 from rock_paper_sand.proto import config_pb2
 
@@ -40,12 +41,14 @@ class Config:
         justwatch_api: JustWatch API.
         filter_registry: Filter registry populated from the config file.
         reports: Mapping from report name to report.
+        media: Media.
     """
 
     proto: config_pb2.Config
     justwatch_api: justwatch.Api
     filter_registry: media_filter.Registry
     reports: Mapping[str, report.Report]
+    media: Sequence[media_item.MediaItem]
 
     @classmethod
     def from_config_file(
@@ -79,6 +82,7 @@ class Config:
             justwatch_api=justwatch_api,
             filter_registry=filter_registry,
             reports=reports,
+            media=tuple(map(media_item.MediaItem.from_config, proto.media)),
         )
 
     def _lint_sort(self) -> dict[str, Any]:

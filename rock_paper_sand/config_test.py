@@ -25,7 +25,6 @@ from absl.testing import parameterized
 
 from rock_paper_sand import config
 from rock_paper_sand import flags_and_constants
-from rock_paper_sand import multi_level_set
 from rock_paper_sand import network
 
 
@@ -155,8 +154,6 @@ class ConfigTest(parameterized.TestCase):
             config_ = config.Config.from_config_file(
                 session=network.null_requests_session()
             )
-            for item in config_.proto.media:
-                multi_level_set.MultiLevelSet.from_string(item.done)
             self.assertEmpty(config_.lint())
 
 
