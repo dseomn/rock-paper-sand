@@ -21,10 +21,10 @@ dependency, and 2) the library doesn't give enough control over the HTTP calls
 to enable useful things like caching and retrying specific errors.
 """
 
-import datetime
-import dataclasses
 import collections
 from collections.abc import Collection, Iterable, Mapping, Set
+import dataclasses
+import datetime
 import itertools
 from typing import Any
 import warnings
