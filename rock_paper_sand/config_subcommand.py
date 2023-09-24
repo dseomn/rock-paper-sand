@@ -15,6 +15,7 @@
 
 import argparse
 import sys
+import typing
 
 import yaml
 
@@ -38,7 +39,7 @@ class Lint(subcommand.Subcommand):
                         default_style="|",
                         sort_keys=False,
                         allow_unicode=True,
-                        width=float("inf"),
+                        width=typing.cast(int, float("inf")),
                     ),
                     end="",
                 )

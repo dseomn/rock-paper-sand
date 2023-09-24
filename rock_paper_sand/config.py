@@ -16,6 +16,7 @@ from collections.abc import Mapping
 import dataclasses
 import difflib
 import functools
+import typing
 from typing import Any, Self
 
 from google.protobuf import json_format
@@ -97,10 +98,14 @@ class Config:
             "sort": "".join(
                 difflib.unified_diff(
                     yaml.safe_dump(
-                        names, allow_unicode=True, width=float("inf")
+                        names,
+                        allow_unicode=True,
+                        width=typing.cast(int, float("inf")),
                     ).splitlines(keepends=True),
                     yaml.safe_dump(
-                        names_sorted, allow_unicode=True, width=float("inf")
+                        names_sorted,
+                        allow_unicode=True,
+                        width=typing.cast(int, float("inf")),
                     ).splitlines(keepends=True),
                     fromfile="media-names",
                     tofile="media-names-sorted",

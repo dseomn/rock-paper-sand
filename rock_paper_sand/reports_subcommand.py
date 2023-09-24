@@ -14,6 +14,7 @@
 """Reports commands."""
 
 import argparse
+import typing
 
 import yaml
 
@@ -71,7 +72,7 @@ class Print(subcommand.Subcommand):
                     results,
                     sort_keys=False,
                     allow_unicode=True,
-                    width=float("inf"),
+                    width=typing.cast(int, float("inf")),
                 ),
                 end="",
             )

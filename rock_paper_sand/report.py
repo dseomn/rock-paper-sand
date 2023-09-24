@@ -18,6 +18,7 @@ import difflib
 import email.message
 import json
 import subprocess
+import typing
 from typing import Any
 
 import yaml
@@ -67,7 +68,7 @@ def _dump_for_email(results: Any) -> str:
         results,
         sort_keys=False,
         allow_unicode=True,
-        width=float("inf"),
+        width=typing.cast(int, float("inf")),
     )
 
 
