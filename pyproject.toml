@@ -16,6 +16,10 @@
 requires = ["setuptools", "setuptools-protobuf"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "rock-paper-sand"
+version = "0"
+
 [tool.black]
 line-length = 80
 
@@ -47,6 +51,9 @@ addopts = """\
   --cov-branch \
   --cov-report=term-missing \
   """
+
+[tool.setuptools]
+packages = ["rock_paper_sand"]
 
 [tool.setuptools-protobuf]
 protobufs = [
