@@ -53,8 +53,9 @@ def requests_session() -> Generator[requests.Session, None, None]:
         http_adapter = requests_http_adapter()
         session.mount("http://", http_adapter)
         session.mount("https://", http_adapter)
-        # TODO(dseomn): Add GitHub URL?
-        session.headers["User-Agent"] = "rock_paper_sand/0"
+        session.headers[
+            "User-Agent"
+        ] = "rock_paper_sand/0 https://github.com/dseomn/rock-paper-sand"
         yield session
 
 
