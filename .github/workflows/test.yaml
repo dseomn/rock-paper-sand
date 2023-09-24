@@ -46,6 +46,10 @@ jobs:
     - name: Build
       run: |
         python setup.py build
+    - name: Lint
+      run: |
+        pip install pylint
+        pylint rock_paper_sand
     - name: Check formatting
       run: |
         pip install black
