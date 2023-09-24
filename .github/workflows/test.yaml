@@ -54,6 +54,10 @@ jobs:
       run: |
         pip install black
         black --check --diff .
+    - name: Check import order
+      run: |
+        pip install isort
+        isort --check --diff rock_paper_sand
     - name: Check types
       run: |
         pip install mypy
