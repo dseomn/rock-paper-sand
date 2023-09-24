@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=missing-module-docstring
+
 import argparse
 import io
 import textwrap
@@ -77,6 +79,7 @@ class JustWatchSubcommandTest(parameterized.TestCase):
         )
         self.assertEqual(
             textwrap.dedent(
+                # pylint: disable=line-too-long
                 """\
                 - name: "They had movies in 1234? (1234)"
                   justwatchId: movie/42  # https://www.justwatch.com/movie-1234
@@ -85,6 +88,7 @@ class JustWatchSubcommandTest(parameterized.TestCase):
                 - name: "This is a Show (2002 - ?)"
                   justwatchId: show/5  # https://www.justwatch.com/this-is-a-show
                 """
+                # pylint: enable=line-too-long
             ),
             output.getvalue(),
         )

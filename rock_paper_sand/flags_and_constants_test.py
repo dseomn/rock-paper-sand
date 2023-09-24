@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=missing-module-docstring
+
 from collections.abc import Mapping
 import os
 import pathlib
@@ -42,7 +44,7 @@ class FlagsAndConstantsTest(parameterized.TestCase):
         expected_path: pathlib.Path,
     ) -> None:
         with mock.patch.dict(os.environ, env, clear=True):
-            actual_path = flags_and_constants._get_app_dir(
+            actual_path = flags_and_constants._get_app_dir(  # pylint: disable=protected-access
                 xdg_variable_name="XDG_FOO_HOME",
                 relative_fallback_path=pathlib.Path("foo"),
             )
@@ -51,7 +53,7 @@ class FlagsAndConstantsTest(parameterized.TestCase):
     def test_get_app_dir_error(self) -> None:
         with self.assertRaisesRegex(ValueError, "No HOME directory"):
             with mock.patch.dict(os.environ, {}, clear=True):
-                flags_and_constants._get_app_dir(
+                flags_and_constants._get_app_dir(  # pylint: disable=protected-access
                     xdg_variable_name="XDG_FOO_HOME",
                     relative_fallback_path=pathlib.Path("foo"),
                 )
