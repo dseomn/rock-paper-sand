@@ -291,16 +291,14 @@ class Filter(media_filter.Filter):
             return False
         return True
 
-    def filter(
-        self, media_item: config_pb2.MediaItem
-    ) -> media_filter.FilterResult:
+    def filter(self, item: config_pb2.MediaItem) -> media_filter.FilterResult:
         """See base class."""
         now = datetime.datetime.now(tz=datetime.timezone.utc)
-        if not media_item.justwatch_id:
+        if not item.justwatch_id:
             return media_filter.FilterResult(False)
-        done = multi_level_set.MultiLevelSet.from_string(media_item.done)
+        done = multi_level_set.MultiLevelSet.from_string(item.done)
         relative_url = (
-            f"titles/{media_item.justwatch_id}/locale/{self._config.locale}"
+            f"titles/{item.justwatch_id}/locale/{self._config.locale}"
         )
         content = self._api.get(relative_url)
         extra_information: set[str] = set()

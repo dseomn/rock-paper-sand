@@ -39,9 +39,7 @@ class _ExtraInfoFilter(media_filter.Filter):
     def __init__(self, extra: Set[str]) -> None:
         self._extra = extra
 
-    def filter(
-        self, media_item: config_pb2.MediaItem
-    ) -> media_filter.FilterResult:
+    def filter(self, item: config_pb2.MediaItem) -> media_filter.FilterResult:
         """See base class."""
         return media_filter.FilterResult(True, extra=self._extra)
 

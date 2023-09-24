@@ -180,27 +180,27 @@ class FilterTest(parameterized.TestCase):
         dict(
             testcase_name="no_id",
             filter_config={"locale": "en_US"},
-            media_item={"name": "foo"},
+            item={"name": "foo"},
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
             testcase_name="no_match_conditions",
             filter_config={"locale": "en_US"},
-            media_item={"name": "foo", "justwatchId": "movie/1"},
+            item={"name": "foo", "justwatchId": "movie/1"},
             api_data={"titles/movie/1/locale/en_US": {}},
             expected_result=media_filter.FilterResult(True),
         ),
         dict(
             testcase_name="any_availability_no_match",
             filter_config={"locale": "en_US", "anyAvailability": True},
-            media_item={"name": "foo", "justwatchId": "movie/1"},
+            item={"name": "foo", "justwatchId": "movie/1"},
             api_data={"titles/movie/1/locale/en_US": {}},
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
             testcase_name="any_availability_matches",
             filter_config={"locale": "en_US", "anyAvailability": True},
-            media_item={"name": "foo", "justwatchId": "movie/1"},
+            item={"name": "foo", "justwatchId": "movie/1"},
             api_data={
                 "titles/movie/1/locale/en_US": {
                     "offers": [
@@ -236,7 +236,7 @@ class FilterTest(parameterized.TestCase):
                 "providers": ["foo"],
                 "monetizationTypes": ["bar"],
             },
-            media_item={"name": "foo", "justwatchId": "movie/1"},
+            item={"name": "foo", "justwatchId": "movie/1"},
             api_data={
                 "titles/movie/1/locale/en_US": {
                     "offers": [
@@ -266,7 +266,7 @@ class FilterTest(parameterized.TestCase):
         dict(
             testcase_name="partial_availability",
             filter_config={"locale": "en_US", "anyAvailability": True},
-            media_item={"name": "foo", "justwatchId": "show/1"},
+            item={"name": "foo", "justwatchId": "show/1"},
             api_data={
                 "titles/show/1/locale/en_US": {
                     "seasons": [
@@ -308,7 +308,7 @@ class FilterTest(parameterized.TestCase):
                 "includeDone": False,
                 "anyAvailability": True,
             },
-            media_item={"name": "foo", "done": "all", "justwatchId": "movie/1"},
+            item={"name": "foo", "done": "all", "justwatchId": "movie/1"},
             api_data={"titles/movie/1/locale/en_US": {"offers": [_offer()]}},
             expected_result=media_filter.FilterResult(False),
         ),
@@ -319,7 +319,7 @@ class FilterTest(parameterized.TestCase):
                 "includeDone": False,
                 "anyAvailability": True,
             },
-            media_item={
+            item={
                 "name": "foo",
                 "done": "1-2.1",
                 "justwatchId": "show/1",
@@ -368,7 +368,7 @@ class FilterTest(parameterized.TestCase):
                 "includeDone": True,
                 "anyAvailability": True,
             },
-            media_item={"name": "foo", "done": "all", "justwatchId": "movie/1"},
+            item={"name": "foo", "done": "all", "justwatchId": "movie/1"},
             api_data={
                 "titles/movie/1/locale/en_US": {
                     "offers": [
@@ -389,7 +389,7 @@ class FilterTest(parameterized.TestCase):
                 "locale": "en_US",
                 "allDone": True,
             },
-            media_item={
+            item={
                 "name": "foo",
                 "done": "1-2.1",
                 "justwatchId": "show/1",
@@ -424,7 +424,7 @@ class FilterTest(parameterized.TestCase):
                 "locale": "en_US",
                 "allDone": True,
             },
-            media_item={"name": "foo", "done": "1.1", "justwatchId": "show/1"},
+            item={"name": "foo", "done": "1.1", "justwatchId": "show/1"},
             api_data={
                 "titles/show/1/locale/en_US": {
                     "seasons": [
@@ -445,7 +445,7 @@ class FilterTest(parameterized.TestCase):
         self,
         *,
         filter_config: Any,
-        media_item: Any,
+        item: Any,
         api_data: Mapping[str, Any] = immutabledict.immutabledict(),
         expected_result: media_filter.FilterResult,
     ) -> None:
@@ -458,7 +458,7 @@ class FilterTest(parameterized.TestCase):
         )
 
         result = test_filter.filter(
-            json_format.ParseDict(media_item, config_pb2.MediaItem())
+            json_format.ParseDict(item, config_pb2.MediaItem())
         )
 
         self.assertEqual(expected_result, result)

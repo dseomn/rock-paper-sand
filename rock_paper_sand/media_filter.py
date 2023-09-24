@@ -42,7 +42,7 @@ class Filter(abc.ABC):
     """Base class for filtering media and optionally adding additional info."""
 
     @abc.abstractmethod
-    def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
+    def filter(self, item: config_pb2.MediaItem) -> FilterResult:
         """Returns the result of the filter on the media item."""
         raise NotImplementedError()
 
@@ -53,9 +53,9 @@ class Not(Filter):
     def __init__(self, child: Filter, /) -> None:
         self._child = child
 
-    def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
+    def filter(self, item: config_pb2.MediaItem) -> FilterResult:
         """See base class."""
-        child_result = self._child.filter(media_item)
+        child_result = self._child.filter(item)
         return FilterResult(not child_result.matches, extra=child_result.extra)
 
 
@@ -68,9 +68,9 @@ class BinaryLogic(Filter):
         self._children = children
         self._op = op
 
-    def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
+    def filter(self, item: config_pb2.MediaItem) -> FilterResult:
         """See base class."""
-        results = tuple(child.filter(media_item) for child in self._children)
+        results = tuple(child.filter(item) for child in self._children)
         return FilterResult(
             self._op(result.matches for result in results),
             extra=frozenset(
@@ -87,9 +87,9 @@ class HasParts(Filter):
     def __init__(self, has_parts: bool) -> None:
         self._has_parts = has_parts
 
-    def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
+    def filter(self, item: config_pb2.MediaItem) -> FilterResult:
         """See base class."""
-        return FilterResult(bool(media_item.parts) == self._has_parts)
+        return FilterResult(bool(item.parts) == self._has_parts)
 
 
 class Done(Filter):
@@ -98,11 +98,10 @@ class Done(Filter):
     def __init__(self, done: str) -> None:
         self._done = multi_level_set.parse_number(done)
 
-    def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
+    def filter(self, item: config_pb2.MediaItem) -> FilterResult:
         """See base class."""
         return FilterResult(
-            self._done
-            in multi_level_set.MultiLevelSet.from_string(media_item.done)
+            self._done in multi_level_set.MultiLevelSet.from_string(item.done)
         )
 
 
@@ -130,9 +129,9 @@ class StringFieldMatcher(Filter):
                     f"Unknown string field match type: {matcher_config!r}"
                 )
 
-    def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
+    def filter(self, item: config_pb2.MediaItem) -> FilterResult:
         """See base class."""
-        return FilterResult(self._matcher(self._field_getter(media_item)))
+        return FilterResult(self._matcher(self._field_getter(item)))
 
 
 class Registry:
@@ -185,11 +184,11 @@ class Registry:
                 return Done(filter_config.done)
             case "name":
                 return StringFieldMatcher(
-                    lambda media_item: media_item.name, filter_config.name
+                    lambda item: item.name, filter_config.name
                 )
             case "custom_availability":
                 return StringFieldMatcher(
-                    lambda media_item: media_item.custom_availability,
+                    lambda item: item.custom_availability,
                     filter_config.custom_availability,
                 )
             case "justwatch":
