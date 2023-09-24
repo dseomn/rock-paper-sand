@@ -14,9 +14,7 @@
 """Multi-level sets."""
 
 from collections.abc import Collection
-from typing import NewType, TypeVar
-
-_T = TypeVar("_T")
+from typing import NewType, Self
 
 # Something like a season/episode number. E.g., season 2 would be (2,) and
 # episode 3 of season 4 would be (4, 3). Earlier levels include all children, so
@@ -79,7 +77,7 @@ class MultiLevelSet:
         self._ranges = ranges
 
     @classmethod
-    def from_string(cls: type[_T], set_str: str, /) -> _T:
+    def from_string(cls, set_str: str, /) -> Self:
         """Returns a set parsed from a string.
 
         Args:

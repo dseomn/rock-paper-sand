@@ -16,7 +16,7 @@ from collections.abc import Mapping
 import dataclasses
 import difflib
 import functools
-from typing import Any, TypeVar
+from typing import Any, Self
 
 from google.protobuf import json_format
 import requests
@@ -27,8 +27,6 @@ from rock_paper_sand import justwatch
 from rock_paper_sand import media_filter
 from rock_paper_sand import report
 from rock_paper_sand.proto import config_pb2
-
-_T = TypeVar("_T")
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -49,10 +47,10 @@ class Config:
 
     @classmethod
     def from_config_file(
-        cls: type[_T],
+        cls,
         *,
         session: requests.Session,
-    ) -> _T:
+    ) -> Self:
         """Parses a config file."""
         with open(flags_and_constants.CONFIG_FILE.value, "rb") as config_file:
             proto = json_format.ParseDict(
