@@ -19,6 +19,7 @@ import dataclasses
 import itertools
 import re
 
+from rock_paper_sand import media_item
 from rock_paper_sand import multi_level_set
 from rock_paper_sand.proto import config_pb2
 
@@ -42,7 +43,7 @@ class Filter(abc.ABC):
     """Base class for filtering media and optionally adding additional info."""
 
     @abc.abstractmethod
-    def filter(self, item: config_pb2.MediaItem) -> FilterResult:
+    def filter(self, item: media_item.MediaItem) -> FilterResult:
         """Returns the result of the filter on the media item."""
         raise NotImplementedError()
 
@@ -53,7 +54,7 @@ class Not(Filter):
     def __init__(self, child: Filter, /) -> None:
         self._child = child
 
-    def filter(self, item: config_pb2.MediaItem) -> FilterResult:
+    def filter(self, item: media_item.MediaItem) -> FilterResult:
         """See base class."""
         child_result = self._child.filter(item)
         return FilterResult(not child_result.matches, extra=child_result.extra)
@@ -68,7 +69,7 @@ class BinaryLogic(Filter):
         self._children = children
         self._op = op
 
-    def filter(self, item: config_pb2.MediaItem) -> FilterResult:
+    def filter(self, item: media_item.MediaItem) -> FilterResult:
         """See base class."""
         results = tuple(child.filter(item) for child in self._children)
         return FilterResult(
@@ -87,7 +88,7 @@ class HasParts(Filter):
     def __init__(self, has_parts: bool) -> None:
         self._has_parts = has_parts
 
-    def filter(self, item: config_pb2.MediaItem) -> FilterResult:
+    def filter(self, item: media_item.MediaItem) -> FilterResult:
         """See base class."""
         return FilterResult(bool(item.parts) == self._has_parts)
 
@@ -98,11 +99,9 @@ class Done(Filter):
     def __init__(self, done: str) -> None:
         self._done = multi_level_set.parse_number(done)
 
-    def filter(self, item: config_pb2.MediaItem) -> FilterResult:
+    def filter(self, item: media_item.MediaItem) -> FilterResult:
         """See base class."""
-        return FilterResult(
-            self._done in multi_level_set.MultiLevelSet.from_string(item.done)
-        )
+        return FilterResult(self._done in item.done)
 
 
 class StringFieldMatcher(Filter):
@@ -129,9 +128,9 @@ class StringFieldMatcher(Filter):
                     f"Unknown string field match type: {matcher_config!r}"
                 )
 
-    def filter(self, item: config_pb2.MediaItem) -> FilterResult:
+    def filter(self, item: media_item.MediaItem) -> FilterResult:
         """See base class."""
-        return FilterResult(self._matcher(self._field_getter(item)))
+        return FilterResult(self._matcher(self._field_getter(item.proto)))
 
 
 class Registry:

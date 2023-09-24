@@ -36,7 +36,7 @@ class Notify(subcommand.Subcommand):
             state_ = state.from_file()
             for report_name, report_ in config_.reports.items():
                 report_.notify(
-                    report_.generate(config_.proto.media),
+                    report_.generate(config_.media),
                     report_state=state_.reports[report_name],
                 )
                 state.to_file(state_)
@@ -62,13 +62,11 @@ class Print(subcommand.Subcommand):
             results: Any
             if args.report is None:
                 results = {
-                    name: report_.generate(config_.proto.media)
+                    name: report_.generate(config_.media)
                     for name, report_ in config_.reports.items()
                 }
             else:
-                results = config_.reports[args.report].generate(
-                    config_.proto.media
-                )
+                results = config_.reports[args.report].generate(config_.media)
             print(
                 yaml.safe_dump(
                     results,

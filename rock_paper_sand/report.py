@@ -24,13 +24,14 @@ from typing import Any
 import yaml
 
 from rock_paper_sand import media_filter
+from rock_paper_sand import media_item
 from rock_paper_sand.proto import config_pb2
 from rock_paper_sand.proto import state_pb2
 
 
 def _filter_media_item(
     filter_: media_filter.Filter,
-    item: config_pb2.MediaItem,
+    item: media_item.MediaItem,
 ) -> Mapping[str, Any] | None:
     """Returns info about the item if it matches, or None if it doesn't."""
     parts: list[Any] = []
@@ -38,20 +39,20 @@ def _filter_media_item(
     for part in item.parts:
         part_result = _filter_media_item(filter_, part)
         if part_result is None:
-            parts.append(f"unmatched part: {part.name}")
+            parts.append(f"unmatched part: {part.proto.name}")
         else:
             matched_any_part = True
             parts.append(part_result)
     item_result = filter_.filter(item)
     if not item_result.matches and not matched_any_part:
         return None
-    result: dict[str, Any] = {"name": item.name}
-    if item.comment:
-        result["comment"] = item.comment
-    if item.done:
-        result["done"] = item.done
-    if item.custom_availability:
-        result["customAvailability"] = item.custom_availability
+    result: dict[str, Any] = {"name": item.proto.name}
+    if item.proto.comment:
+        result["comment"] = item.proto.comment
+    if item.proto.done:
+        result["done"] = item.proto.done
+    if item.proto.custom_availability:
+        result["customAvailability"] = item.proto.custom_availability
     extra_information = []
     if not item_result.matches:
         extra_information.append("parent did not match, but children did")
@@ -108,7 +109,7 @@ class Report:
             self._sections[section.name] = filter_registry.parse(section.filter)
 
     def generate(
-        self, media: Sequence[config_pb2.MediaItem]
+        self, media: Sequence[media_item.MediaItem]
     ) -> Mapping[str, Any]:
         """Returns a mapping from section name to results of the section."""
         result = {}

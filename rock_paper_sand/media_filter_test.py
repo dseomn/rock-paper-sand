@@ -24,6 +24,7 @@ from absl.testing import parameterized
 from google.protobuf import json_format
 
 from rock_paper_sand import media_filter
+from rock_paper_sand import media_item
 from rock_paper_sand.proto import config_pb2
 
 
@@ -31,7 +32,7 @@ class _ExtraInfoFilter(media_filter.Filter):
     def __init__(self, extra: Set[str]) -> None:
         self._extra = extra
 
-    def filter(self, item: config_pb2.MediaItem) -> media_filter.FilterResult:
+    def filter(self, item: media_item.MediaItem) -> media_filter.FilterResult:
         """See base class."""
         return media_filter.FilterResult(True, extra=self._extra)
 
@@ -227,7 +228,7 @@ class MediaFilterTest(parameterized.TestCase):
         test_filter = registry.parse(
             json_format.ParseDict(filter_config, config_pb2.Filter())
         )
-        result = test_filter.filter(item)
+        result = test_filter.filter(media_item.MediaItem.from_config(item))
         self.assertEqual(expected_result, result)
 
     def test_justwatch_filter(self) -> None:

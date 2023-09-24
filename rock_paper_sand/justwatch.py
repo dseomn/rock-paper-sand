@@ -34,6 +34,7 @@ import dateutil.parser
 import requests
 
 from rock_paper_sand import media_filter
+from rock_paper_sand import media_item
 from rock_paper_sand import multi_level_set
 from rock_paper_sand import network
 from rock_paper_sand.proto import config_pb2
@@ -291,14 +292,13 @@ class Filter(media_filter.Filter):
             return False
         return True
 
-    def filter(self, item: config_pb2.MediaItem) -> media_filter.FilterResult:
+    def filter(self, item: media_item.MediaItem) -> media_filter.FilterResult:
         """See base class."""
         now = datetime.datetime.now(tz=datetime.timezone.utc)
-        if not item.justwatch_id:
+        if not item.proto.justwatch_id:
             return media_filter.FilterResult(False)
-        done = multi_level_set.MultiLevelSet.from_string(item.done)
         relative_url = (
-            f"titles/{item.justwatch_id}/locale/{self._config.locale}"
+            f"titles/{item.proto.justwatch_id}/locale/{self._config.locale}"
         )
         content = self._api.get(relative_url)
         extra_information: set[str] = set()
@@ -317,7 +317,7 @@ class Filter(media_filter.Filter):
                 exclude=(
                     multi_level_set.MultiLevelSet(())
                     if self._config.include_done
-                    else done
+                    else item.done
                 ),
             ):
                 availability.update(
@@ -332,7 +332,7 @@ class Filter(media_filter.Filter):
             extra_information.update(availability.to_extra_information())
         if self._config.all_done and not self._all_done(
             content,
-            done=done,
+            done=item.done,
             relative_url=relative_url,
         ):
             return media_filter.FilterResult(False)

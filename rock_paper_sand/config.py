@@ -122,7 +122,7 @@ class Config:
         if not self.proto.lint.issues_report:
             return {}
         results = self.reports[self.proto.lint.issues_report].generate(
-            self.proto.media
+            self.media
         )
         if not any(results.values()):
             return {}

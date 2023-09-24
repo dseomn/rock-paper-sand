@@ -27,6 +27,7 @@ import requests
 
 from rock_paper_sand import justwatch
 from rock_paper_sand import media_filter
+from rock_paper_sand import media_item
 from rock_paper_sand.proto import config_pb2
 
 _NOW = datetime.datetime.now(tz=datetime.timezone.utc)
@@ -458,7 +459,9 @@ class FilterTest(parameterized.TestCase):
         )
 
         result = test_filter.filter(
-            json_format.ParseDict(item, config_pb2.MediaItem())
+            media_item.MediaItem.from_config(
+                json_format.ParseDict(item, config_pb2.MediaItem())
+            )
         )
 
         self.assertEqual(expected_result, result)
@@ -483,9 +486,11 @@ class FilterTest(parameterized.TestCase):
 
         with self.assertWarnsRegex(UserWarning, "0042.*might be a placeholder"):
             result = test_filter.filter(
-                json_format.ParseDict(
-                    {"name": "foo", "justwatchId": "movie/1"},
-                    config_pb2.MediaItem(),
+                media_item.MediaItem.from_config(
+                    json_format.ParseDict(
+                        {"name": "foo", "justwatchId": "movie/1"},
+                        config_pb2.MediaItem(),
+                    )
                 )
             )
         self.assertEqual(
