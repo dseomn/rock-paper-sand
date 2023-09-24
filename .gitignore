@@ -1,5 +1,6 @@
 *_pb2.py
 *_pb2.pyi
 .coverage
+/*.egg-info/
 /build/
 __pycache__/
