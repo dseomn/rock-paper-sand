@@ -239,7 +239,7 @@ class Filter(media_filter.Filter):
         content: Any,
         *,
         relative_url: str,
-        now: datetime.timedelta,
+        now: datetime.datetime,
         done: multi_level_set.MultiLevelSet,
     ) -> _Availability:
         availability = _Availability(total_episode_count=1)
