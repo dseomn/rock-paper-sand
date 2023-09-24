@@ -466,6 +466,10 @@ class FilterTest(parameterized.TestCase):
 
         self.assertEqual(expected_result, result)
 
+    def test_missing_locale_field(self) -> None:
+        with self.assertRaisesRegex(ValueError, "locale"):
+            justwatch.Filter(config_pb2.JustWatchFilter(), api=self._mock_api)
+
     def test_possible_unknown_placeholder_datetime(self) -> None:
         self._mock_api.get.return_value = {
             "offers": [

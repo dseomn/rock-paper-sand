@@ -209,6 +209,8 @@ class Filter(media_filter.CachedFilter):
         super().__init__()
         self._config = filter_config
         self._api = api
+        if not self._config.locale:
+            raise ValueError("The locale field is required.")
 
     def _iter_episodes_and_relative_url(
         self,
