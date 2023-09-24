@@ -126,7 +126,7 @@ class Report:
         results: Mapping[str, Any],
         *,
         report_state: state_pb2.ReportState,
-        subprocess_run: ... = subprocess.run,
+        subprocess_run: Any = subprocess.run,
     ):
         """Sends any notifications defined in the report.
 

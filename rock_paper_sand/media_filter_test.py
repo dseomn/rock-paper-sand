@@ -14,6 +14,7 @@
 
 from collections.abc import Mapping, Set
 import re
+from typing import Any
 from unittest import mock
 
 from absl.testing import absltest
@@ -224,7 +225,7 @@ class MediaFilterTest(parameterized.TestCase):
         self,
         *,
         filter_by_name: Mapping[str, media_filter.Filter],
-        filter_config: ...,
+        filter_config: Any,
         media_item: config_pb2.MediaItem = config_pb2.MediaItem(name="foo"),
         expected_result: media_filter.FilterResult,
     ):
@@ -282,7 +283,7 @@ class MediaFilterTest(parameterized.TestCase):
     def test_parse_error(
         self,
         *,
-        filter_config: ...,
+        filter_config: Any,
         error_class: type[Exception],
         error_regex: str,
     ):

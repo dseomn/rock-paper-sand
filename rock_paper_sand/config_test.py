@@ -15,6 +15,7 @@
 import json
 import pathlib
 import textwrap
+from typing import Any
 
 from absl.testing import absltest
 from absl.testing import flagsaver
@@ -121,8 +122,8 @@ class ConfigTest(parameterized.TestCase):
     def test_lint(
         self,
         *,
-        config_data: ...,
-        expected_results: ...,
+        config_data: Any,
+        expected_results: Any,
     ):
         self.enter_context(
             flagsaver.flagsaver(

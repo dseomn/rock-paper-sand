@@ -19,6 +19,7 @@ import email.policy
 import json
 import subprocess
 import textwrap
+from typing import Any
 from unittest import mock
 
 from absl.testing import absltest
@@ -135,9 +136,9 @@ class ReportTest(parameterized.TestCase):
     )
     def test_report_generate(
         self,
-        report_config: ...,
-        media: ...,
-        expected_result: ...,
+        report_config: Any,
+        media: Any,
+        expected_result: Any,
     ):
         filter_registry = media_filter.Registry()
         filter_registry.register(
@@ -175,9 +176,9 @@ class ReportTest(parameterized.TestCase):
     def test_report_notify_noop(
         self,
         *,
-        report_config: ...,
-        previous_results: ...,
-        current_results: ...,
+        report_config: Any,
+        previous_results: Any,
+        current_results: Any,
     ):
         report_ = report.Report(
             json_format.ParseDict(report_config, config_pb2.Report()),
@@ -265,9 +266,9 @@ class ReportTest(parameterized.TestCase):
     def test_report_notify(
         self,
         *,
-        previous_results: ...,
-        current_results: ...,
-        expected_message_parts: ...,
+        previous_results: Any,
+        current_results: Any,
+        expected_message_parts: Any,
     ):
         report_ = report.Report(
             json_format.ParseDict(

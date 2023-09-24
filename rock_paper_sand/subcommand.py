@@ -16,6 +16,7 @@
 import abc
 import argparse
 from collections.abc import Callable
+from typing import Any
 
 
 class Subcommand(abc.ABC):
@@ -47,10 +48,10 @@ class ContainerSubcommand(Subcommand):
 
     def add_subcommand(
         self,
-        subparsers: ...,
+        subparsers: Any,
         subcommand_callback: Callable[[argparse.ArgumentParser], Subcommand],
         name: str,
-        **add_parser_kwargs: ...,
+        **add_parser_kwargs: Any,
     ):
         """Adds a subcommand."""
         subcommand_parser = subparsers.add_parser(name, **add_parser_kwargs)

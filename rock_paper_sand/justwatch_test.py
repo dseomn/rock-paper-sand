@@ -442,8 +442,8 @@ class FilterTest(parameterized.TestCase):
     def test_filter(
         self,
         *,
-        filter_config: ...,
-        media_item: ...,
+        filter_config: Any,
+        media_item: Any,
         api_data: Mapping[str, Any] = immutabledict.immutabledict(),
         expected_result: media_filter.FilterResult,
     ):
