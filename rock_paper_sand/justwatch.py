@@ -244,7 +244,6 @@ class Filter(media_filter.Filter):
         *,
         relative_url: str,
         now: datetime.datetime,
-        done: multi_level_set.MultiLevelSet,
     ) -> _Availability:
         availability = _Availability(total_episode_count=1)
         for offer in content.get("offers", ()):
@@ -328,7 +327,6 @@ class Filter(media_filter.Filter):
                         episode,
                         relative_url=episode_relative_url,
                         now=now,
-                        done=done,
                     )
                 )
             if not availability.episode_count_by_offer:
