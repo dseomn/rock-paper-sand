@@ -198,7 +198,9 @@ class MultiLevelSetTest(parameterized.TestCase):
         is_member: bool,
     ) -> None:
         test_set = multi_level_set.MultiLevelSet.from_string(set_str)
-        self.assertEqual(is_member, number in test_set)
+        self.assertEqual(
+            is_member, multi_level_set.MultiLevelNumber(number) in test_set
+        )
 
     @parameterized.parameters(
         ".",
