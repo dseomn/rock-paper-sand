@@ -14,9 +14,8 @@
 """Filters for media items."""
 
 import abc
-from collections.abc import Callable, Iterable, Mapping, Set
+from collections.abc import Callable, Iterable, Set
 import dataclasses
-import functools
 import itertools
 import re
 

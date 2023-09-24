@@ -20,8 +20,6 @@ from typing import Any
 from absl.testing import absltest
 from absl.testing import flagsaver
 from absl.testing import parameterized
-from google.protobuf import json_format
-import yaml
 
 from rock_paper_sand import config
 from rock_paper_sand import flags_and_constants
