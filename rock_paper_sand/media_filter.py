@@ -48,6 +48,27 @@ class Filter(abc.ABC):
         raise NotImplementedError()
 
 
+class CachedFilter(Filter, abc.ABC):
+    """Base class for filters that cache their results.
+
+    Child classes should override filter_implementation() instead of filter().
+    """
+
+    def __init__(self) -> None:
+        self._result_by_id: dict[str, FilterResult] = {}
+
+    @abc.abstractmethod
+    def filter_implementation(self, item: media_item.MediaItem) -> FilterResult:
+        """See Filter.filter."""
+        raise NotImplementedError()
+
+    def filter(self, item: media_item.MediaItem) -> FilterResult:
+        """See base class."""
+        if item.id not in self._result_by_id:
+            self._result_by_id[item.id] = self.filter_implementation(item)
+        return self._result_by_id[item.id]
+
+
 class Not(Filter):
     """Inverts another filter."""
 

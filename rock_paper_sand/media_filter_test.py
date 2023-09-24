@@ -28,12 +28,23 @@ from rock_paper_sand import media_item
 from rock_paper_sand.proto import config_pb2
 
 
-class _ExtraInfoFilter(media_filter.Filter):
-    def __init__(self, extra: Set[str]) -> None:
-        self._extra = extra
+class _ExtraInfoFilter(media_filter.CachedFilter):
+    """Test filter that returns the given extra info.
 
-    def filter(self, item: media_item.MediaItem) -> media_filter.FilterResult:
+    Attributes:
+        call_count: Number of times filter_implementation() was called.
+    """
+
+    def __init__(self, extra: Set[str]) -> None:
+        super().__init__()
+        self._extra = extra
+        self.call_count = 0
+
+    def filter_implementation(
+        self, item: media_item.MediaItem
+    ) -> media_filter.FilterResult:
         """See base class."""
+        self.call_count += 1
         return media_filter.FilterResult(True, extra=self._extra)
 
 
@@ -230,6 +241,18 @@ class MediaFilterTest(parameterized.TestCase):
         )
         result = test_filter.filter(media_item.MediaItem.from_config(item))
         self.assertEqual(expected_result, result)
+
+    def test_cached_filter(self) -> None:
+        test_filter = _ExtraInfoFilter({"foo"})
+        item = media_item.MediaItem.from_config(config_pb2.MediaItem())
+        expected_result = media_filter.FilterResult(True, extra={"foo"})
+
+        first_result = test_filter.filter(item)
+        second_result = test_filter.filter(item)
+
+        self.assertEqual(expected_result, first_result)
+        self.assertEqual(expected_result, second_result)
+        self.assertEqual(1, test_filter.call_count)
 
     def test_justwatch_filter(self) -> None:
         mock_filter = mock.create_autospec(

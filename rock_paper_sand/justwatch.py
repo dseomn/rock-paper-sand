@@ -197,7 +197,7 @@ def _content_number(content: Any) -> multi_level_set.MultiLevelNumber:
     return multi_level_set.MultiLevelNumber(tuple(parts))
 
 
-class Filter(media_filter.Filter):
+class Filter(media_filter.CachedFilter):
     """Filter based on JustWatch's API."""
 
     def __init__(
@@ -206,6 +206,7 @@ class Filter(media_filter.Filter):
         *,
         api: Api,
     ) -> None:
+        super().__init__()
         self._config = filter_config
         self._api = api
 
@@ -292,7 +293,9 @@ class Filter(media_filter.Filter):
             return False
         return True
 
-    def filter(self, item: media_item.MediaItem) -> media_filter.FilterResult:
+    def filter_implementation(
+        self, item: media_item.MediaItem
+    ) -> media_filter.FilterResult:
         """See base class."""
         now = datetime.datetime.now(tz=datetime.timezone.utc)
         if not item.proto.justwatch_id:

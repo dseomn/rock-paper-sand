@@ -16,6 +16,7 @@
 from collections.abc import Sequence
 import dataclasses
 from typing import Self
+import uuid
 
 from rock_paper_sand import multi_level_set
 from rock_paper_sand.proto import config_pb2
@@ -26,11 +27,18 @@ class MediaItem:
     """Media item.
 
     Attributes:
+        id: Unique ID of the media item. This is not stable across runs of the
+            program, so it should not be stored anywhere or shown to the user.
+            It's designed for caching filter results in memory.
         proto: Proto from the config file.
         done: Parsed proto.done field.
         parts: Parsed proto.parts field.
     """
 
+    id: str = dataclasses.field(
+        default_factory=lambda: str(uuid.uuid4()),
+        repr=False,
+    )
     proto: config_pb2.MediaItem
     done: multi_level_set.MultiLevelSet
     parts: Sequence["MediaItem"]

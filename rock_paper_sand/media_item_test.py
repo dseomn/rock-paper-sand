@@ -42,10 +42,12 @@ class MediaItemTest(parameterized.TestCase):
 
         self.assertEqual(
             media_item.MediaItem(
+                id=mock.ANY,
                 proto=proto,
                 done=mock.ANY,
                 parts=(
                     media_item.MediaItem(
+                        id=mock.ANY,
                         proto=config_pb2.MediaItem(name="some-part"),
                         done=mock.ANY,
                         parts=(),
@@ -56,6 +58,12 @@ class MediaItemTest(parameterized.TestCase):
         )
         self.assertIn(multi_level_set.parse_number("1"), item.done)
         self.assertNotIn(multi_level_set.parse_number("1"), item.parts[0].done)
+
+    def test_id(self) -> None:
+        self.assertNotEqual(
+            media_item.MediaItem.from_config(config_pb2.MediaItem()),
+            media_item.MediaItem.from_config(config_pb2.MediaItem()),
+        )
 
 
 if __name__ == "__main__":
