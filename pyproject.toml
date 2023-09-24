@@ -26,6 +26,21 @@ omit = [
   "**/conftest.py",
 ]
 
+[tool.mypy]
+disallow_any_generics = true
+disallow_untyped_defs = true
+packages = ["rock_paper_sand"]
+warn_redundant_casts = true
+warn_unreachable = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = [
+  "absl.*",
+  "google.protobuf.*",
+]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 addopts = """\
   --cov=. \

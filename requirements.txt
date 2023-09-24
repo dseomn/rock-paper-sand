@@ -6,5 +6,9 @@ python-dateutil
 pyyaml
 requests
 setuptools
-setuptools-protobuf
+setuptools-protobuf[mypy]
+types-protobuf
+types-python-dateutil
+types-pyyaml
+types-requests
 urllib3
