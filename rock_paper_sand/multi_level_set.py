@@ -73,7 +73,7 @@ def _le_end(number: MultiLevelNumber, *, end: MultiLevelNumber) -> bool:
 class MultiLevelSet:
     """A set of MultiLevelNumber."""
 
-    def __init__(self, ranges: Collection[MultiLevelRange]):
+    def __init__(self, ranges: Collection[MultiLevelRange]) -> None:
         self._ranges = ranges
 
     @classmethod

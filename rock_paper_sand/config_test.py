@@ -124,7 +124,7 @@ class ConfigTest(parameterized.TestCase):
         *,
         config_data: Any,
         expected_results: Any,
-    ):
+    ) -> None:
         self.enter_context(
             flagsaver.flagsaver(
                 (
@@ -143,7 +143,7 @@ class ConfigTest(parameterized.TestCase):
 
         self.assertEqual(expected_results, results)
 
-    def test_example_config(self):
+    def test_example_config(self) -> None:
         with flagsaver.flagsaver(
             (
                 flags_and_constants.CONFIG_FILE,

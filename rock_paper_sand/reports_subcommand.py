@@ -27,7 +27,7 @@ from rock_paper_sand import subcommand
 class Notify(subcommand.Subcommand):
     """Sends report notifications."""
 
-    def run(self, args: argparse.Namespace):
+    def run(self, args: argparse.Namespace) -> None:
         """See base class."""
         del args  # Unused.
         with network.requests_session() as session:
@@ -44,7 +44,7 @@ class Notify(subcommand.Subcommand):
 class Print(subcommand.Subcommand):
     """Prints the output of reports."""
 
-    def __init__(self, parser: argparse.ArgumentParser):
+    def __init__(self, parser: argparse.ArgumentParser) -> None:
         """See base class."""
         super().__init__(parser)
         parser.add_argument(
@@ -54,7 +54,7 @@ class Print(subcommand.Subcommand):
             nargs="?",
         )
 
-    def run(self, args: argparse.Namespace):
+    def run(self, args: argparse.Namespace) -> None:
         """See base class."""
         with network.requests_session() as session:
             config_ = config.Config.from_config_file(session=session)
@@ -81,7 +81,7 @@ class Print(subcommand.Subcommand):
 class Main(subcommand.ContainerSubcommand):
     """Main reports command."""
 
-    def __init__(self, parser: argparse.ArgumentParser):
+    def __init__(self, parser: argparse.ArgumentParser) -> None:
         """See base class."""
         super().__init__(parser)
         subparsers = parser.add_subparsers()

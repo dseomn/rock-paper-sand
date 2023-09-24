@@ -28,7 +28,7 @@ flags.adopt_module_key_flags(flags_and_constants)
 
 
 class MainCommand(subcommand.ContainerSubcommand):
-    def __init__(self, parser: argparse.ArgumentParser):
+    def __init__(self, parser: argparse.ArgumentParser) -> None:
         """See base class."""
         super().__init__(parser)
         subparsers = parser.add_subparsers()
@@ -52,7 +52,7 @@ class MainCommand(subcommand.ContainerSubcommand):
         )
 
 
-def main():
+def main() -> None:
     parser = argparse_flags.ArgumentParser()
     main_command = MainCommand(parser)
     args = parser.parse_args()

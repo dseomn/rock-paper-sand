@@ -28,7 +28,7 @@ class _TestContainer(subcommand.ContainerSubcommand):
         parser: argparse.ArgumentParser,
         *,
         mock_subcommands: Mapping[str, type[subcommand.Subcommand]]
-    ):
+    ) -> None:
         super().__init__(parser)
         subparsers = parser.add_subparsers()
         for name, mock_subcommand_class in mock_subcommands.items():
@@ -36,7 +36,7 @@ class _TestContainer(subcommand.ContainerSubcommand):
 
 
 class SubcommandTest(parameterized.TestCase):
-    def test_container_runs_subcommand(self):
+    def test_container_runs_subcommand(self) -> None:
         mock_subcommand_class = mock.create_autospec(
             subcommand.Subcommand, spec_set=True
         )
@@ -50,7 +50,7 @@ class SubcommandTest(parameterized.TestCase):
 
         mock_subcommand_class.return_value.run.assert_called_once_with(args)
 
-    def test_container_prints_help(self):
+    def test_container_prints_help(self) -> None:
         parser = argparse.ArgumentParser()
         mock_print_help = self.enter_context(
             mock.patch.object(

@@ -70,7 +70,7 @@ class Api:
         *,
         session: requests.Session,
         base_url: str = _BASE_URL,
-    ):
+    ) -> None:
         self._session = session
         self._base_url = base_url
         self._cache = {}
@@ -157,7 +157,7 @@ class _Availability:
         default_factory=collections.Counter
     )
 
-    def update(self, other: "_Availability"):
+    def update(self, other: "_Availability") -> None:
         self.total_episode_count += other.total_episode_count
         self.episode_count_by_offer.update(other.episode_count_by_offer)
 
@@ -198,7 +198,7 @@ class Filter(media_filter.Filter):
         filter_config: config_pb2.JustWatchFilter,
         *,
         api: Api,
-    ):
+    ) -> None:
         self._config = filter_config
         self._api = api
 

@@ -26,7 +26,7 @@ class Subcommand(abc.ABC):
         parser: Parser for this subcommand.
     """
 
-    def __init__(self, parser: argparse.ArgumentParser):
+    def __init__(self, parser: argparse.ArgumentParser) -> None:
         """Initializer.
 
         Subclasses will generally add their arguments to the parser in this
@@ -38,7 +38,7 @@ class Subcommand(abc.ABC):
         self.parser = parser
 
     @abc.abstractmethod
-    def run(self, args: argparse.Namespace):
+    def run(self, args: argparse.Namespace) -> None:
         """Runs the subcommand."""
         raise NotImplementedError()
 
@@ -52,13 +52,13 @@ class ContainerSubcommand(Subcommand):
         subcommand_callback: Callable[[argparse.ArgumentParser], Subcommand],
         name: str,
         **add_parser_kwargs: Any,
-    ):
+    ) -> None:
         """Adds a subcommand."""
         subcommand_parser = subparsers.add_parser(name, **add_parser_kwargs)
         subcommand_instance = subcommand_callback(subcommand_parser)
         subcommand_parser.set_defaults(subcommand=subcommand_instance)
 
-    def run(self, args: argparse.Namespace):
+    def run(self, args: argparse.Namespace) -> None:
         """See base class."""
         if hasattr(args, "subcommand") and args.subcommand is not self:
             args.subcommand.run(args)

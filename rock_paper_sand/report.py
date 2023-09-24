@@ -78,7 +78,7 @@ def _add_diff_attachment(
     name: str,
     old: str | None,
     new: str | None,
-):
+) -> None:
     message.add_attachment(
         "".join(
             difflib.unified_diff(
@@ -101,7 +101,7 @@ class Report:
         report_config: config_pb2.Report,
         *,
         filter_registry: media_filter.Registry,
-    ):
+    ) -> None:
         self._config = report_config
         self._sections = {}
         for section in report_config.sections:
@@ -127,7 +127,7 @@ class Report:
         *,
         report_state: state_pb2.ReportState,
         subprocess_run: Any = subprocess.run,
-    ):
+    ) -> None:
         """Sends any notifications defined in the report.
 
         Args:

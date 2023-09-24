@@ -24,7 +24,7 @@ from rock_paper_sand.proto import state_pb2
 
 
 class StateTest(parameterized.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self._state_path = (
             pathlib.Path(self.create_tempdir("state").full_path)
@@ -37,10 +37,10 @@ class StateTest(parameterized.TestCase):
             )
         )
 
-    def test_from_file_not_found(self):
+    def test_from_file_not_found(self) -> None:
         self.assertEqual(state_pb2.State(), state.from_file())
 
-    def test_round_trip(self):
+    def test_round_trip(self) -> None:
         state_to_write = state_pb2.State(
             reports={
                 "foo": state_pb2.ReportState(

@@ -25,13 +25,13 @@ from rock_paper_sand import justwatch_subcommand
 
 
 class JustWatchSubcommandTest(parameterized.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self._mock_api = mock.create_autospec(
             justwatch.Api, instance=True, spec_set=True
         )
 
-    def test_search(self):
+    def test_search(self) -> None:
         parser = argparse.ArgumentParser()
         output = io.StringIO()
         self._mock_api.post.return_value = {

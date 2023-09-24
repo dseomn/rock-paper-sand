@@ -27,7 +27,7 @@ from rock_paper_sand import subcommand
 class Lint(subcommand.Subcommand):
     """Lints the config file."""
 
-    def run(self, args: argparse.Namespace):
+    def run(self, args: argparse.Namespace) -> None:
         """See base class."""
         del args  # Unused.
         with network.null_requests_session() as session:
@@ -49,7 +49,7 @@ class Lint(subcommand.Subcommand):
 class Main(subcommand.ContainerSubcommand):
     """Main config command."""
 
-    def __init__(self, parser: argparse.ArgumentParser):
+    def __init__(self, parser: argparse.ArgumentParser) -> None:
         """See base class."""
         super().__init__(parser)
         subparsers = parser.add_subparsers()

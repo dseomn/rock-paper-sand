@@ -34,7 +34,7 @@ from rock_paper_sand.proto import state_pb2
 
 
 class _ExtraInfoFilter(media_filter.Filter):
-    def __init__(self, extra: Set[str]):
+    def __init__(self, extra: Set[str]) -> None:
         self._extra = extra
 
     def filter(
@@ -140,7 +140,7 @@ class ReportTest(parameterized.TestCase):
         report_config: Any,
         media: Any,
         expected_result: Any,
-    ):
+    ) -> None:
         filter_registry = media_filter.Registry()
         filter_registry.register(
             "extra", _ExtraInfoFilter({"example extra info"})
@@ -180,7 +180,7 @@ class ReportTest(parameterized.TestCase):
         report_config: Any,
         previous_results: Any,
         current_results: Any,
-    ):
+    ) -> None:
         report_ = report.Report(
             json_format.ParseDict(report_config, config_pb2.Report()),
             filter_registry=media_filter.Registry(),
@@ -270,7 +270,7 @@ class ReportTest(parameterized.TestCase):
         previous_results: Any,
         current_results: Any,
         expected_message_parts: Any,
-    ):
+    ) -> None:
         report_ = report.Report(
             json_format.ParseDict(
                 {

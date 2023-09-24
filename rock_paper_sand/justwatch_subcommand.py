@@ -25,14 +25,14 @@ from rock_paper_sand import network
 from rock_paper_sand import subcommand
 
 
-def _add_locale_arg(parser: argparse.ArgumentParser):
+def _add_locale_arg(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--locale", help="JustWatch locale.", required=True)
 
 
 class Locales(subcommand.Subcommand):
     """Prints the available JustWatch locales."""
 
-    def run(self, args: argparse.Namespace):
+    def run(self, args: argparse.Namespace) -> None:
         """See base class."""
         del args  # Unused.
         with network.requests_session() as session:
@@ -43,12 +43,12 @@ class Locales(subcommand.Subcommand):
 class MonetizationTypes(subcommand.Subcommand):
     """Prints the available JustWatch monetization types."""
 
-    def __init__(self, parser: argparse.ArgumentParser):
+    def __init__(self, parser: argparse.ArgumentParser) -> None:
         """See base class."""
         super().__init__(parser)
         _add_locale_arg(parser)
 
-    def run(self, args: argparse.Namespace):
+    def run(self, args: argparse.Namespace) -> None:
         """See base class."""
         with network.requests_session() as session:
             api = justwatch.Api(session=session)
@@ -63,12 +63,12 @@ class MonetizationTypes(subcommand.Subcommand):
 class Providers(subcommand.Subcommand):
     """Prints the available JustWatch providers."""
 
-    def __init__(self, parser: argparse.ArgumentParser):
+    def __init__(self, parser: argparse.ArgumentParser) -> None:
         """See base class."""
         super().__init__(parser)
         _add_locale_arg(parser)
 
-    def run(self, args: argparse.Namespace):
+    def run(self, args: argparse.Namespace) -> None:
         """See base class."""
         with network.requests_session() as session:
             api = justwatch.Api(session=session)
@@ -78,7 +78,7 @@ class Providers(subcommand.Subcommand):
 class Search(subcommand.Subcommand):
     """Searches for a media item."""
 
-    def __init__(self, parser: argparse.ArgumentParser):
+    def __init__(self, parser: argparse.ArgumentParser) -> None:
         """See base class."""
         super().__init__(parser)
         _add_locale_arg(parser)
@@ -90,7 +90,7 @@ class Search(subcommand.Subcommand):
         *,
         out_file: IO[str] = sys.stdout,
         api: justwatch.Api | None = None,
-    ):
+    ) -> None:
         """See base class."""
         with network.requests_session() as session:
             if api is None:
@@ -117,7 +117,7 @@ class Search(subcommand.Subcommand):
 class Main(subcommand.ContainerSubcommand):
     """Main JustWatch API command."""
 
-    def __init__(self, parser: argparse.ArgumentParser):
+    def __init__(self, parser: argparse.ArgumentParser) -> None:
         """See base class."""
         super().__init__(parser)
         subparsers = parser.add_subparsers()

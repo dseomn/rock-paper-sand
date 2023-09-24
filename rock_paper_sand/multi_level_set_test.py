@@ -28,7 +28,7 @@ class MultiLevelSetTest(parameterized.TestCase):
         self,
         number_str: str,
         number: tuple[int, ...],
-    ):
+    ) -> None:
         self.assertEqual(number, multi_level_set.parse_number(number_str))
 
     @parameterized.parameters(
@@ -40,7 +40,7 @@ class MultiLevelSetTest(parameterized.TestCase):
         "1.",
         "1.-2",
     )
-    def test_parse_number_invalid(self, number_str: str):
+    def test_parse_number_invalid(self, number_str: str) -> None:
         with self.assertRaisesRegex(ValueError, "MultiLevelNumber"):
             multi_level_set.parse_number(number_str)
 
@@ -196,7 +196,7 @@ class MultiLevelSetTest(parameterized.TestCase):
         set_str: str,
         number: tuple[int, ...],
         is_member: bool,
-    ):
+    ) -> None:
         test_set = multi_level_set.MultiLevelSet.from_string(set_str)
         self.assertEqual(is_member, number in test_set)
 
@@ -218,7 +218,7 @@ class MultiLevelSetTest(parameterized.TestCase):
         ",1",
         "1,",
     )
-    def test_invalid_set(self, set_str: str):
+    def test_invalid_set(self, set_str: str) -> None:
         with self.assertRaisesRegex(ValueError, "Invalid multi level set"):
             multi_level_set.MultiLevelSet.from_string(set_str)
 

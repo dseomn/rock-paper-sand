@@ -29,7 +29,7 @@ def from_file() -> state_pb2.State:
         return state_pb2.State()
 
 
-def to_file(state: state_pb2.State):
+def to_file(state: state_pb2.State) -> None:
     """Saves the state to the state file."""
     state_path = pathlib.Path(flags_and_constants.STATE_FILE.value)
     state_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)

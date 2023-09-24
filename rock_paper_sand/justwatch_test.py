@@ -49,7 +49,7 @@ def _offer(
 
 
 class JustWatchApiTest(parameterized.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self._mock_session = mock.create_autospec(
             requests.Session, spec_set=True, instance=True
@@ -60,7 +60,7 @@ class JustWatchApiTest(parameterized.TestCase):
         )
         self._mock_session.reset_mock()
 
-    def test_get(self):
+    def test_get(self) -> None:
         self._mock_session.get.return_value.json.return_value = "foo"
 
         data = self._api.get("bar")
@@ -75,7 +75,7 @@ class JustWatchApiTest(parameterized.TestCase):
             self._mock_session.mock_calls,
         )
 
-    def test_cache(self):
+    def test_cache(self) -> None:
         self._mock_session.get.return_value.json.return_value = "foo"
         self._api.get("bar")
         self._mock_session.reset_mock()
@@ -85,7 +85,7 @@ class JustWatchApiTest(parameterized.TestCase):
         self.assertEqual("foo", data)
         self.assertEmpty(self._mock_session.mock_calls)
 
-    def test_post(self):
+    def test_post(self) -> None:
         self._mock_session.post.return_value.json.return_value = "foo"
 
         data = self._api.post("bar", ["payload"])
@@ -100,7 +100,7 @@ class JustWatchApiTest(parameterized.TestCase):
             self._mock_session.mock_calls,
         )
 
-    def test_locales(self):
+    def test_locales(self) -> None:
         self._mock_session.get.return_value.json.return_value = [
             {"full_locale": "foo"},
             {"full_locale": "bar"},
@@ -113,7 +113,7 @@ class JustWatchApiTest(parameterized.TestCase):
             f"{self._base_url}/locales/state"
         )
 
-    def test_providers(self):
+    def test_providers(self) -> None:
         self._mock_session.get.return_value.json.return_value = [
             {"short_name": "foo", "clear_name": "Foo+"},
         ]
@@ -125,7 +125,7 @@ class JustWatchApiTest(parameterized.TestCase):
             f"{self._base_url}/providers/locale/en_US"
         )
 
-    def test_providers_cached(self):
+    def test_providers_cached(self) -> None:
         self._mock_session.get.return_value.json.return_value = [
             {"short_name": "foo", "clear_name": "Foo+"},
         ]
@@ -137,7 +137,7 @@ class JustWatchApiTest(parameterized.TestCase):
         self.assertEqual({"foo": "Foo+"}, providers)
         self.assertEmpty(self._mock_session.mock_calls)
 
-    def test_provider_name(self):
+    def test_provider_name(self) -> None:
         self._mock_session.get.return_value.json.return_value = [
             {"short_name": "foo", "clear_name": "Foo+"},
         ]
@@ -146,11 +146,11 @@ class JustWatchApiTest(parameterized.TestCase):
 
         self.assertEqual("Foo+", provider_name)
 
-    def test_provider_name_not_found(self):
+    def test_provider_name_not_found(self) -> None:
         self._mock_session.get.return_value.json.return_value = []
         self.assertEqual("foo", self._api.provider_name("foo", locale="en_US"))
 
-    def test_monetization_types(self):
+    def test_monetization_types(self) -> None:
         self._mock_session.get.return_value.json.return_value = [
             {"monetization_types": ["foo"]},
             {"monetization_types": ["bar", "quux"]},
@@ -166,7 +166,7 @@ class JustWatchApiTest(parameterized.TestCase):
 
 
 class FilterTest(parameterized.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self._mock_api = mock.create_autospec(
             justwatch.Api, spec_set=True, instance=True
         )
@@ -446,7 +446,7 @@ class FilterTest(parameterized.TestCase):
         media_item: Any,
         api_data: Mapping[str, Any] = immutabledict.immutabledict(),
         expected_result: media_filter.FilterResult,
-    ):
+    ) -> None:
         self._mock_api.get.side_effect = lambda relative_url: api_data[
             relative_url
         ]
@@ -461,7 +461,7 @@ class FilterTest(parameterized.TestCase):
 
         self.assertEqual(expected_result, result)
 
-    def test_possible_unknown_placeholder_datetime(self):
+    def test_possible_unknown_placeholder_datetime(self) -> None:
         self._mock_api.get.return_value = {
             "offers": [
                 _offer(

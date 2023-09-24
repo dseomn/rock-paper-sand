@@ -51,7 +51,7 @@ class Filter(abc.ABC):
 class Not(Filter):
     """Inverts another filter."""
 
-    def __init__(self, child: Filter, /):
+    def __init__(self, child: Filter, /) -> None:
         self._child = child
 
     def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
@@ -63,7 +63,9 @@ class Not(Filter):
 class BinaryLogic(Filter):
     """Binary logic filter, i.e., "and" and "or"."""
 
-    def __init__(self, *children: Filter, op: Callable[[Iterable[bool]], bool]):
+    def __init__(
+        self, *children: Filter, op: Callable[[Iterable[bool]], bool]
+    ) -> None:
         self._children = children
         self._op = op
 
@@ -83,7 +85,7 @@ class BinaryLogic(Filter):
 class HasParts(Filter):
     """Matches based on whether there are any child parts."""
 
-    def __init__(self, has_parts: bool):
+    def __init__(self, has_parts: bool) -> None:
         self._has_parts = has_parts
 
     def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
@@ -94,7 +96,7 @@ class HasParts(Filter):
 class Done(Filter):
     """Matches based on the `done` field."""
 
-    def __init__(self, done: str):
+    def __init__(self, done: str) -> None:
         self._done = multi_level_set.parse_number(done)
 
     def filter(self, media_item: config_pb2.MediaItem) -> FilterResult:
@@ -112,7 +114,7 @@ class StringFieldMatcher(Filter):
         self,
         field_getter: Callable[[config_pb2.MediaItem], str],
         matcher_config: config_pb2.StringFieldMatcher,
-    ):
+    ) -> None:
         self._field_getter = field_getter
         match matcher_config.WhichOneof("method"):
             case "empty":
@@ -143,7 +145,7 @@ class Registry:
         justwatch_factory: (
             Callable[[config_pb2.JustWatchFilter], Filter] | None
         ) = None,
-    ):
+    ) -> None:
         """Initializer.
 
         Args:
@@ -153,7 +155,7 @@ class Registry:
         self._justwatch_factory = justwatch_factory
         self._filter_by_name = {}
 
-    def register(self, name: str, filter_: Filter):
+    def register(self, name: str, filter_: Filter) -> None:
         """Registers a named filter."""
         if name in self._filter_by_name:
             raise ValueError(f"Filter {name!r} is defined multiple times.")

@@ -26,7 +26,7 @@ from rock_paper_sand.proto import config_pb2
 
 
 class _ExtraInfoFilter(media_filter.Filter):
-    def __init__(self, extra: Set[str]):
+    def __init__(self, extra: Set[str]) -> None:
         self._extra = extra
 
     def filter(
@@ -228,7 +228,7 @@ class MediaFilterTest(parameterized.TestCase):
         filter_config: Any,
         media_item: config_pb2.MediaItem = config_pb2.MediaItem(name="foo"),
         expected_result: media_filter.FilterResult,
-    ):
+    ) -> None:
         registry = media_filter.Registry()
         for name, filter_ in filter_by_name.items():
             registry.register(name, filter_)
@@ -238,7 +238,7 @@ class MediaFilterTest(parameterized.TestCase):
         result = test_filter.filter(media_item)
         self.assertEqual(expected_result, result)
 
-    def test_justwatch_filter(self):
+    def test_justwatch_filter(self) -> None:
         mock_filter = mock.create_autospec(
             media_filter.Filter, spec_set=True, instance=True
         )
@@ -253,7 +253,7 @@ class MediaFilterTest(parameterized.TestCase):
         justwatch_factory.assert_called_once_with(filter_config.justwatch)
         self.assertIs(mock_filter, returned_filter)
 
-    def test_justwatch_filter_unsupported(self):
+    def test_justwatch_filter_unsupported(self) -> None:
         registry = media_filter.Registry(justwatch_factory=None)
         with self.assertRaisesRegex(ValueError, "JustWatch.*no callback"):
             registry.parse(
@@ -286,13 +286,13 @@ class MediaFilterTest(parameterized.TestCase):
         filter_config: Any,
         error_class: type[Exception],
         error_regex: str,
-    ):
+    ) -> None:
         with self.assertRaisesRegex(error_class, error_regex):
             media_filter.Registry().parse(
                 json_format.ParseDict(filter_config, config_pb2.Filter())
             )
 
-    def test_registry_unique(self):
+    def test_registry_unique(self) -> None:
         registry = media_filter.Registry()
         registry.register("foo", media_filter.BinaryLogic(op=all))
         with self.assertRaisesRegex(

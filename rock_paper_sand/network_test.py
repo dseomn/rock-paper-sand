@@ -21,14 +21,14 @@ from rock_paper_sand import network
 
 
 class NetworkTest(parameterized.TestCase):
-    def test_requests_http_adapter(self):
+    def test_requests_http_adapter(self) -> None:
         # For now this is basicaly just a smoke test, because it's probably not
         # worth the effort to really test this function.
         self.assertIsInstance(
             network.requests_http_adapter(), requests.adapters.HTTPAdapter
         )
 
-    def test_requests_session(self):
+    def test_requests_session(self) -> None:
         # For now this is basicaly just a smoke test, because it's probably not
         # worth the effort to really test this function.
         with network.requests_session() as session:
@@ -38,7 +38,7 @@ class NetworkTest(parameterized.TestCase):
         "http://example.com",
         "https://example.com",
     )
-    def test_null_requests_session(self, url: str):
+    def test_null_requests_session(self, url: str) -> None:
         session = network.null_requests_session()
         with self.assertRaises(requests.exceptions.InvalidSchema):
             session.get(url)

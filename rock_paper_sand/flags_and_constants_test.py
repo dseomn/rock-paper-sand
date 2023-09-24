@@ -40,7 +40,7 @@ class FlagsAndConstantsTest(parameterized.TestCase):
         self,
         env: Mapping[str, str],
         expected_path: pathlib.Path,
-    ):
+    ) -> None:
         with mock.patch.dict(os.environ, env, clear=True):
             actual_path = flags_and_constants._get_app_dir(
                 xdg_variable_name="XDG_FOO_HOME",
@@ -48,7 +48,7 @@ class FlagsAndConstantsTest(parameterized.TestCase):
             )
         self.assertEqual(expected_path, actual_path)
 
-    def test_get_app_dir_error(self):
+    def test_get_app_dir_error(self) -> None:
         with self.assertRaisesRegex(ValueError, "No HOME directory"):
             with mock.patch.dict(os.environ, {}, clear=True):
                 flags_and_constants._get_app_dir(
