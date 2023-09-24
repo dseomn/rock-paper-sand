@@ -14,6 +14,10 @@
 
 # pylint: disable=missing-module-docstring
 
+# TODO(https://github.com/python/mypy/issues/8766): Remove this disable.
+# mypy: warn-unreachable=false
+
+from collections.abc import Sequence
 import json
 import pathlib
 import textwrap
@@ -29,6 +33,58 @@ from rock_paper_sand import network
 
 
 class ConfigTest(parameterized.TestCase):
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="filter_missing_name",
+            config_data={
+                "filters": [{}],
+            },
+            error_regex="name field is required",
+            error_notes=("In filters[0] with name ''.",),
+        ),
+        dict(
+            testcase_name="report_missing_name",
+            config_data={
+                "reports": [{}],
+            },
+            error_regex="name field is required",
+            error_notes=("In reports[0] with name ''.",),
+        ),
+        dict(
+            testcase_name="report_duplicate_name",
+            config_data={
+                "reports": [
+                    {"name": "foo"},
+                    {"name": "foo"},
+                ],
+            },
+            error_regex="name field must be unique",
+            error_notes=("In reports[1] with name 'foo'.",),
+        ),
+    )
+    def test_invalid_config(
+        self,
+        *,
+        config_data: Any,
+        error_regex: str,
+        error_notes: Sequence[str],
+    ) -> None:
+        self.enter_context(
+            flagsaver.flagsaver(
+                (
+                    flags_and_constants.CONFIG_FILE,
+                    self.create_tempfile(
+                        content=json.dumps(config_data)
+                    ).full_path,
+                )
+            )
+        )
+        with self.assertRaisesRegex(ValueError, error_regex) as error:
+            config.Config.from_config_file(
+                session=self.enter_context(network.null_requests_session())
+            )
+        self.assertSequenceEqual(error_notes, error.exception.__notes__)
+
     @parameterized.named_parameters(
         dict(
             testcase_name="no_lint_config",

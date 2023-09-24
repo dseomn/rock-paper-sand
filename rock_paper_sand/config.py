@@ -24,6 +24,7 @@ from google.protobuf import json_format
 import requests
 import yaml
 
+from rock_paper_sand import exceptions
 from rock_paper_sand import flags_and_constants
 from rock_paper_sand import justwatch
 from rock_paper_sand import media_filter
@@ -67,16 +68,28 @@ class Config:
                 justwatch.Filter, api=justwatch_api
             ),
         )
-        for filter_config in proto.filters:
-            filter_registry.register(
-                filter_config.name, filter_registry.parse(filter_config.filter)
-            )
-        reports = {
-            report_config.name: report.Report(
-                report_config, filter_registry=filter_registry
-            )
-            for report_config in proto.reports
-        }
+        for filter_index, filter_config in enumerate(proto.filters):
+            with exceptions.add_note(
+                f"In filters[{filter_index}] with name {filter_config.name!r}."
+            ):
+                if not filter_config.name:
+                    raise ValueError("The name field is required.")
+                filter_registry.register(
+                    filter_config.name,
+                    filter_registry.parse(filter_config.filter),
+                )
+        reports = {}
+        for report_index, report_config in enumerate(proto.reports):
+            with exceptions.add_note(
+                f"In reports[{report_index}] with name {report_config.name!r}."
+            ):
+                if not report_config.name:
+                    raise ValueError("The name field is required.")
+                if report_config.name in reports:
+                    raise ValueError("The name field must be unique.")
+                reports[report_config.name] = report.Report(
+                    report_config, filter_registry=filter_registry
+                )
         return cls(
             proto=proto,
             justwatch_api=justwatch_api,
