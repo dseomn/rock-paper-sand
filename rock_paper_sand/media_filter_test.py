@@ -244,7 +244,9 @@ class MediaFilterTest(parameterized.TestCase):
 
     def test_cached_filter(self) -> None:
         test_filter = _ExtraInfoFilter({"foo"})
-        item = media_item.MediaItem.from_config(config_pb2.MediaItem())
+        item = media_item.MediaItem.from_config(
+            config_pb2.MediaItem(name="bar")
+        )
         expected_result = media_filter.FilterResult(True, extra={"foo"})
 
         first_result = test_filter.filter(item)

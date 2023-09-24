@@ -18,6 +18,7 @@ import dataclasses
 from typing import Self
 import uuid
 
+from rock_paper_sand import exceptions
 from rock_paper_sand import multi_level_set
 from rock_paper_sand.proto import config_pb2
 
@@ -44,10 +45,38 @@ class MediaItem:
     parts: Sequence["MediaItem"]
 
     @classmethod
-    def from_config(cls, proto: config_pb2.MediaItem) -> Self:
-        """Parses from a config proto."""
-        return cls(
-            proto=proto,
-            done=multi_level_set.MultiLevelSet.from_string(proto.done),
-            parts=tuple(map(cls.from_config, proto.parts)),
+    def from_config(
+        cls,
+        proto: config_pb2.MediaItem,
+        *,
+        index: Sequence[int] = (),
+    ) -> Self:
+        """Parses from a config proto.
+
+        Args:
+            proto: Config to parse.
+            index: Index within the config file. () means it's not from a config
+                file. (0,) means it's media[0]. (0, 1, 2) means it's
+                media[0].parts[1].parts[2].
+        """
+        parts = tuple(
+            cls.from_config(part, index=(*index, part_index) if index else ())
+            for part_index, part in enumerate(proto.parts)
         )
+        if index:
+            path = ".".join(
+                (
+                    f"media[{index[0]}]",
+                    *(f"parts[{part_index}]" for part_index in index[1:]),
+                )
+            )
+        else:
+            path = "unknown media item"
+        with exceptions.add_note(f"In {path} with name {proto.name!r}."):
+            if not proto.name:
+                raise ValueError("The name field is required.")
+            return cls(
+                proto=proto,
+                done=multi_level_set.MultiLevelSet.from_string(proto.done),
+                parts=parts,
+            )

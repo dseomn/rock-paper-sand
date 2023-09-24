@@ -82,7 +82,10 @@ class Config:
             justwatch_api=justwatch_api,
             filter_registry=filter_registry,
             reports=reports,
-            media=tuple(map(media_item.MediaItem.from_config, proto.media)),
+            media=tuple(
+                media_item.MediaItem.from_config(item, index=(item_index,))
+                for item_index, item in enumerate(proto.media)
+            ),
         )
 
     def _lint_sort(self) -> dict[str, Any]:

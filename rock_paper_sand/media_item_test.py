@@ -14,6 +14,7 @@
 
 # pylint: disable=missing-module-docstring
 
+from collections.abc import Sequence
 from unittest import mock
 
 from absl.testing import absltest
@@ -61,9 +62,47 @@ class MediaItemTest(parameterized.TestCase):
 
     def test_id(self) -> None:
         self.assertNotEqual(
-            media_item.MediaItem.from_config(config_pb2.MediaItem()),
-            media_item.MediaItem.from_config(config_pb2.MediaItem()),
+            media_item.MediaItem.from_config(config_pb2.MediaItem(name="foo")),
+            media_item.MediaItem.from_config(config_pb2.MediaItem(name="foo")),
         )
+
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="from_config",
+            index=(42,),
+            error_notes=("In media[42].parts[0].parts[1] with name ''.",),
+        ),
+        dict(
+            testcase_name="from_code",
+            index=(),
+            error_notes=("In unknown media item with name ''.",),
+        ),
+    )
+    def test_missing_name(
+        self,
+        *,
+        index: Sequence[int],
+        error_notes: Sequence[str],
+    ) -> None:
+        with self.assertRaisesRegex(
+            ValueError, "name field is required"
+        ) as error:
+            media_item.MediaItem.from_config(
+                json_format.ParseDict(
+                    {
+                        "name": "foo",
+                        "parts": [
+                            {
+                                "name": "foo",
+                                "parts": [{"name": "foo"}, {}],
+                            },
+                        ],
+                    },
+                    config_pb2.MediaItem(),
+                ),
+                index=index,
+            )
+        self.assertSequenceEqual(error_notes, error.exception.__notes__)
 
 
 if __name__ == "__main__":
