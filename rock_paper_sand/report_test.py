@@ -19,6 +19,7 @@ import email.policy
 import json
 import subprocess
 import textwrap
+import typing
 from typing import Any
 from unittest import mock
 
@@ -300,9 +301,12 @@ class ReportTest(parameterized.TestCase):
             check=True,
             input=mock.ANY,
         )
-        message = email.parser.BytesParser(
-            policy=email.policy.default
-        ).parsebytes(mock_subprocess_run.mock_calls[0].kwargs["input"])
+        message = typing.cast(
+            email.message.EmailMessage,
+            email.parser.BytesParser(policy=email.policy.default).parsebytes(
+                mock_subprocess_run.mock_calls[0].kwargs["input"]
+            ),
+        )
         self.assertIn("some-report-name", message["Subject"])
         self.assertEqual("alice@example.com", message["To"])
         self.assertEqual(
@@ -315,7 +319,10 @@ class ReportTest(parameterized.TestCase):
                 *expected_message_parts,
             ),
             tuple(
-                (part.get_filename(), part.get_content())
+                (
+                    part.get_filename(),
+                    typing.cast(email.message.MIMEPart, part).get_content(),
+                )
                 for part in message.iter_parts()
             ),
         )
