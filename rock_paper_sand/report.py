@@ -33,7 +33,7 @@ def _filter_media_item(
     item: config_pb2.MediaItem,
 ) -> Mapping[str, Any] | None:
     """Returns info about the item if it matches, or None if it doesn't."""
-    parts = []
+    parts: list[Any] = []
     matched_any_part = False
     for part in item.parts:
         part_result = _filter_media_item(filter_, part)
@@ -45,7 +45,7 @@ def _filter_media_item(
     item_result = filter_.filter(item)
     if not item_result.matches and not matched_any_part:
         return None
-    result = {"name": item.name}
+    result: dict[str, Any] = {"name": item.name}
     if item.comment:
         result["comment"] = item.comment
     if item.done:

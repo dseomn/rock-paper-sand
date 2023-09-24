@@ -15,6 +15,7 @@
 
 import argparse
 import typing
+from typing import Any
 
 import yaml
 
@@ -58,6 +59,7 @@ class Print(subcommand.Subcommand):
         """See base class."""
         with network.requests_session() as session:
             config_ = config.Config.from_config_file(session=session)
+            results: Any
             if args.report is None:
                 results = {
                     name: report_.generate(config_.proto.media)

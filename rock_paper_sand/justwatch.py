@@ -73,8 +73,10 @@ class Api:
     ) -> None:
         self._session = session
         self._base_url = base_url
-        self._cache = {}
-        self._provider_name_by_short_name_by_locale = {}
+        self._cache: dict[str, Any] = {}
+        self._provider_name_by_short_name_by_locale: (
+            dict[str, dict[str, str]]
+        ) = {}
 
         # JustWatch seems to rate-limit the API enough to make this code pretty
         # slow when the requests are all cache misses, and they only tell
@@ -298,7 +300,7 @@ class Filter(media_filter.Filter):
             f"titles/{media_item.justwatch_id}/locale/{self._config.locale}"
         )
         content = self._api.get(relative_url)
-        extra_information = set()
+        extra_information: set[str] = set()
         if (
             self._config.providers
             or self._config.monetization_types

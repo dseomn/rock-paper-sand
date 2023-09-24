@@ -153,7 +153,7 @@ class Registry:
                 raise an error if there are any JustWatch filters.
         """
         self._justwatch_factory = justwatch_factory
-        self._filter_by_name = {}
+        self._filter_by_name: dict[str, Filter] = {}
 
     def register(self, name: str, filter_: Filter) -> None:
         """Registers a named filter."""
