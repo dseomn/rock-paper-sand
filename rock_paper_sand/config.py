@@ -80,7 +80,7 @@ class Config:
             reports=reports,
         )
 
-    def _lint_sort(self) -> Mapping[str, Any]:
+    def _lint_sort(self) -> dict[str, Any]:
         if not self.proto.lint.HasField("sort"):
             return {}
         names = [item.name for item in self.proto.media]
@@ -113,7 +113,7 @@ class Config:
             ),
         }
 
-    def _lint_issues_report(self) -> Mapping[str, Any]:
+    def _lint_issues_report(self) -> dict[str, Any]:
         if not self.proto.lint.issues_report:
             return {}
         results = self.reports[self.proto.lint.issues_report].generate(
