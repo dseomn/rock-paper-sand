@@ -154,16 +154,20 @@ class _Offer:
 
 @dataclasses.dataclass(kw_only=True)
 class _Availability:
+    """Per-episode availability of a media item."""
+
     total_episode_count: int = 0
     episode_count_by_offer: collections.Counter[_Offer] = dataclasses.field(
         default_factory=collections.Counter
     )
 
     def update(self, other: "_Availability") -> None:
+        """Adds another _Availability into this one."""
         self.total_episode_count += other.total_episode_count
         self.episode_count_by_offer.update(other.episode_count_by_offer)
 
     def to_extra_information(self) -> Set[str]:
+        """Returns availability info for the FilterResult.extra field."""
         extra_information = set()
         for (
             offer,

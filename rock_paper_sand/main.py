@@ -28,6 +28,8 @@ flags.adopt_module_key_flags(flags_and_constants)
 
 
 class MainCommand(subcommand.ContainerSubcommand):
+    """Top-level container of subcommands."""
+
     def __init__(self, parser: argparse.ArgumentParser) -> None:
         """See base class."""
         super().__init__(parser)

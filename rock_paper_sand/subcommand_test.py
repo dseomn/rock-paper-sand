@@ -23,6 +23,8 @@ from rock_paper_sand import subcommand
 
 
 class _TestContainer(subcommand.ContainerSubcommand):
+    """Container with configurable subcommands."""
+
     def __init__(
         self,
         parser: argparse.ArgumentParser,
