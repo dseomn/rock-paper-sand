@@ -1,0 +1,46 @@
+My Favorite Report:
+  free-at-home:
+  - name: Life of Brian (1979)
+    customAvailability: borrow from the library
+    extraInformation:
+    - Netflix (flatrate)
+  - name: Monty Python's Flying Circus (1969)
+    done: 1 - 3
+    extraInformation:
+    - Netflix (flatrate)
+  - name: Rock, Paper, Sand! the Extended Universe
+    extraInformation:
+    - parent did not match, but children did
+    parts:
+    - 'unmatched part: Rock, Paper, Sand! the Book'
+    - 'unmatched part: Rock, Paper, Sand! the Comic Book'
+    - name: Rock, Paper, Sand! the Movie
+      customAvailability: https://www.youtube.com/watch?v=dQw4w9WgXcQ
+    - 'unmatched part: Rock, Paper, Sand! the Sequel'
+  free-not-at-home:
+  - name: Rock, Paper, Sand! the Extended Universe
+    extraInformation:
+    - parent did not match, but children did
+    parts:
+    - 'unmatched part: Rock, Paper, Sand! the Book'
+    - name: Rock, Paper, Sand! the Comic Book
+      customAvailability: borrow from the library
+    - 'unmatched part: Rock, Paper, Sand! the Movie'
+    - 'unmatched part: Rock, Paper, Sand! the Sequel'
+  all:
+  - name: Monty Python and the Holy Grail (1975)
+    done: all
+  - name: Life of Brian (1979)
+    customAvailability: borrow from the library
+  - name: Monty Python's Flying Circus (1969)
+    done: 1 - 3
+  - name: Rock, Paper, Sand! the Extended Universe
+    parts:
+    - name: Rock, Paper, Sand! the Book
+      done: all
+    - name: Rock, Paper, Sand! the Comic Book
+      customAvailability: borrow from the library
+    - name: Rock, Paper, Sand! the Movie
+      customAvailability: https://www.youtube.com/watch?v=dQw4w9WgXcQ
+    - name: Rock, Paper, Sand! the Sequel
+      comment: Maybe check if this will screen at the Rick Astley Film Festival?
