@@ -23,6 +23,7 @@ from typing import Any
 
 import yaml
 
+from rock_paper_sand import exceptions
 from rock_paper_sand import media_filter
 from rock_paper_sand import media_item
 from rock_paper_sand.proto import config_pb2
@@ -104,9 +105,18 @@ class Report:
         filter_registry: media_filter.Registry,
     ) -> None:
         self._config = report_config
-        self._sections = {}
-        for section in report_config.sections:
-            self._sections[section.name] = filter_registry.parse(section.filter)
+        self._sections: dict[str, media_filter.Filter] = {}
+        for section_index, section in enumerate(report_config.sections):
+            with exceptions.add_note(
+                f"In sections[{section_index}] with name {section.name!r}."
+            ):
+                if not section.name:
+                    raise ValueError("The name field is required.")
+                if section.name in self._sections:
+                    raise ValueError("The name field must be unique.")
+                self._sections[section.name] = filter_registry.parse(
+                    section.filter
+                )
 
     def generate(
         self, media: Sequence[media_item.MediaItem]

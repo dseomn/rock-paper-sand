@@ -14,7 +14,7 @@
 
 # pylint: disable=missing-module-docstring
 
-from collections.abc import Set
+from collections.abc import Sequence, Set
 import copy
 import email.parser
 import email.policy
@@ -46,6 +46,43 @@ class _ExtraInfoFilter(media_filter.Filter):
 
 
 class ReportTest(parameterized.TestCase):
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="section_missing_name",
+            report_config={
+                "sections": [
+                    {"filter": {"all": {}}},
+                ],
+            },
+            error_regex="name field is required",
+            error_notes=("In sections[0] with name ''.",),
+        ),
+        dict(
+            testcase_name="section_duplicate_name",
+            report_config={
+                "sections": [
+                    {"name": "foo", "filter": {"all": {}}},
+                    {"name": "foo", "filter": {"all": {}}},
+                ],
+            },
+            error_regex="name field must be unique",
+            error_notes=("In sections[1] with name 'foo'.",),
+        ),
+    )
+    def test_invalid_config(
+        self,
+        *,
+        report_config: Any,
+        error_regex: str,
+        error_notes: Sequence[str],
+    ) -> None:
+        with self.assertRaisesRegex(ValueError, error_regex) as error:
+            report.Report(
+                json_format.ParseDict(report_config, config_pb2.Report()),
+                filter_registry=media_filter.Registry(),
+            )
+        self.assertSequenceEqual(error_notes, error.exception.__notes__)
+
     @parameterized.named_parameters(
         dict(
             testcase_name="simple",
