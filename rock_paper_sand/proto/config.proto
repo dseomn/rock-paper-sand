@@ -105,7 +105,10 @@ message Filter {
     bool has_parts = 8;
 
     // Matches media items that have this dotted number (or "all") included in
-    // their `done` field.
+    // their `done` field. E.g., setting this to "2.3" (e.g., season 2 episode
+    // 3) would match `done` fields of "2" (e.g., all of season 2), "2.2 - 2.3",
+    // or "all". Setting this to "2" would match "2 - 3", but would not match
+    // "2.2 - 3", because "2" includes "2.1", and "2.2 - 3" is missing that.
     string done = 9;
 
     // Matches on the name field.
