@@ -1,46 +1,66 @@
 # Rock, Paper, Sand! the Media Tracker
 
-Rock, Paper, Sand! is a text-based media tracker for TV shows, movies, and
-potentially other types of media. It will hopefully soon support advanced
-filtering for things like showing all TV shows or movies from the user's list
-that are both complete (i.e., no pending sequels or future seasons) and
-completely available to stream at no additional cost on the user's existing
-streaming services.
+Rock, Paper, Sand! is a text-based media tracker for TV shows, movies, and other
+types of media. It supports advanced filtering for things like showing which
+media is available for free at home (from streaming services, physical copies,
+or whatever else), which is available elsewhere (e.g., the at the library), and
+which is unavailable.
+
+For an example of what it can do, see [the example config
+file](config.example.yaml) and the [output from that config
+file](output.example.yaml). For more documentation on the config file format,
+see [the schema definition](rock_paper_sand/proto/config.proto).
 
 ## What's with the name?
 
 Rock, paper, and sand are all used in different types of physical filters, and
 filtering is one of the main focuses of this program.
 
-## Use cases
+## Supported use cases
 
-Supported:
+*   Keep track of done, partially done, and to-do media, including obscure media
+    that isn't in public databases.
+*   Keep track of groups of media of different types. E.g., if you want to read
+    a book series, watch the movie series and TV shows based on it, see the
+    musical based on the first movie, and read the comic book continuation of
+    the TV show, you can keep track of all of those in the same place.
+*   Filter that media based on:
+    *   Whether it's done, partially done, or to-do.
+    *   What streaming services it's available on or if it's currently in
+        theaters, using [JustWatch](https://www.justwatch.com/)'s API. This
+        filter also adds extra information to the output to show where the media
+        is available, and if only some episodes are available, how many.
+    *   Custom string field matching. E.g., you can put "borrow from the
+        library" in the `customAvailability` field, and filter on that to show
+        media that's at the library (possibly excluding media that's also on a
+        streaming service you have). Or you can put an
+        [archive.org](https://archive.org/) URL for an old public domain movie,
+        and include that in a filter for content that's available for free. Or
+        you can include the release year in the media name, and filter on media
+        released in a range of years.
+    *   Logical combinations of any of the above, including `and`, `or`, and
+        `not`.
+*   Print the output of those filters to the console in reports.
+*   Send email notifications when one of those reports changes.
+*   Enforce some conditions on the list of media. E.g., if you want to keep the
+    list sorted, that can be checked automatically. Or if you want to make sure
+    that all media has a name ending in " (YYYY)" where "YYYY" is the release
+    year, you can do that too. (Doing that can help prevent bugs in filters that
+    try to parse the media name.)
 
-*   None yet, check back later.
+## Wishlist
 
-Near-term goals:
-
-*   Advanced filtering of a list of media:
-    *   Show all TV shows or movies that both have no upcoming sequels/seasons
-        and are completely available at no additional cost on the user's
-        existing streaming services.
-    *   Show all movies that are currently in theaters and not available to
-        stream.
-
-Mid-term goals:
-
-*   Generating reports from a list of media using more than just filtering:
-    *   Filter for TV shows or movies are complete and not available on the
-        user's existing streaming services, then group by what streaming
-        services they are on. (To make it easy to pick a new streaming service.)
-*   Integrate with local libraries' APIs if possible, to find which TV shows or
-    movies can be borrowed from the library.
-
-Potential future goals:
-
-*   Better support for other types of media, like books.
-*   Some sort of graphical user interface.
-*   Recommendations for other media to watch/read/etc.
+*   Better support for filtering based on completeness. E.g., filtering for a TV
+    show where all episodes are available, or filtering for a book series where
+    the final book has already been released.
+*   Relatedly, support for filtering on incompleteness. E.g., letting you know
+    when a book you liked has a new sequel available.
+*   Grouping and sorting the results of a filter. E.g., to make it easier to
+    pick a new streaming service to subscribe to, filter for media on streaming
+    services that you don't already have, group by service, and sort by how much
+    media each service has.
+*   Integration with public libraries' APIs if possible, to automatically find
+    which media can be borrowed from the library.
 
 ## Disclaimer
 
