@@ -101,7 +101,7 @@ class Config:
             ),
         )
 
-    def _lint_sort(self) -> dict[str, Any]:
+    def _lint_sort(self) -> Mapping[str, Any]:
         if not self.proto.lint.HasField("sort"):
             return {}
         names = [item.name for item in self.proto.media]
@@ -134,7 +134,7 @@ class Config:
             ),
         }
 
-    def _lint_issues_report(self) -> dict[str, Any]:
+    def _lint_issues_report(self) -> Mapping[str, Any]:
         if not self.proto.lint.issues_report:
             return {}
         results = self.reports[self.proto.lint.issues_report].generate(
@@ -146,4 +146,7 @@ class Config:
 
     def lint(self) -> Mapping[str, Any]:
         """Returns lint issues, if there are any."""
-        return self._lint_sort() | self._lint_issues_report()
+        return {
+            **self._lint_sort(),
+            **self._lint_issues_report(),
+        }
