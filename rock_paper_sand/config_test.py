@@ -173,6 +173,34 @@ class ConfigTest(parameterized.TestCase):
             },
             expected_results={"issuesReport": {"bar": [{"name": "a"}]}},
         ),
+        dict(
+            testcase_name="justwatch_id_no_duplicates",
+            config_data={
+                "lint": {"requireUniqueJustwatchId": True},
+                "media": [
+                    {"name": "a"},
+                    {"name": "b"},  # "Duplicate" empty justwatchIds are fine.
+                    {"name": "c", "justwatchId": "c"},
+                    {"name": "d", "justwatchId": "d"},
+                ],
+            },
+            expected_results={},
+        ),
+        dict(
+            testcase_name="justwatch_id_duplicates",
+            config_data={
+                "lint": {"requireUniqueJustwatchId": True},
+                "media": [
+                    {"name": "a", "justwatchId": "foo"},
+                    {
+                        "name": "b",
+                        "justwatchId": "b",
+                        "parts": [{"name": "c", "justwatchId": "foo"}],
+                    },
+                ],
+            },
+            expected_results={"duplicateJustwatchIds": ["foo"]},
+        ),
     )
     def test_lint(
         self,
