@@ -80,11 +80,14 @@ def _add_diff_attachment(
     name: str,
     old: str | None,
     new: str | None,
+    collapse: bool = False,
 ) -> None:
     if old is None:
         content = f"Section {name} is newly created"
     elif new is None:
         content = f"Section {name} was deleted"
+    elif collapse:
+        content = f"Section {name} differs"
     else:
         content = "".join(
             difflib.unified_diff(
@@ -112,6 +115,7 @@ class Report:
     ) -> None:
         self._config = report_config
         self._sections: dict[str, media_filter.Filter] = {}
+        self._collapse_diff_sections: set[str] = set()
         for section_index, section in enumerate(report_config.sections):
             with exceptions.add_note(
                 f"In sections[{section_index}] with name {section.name!r}."
@@ -123,6 +127,8 @@ class Report:
                 self._sections[section.name] = filter_registry.parse(
                     section.filter
                 )
+                if section.collapse_diff:
+                    self._collapse_diff_sections.add(section.name)
 
     def generate(
         self, media: Sequence[media_item.MediaItem]
@@ -184,6 +190,7 @@ class Report:
                 name=section_name,
                 old=section_previous_results,
                 new=_dump_for_email(section_results),
+                collapse=section_name in self._collapse_diff_sections,
             )
         for section_name, section_results in previous_results.items():
             if section_name not in results:

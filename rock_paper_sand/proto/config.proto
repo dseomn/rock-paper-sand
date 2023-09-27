@@ -146,6 +146,10 @@ message Report {
     // Required, must be unique. Name of the section.
     string name = 1;
 
+    // In notification emails, whether to show a full diff on changes (false) or
+    // a brief note that there were some changes (true).
+    bool collapse_diff = 3;
+
     // Required. Which media items to include in this section.
     Filter filter = 2;
   }

@@ -267,6 +267,15 @@ class ReportTest(parameterized.TestCase):
             ),
         ),
         dict(
+            testcase_name="collapse_diff",
+            previous_results={"collapse": ["foo"]},
+            current_results={"collapse": ["not-foo"]},
+            expected_message_parts=(
+                ("collapse.diff", "Section collapse differs\n"),
+                ("collapse.yaml", "- not-foo\n"),
+            ),
+        ),
+        dict(
             testcase_name="new_section",
             previous_results={},
             current_results={"foo": ["bar"]},
@@ -294,6 +303,14 @@ class ReportTest(parameterized.TestCase):
                 {
                     "name": "some-report-name",
                     "emailHeaders": {"To": "alice@example.com"},
+                    "sections": [
+                        {
+                            "name": name,
+                            "collapseDiff": name == "collapse",
+                            "filter": {"all": {}},
+                        }
+                        for name in current_results
+                    ],
                 },
                 config_pb2.Report(),
             ),
