@@ -81,15 +81,21 @@ def _add_diff_attachment(
     old: str | None,
     new: str | None,
 ) -> None:
-    message.add_attachment(
-        "".join(
+    if old is None:
+        content = f"Section {name} is newly created"
+    elif new is None:
+        content = f"Section {name} was deleted"
+    else:
+        content = "".join(
             difflib.unified_diff(
-                ("" if old is None else old).splitlines(keepends=True),
-                ("" if new is None else new).splitlines(keepends=True),
-                fromfile=("/dev/null" if old is None else f"{name}.yaml.old"),
-                tofile=("/dev/null" if new is None else f"{name}.yaml"),
+                old.splitlines(keepends=True),
+                new.splitlines(keepends=True),
+                fromfile=f"{name}.yaml.old",
+                tofile=f"{name}.yaml",
             )
-        ),
+        )
+    message.add_attachment(
+        content,
         disposition="inline",
         filename=f"{name}.diff",
     )

@@ -271,17 +271,7 @@ class ReportTest(parameterized.TestCase):
             previous_results={},
             current_results={"foo": ["bar"]},
             expected_message_parts=(
-                (
-                    "foo.diff",
-                    textwrap.dedent(
-                        """\
-                        --- /dev/null
-                        +++ foo.yaml
-                        @@ -0,0 +1 @@
-                        +- bar
-                        """
-                    ),
-                ),
+                ("foo.diff", "Section foo is newly created\n"),
                 ("foo.yaml", "- bar\n"),
             ),
         ),
@@ -289,19 +279,7 @@ class ReportTest(parameterized.TestCase):
             testcase_name="deleted_section",
             previous_results={"foo": ["bar"]},
             current_results={},
-            expected_message_parts=(
-                (
-                    "foo.diff",
-                    textwrap.dedent(
-                        """\
-                        --- foo.yaml.old
-                        +++ /dev/null
-                        @@ -1 +0,0 @@
-                        -- bar
-                        """
-                    ),
-                ),
-            ),
+            expected_message_parts=(("foo.diff", "Section foo was deleted\n"),),
         ),
     )
     def test_report_notify(
