@@ -42,12 +42,6 @@ core.workflow(
             "indent-string='    '",
             paths=glob(["pylintrc"]),
         ),
-        core.replace(
-            "${line_start}disable=",
-            "disable=use-dict-literal,",
-            regex_groups={"line_start": "^"},
-            paths=glob(["pylintrc"]),
-        ),
         core.move("", "third_party/google-styleguide"),
     ],
 )
