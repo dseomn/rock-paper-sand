@@ -62,6 +62,12 @@ filtering is one of the main focuses of this program.
 *   Integration with public libraries' APIs if possible, to automatically find
     which media can be borrowed from the library.
 
-## Disclaimer
+## Disclaimers
 
-This is not an officially supported Google product.
+*   This has not been designed to be secure against malicious config files or
+    state files. If you write your config file yourself and run the code
+    locally, it should hopefully be fine. But if you want to integrate this code
+    into a web application or something where multiple remote users can create
+    config files that are used by the same local user, it might be worth
+    thinking through the security implications first.
+*   This is not an officially supported Google product.
