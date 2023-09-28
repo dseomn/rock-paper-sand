@@ -20,6 +20,9 @@ build-backend = "setuptools.build_meta"
 name = "rock-paper-sand"
 version = "0"
 
+[project.scripts]
+rock-paper-sand = "rock_paper_sand.main:main"
+
 [tool.black]
 line-length = 80
 
