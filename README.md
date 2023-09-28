@@ -3,7 +3,7 @@
 Rock, Paper, Sand! is a text-based media tracker for TV shows, movies, and other
 types of media. It supports advanced filtering for things like showing which
 media is available for free at home (from streaming services, physical copies,
-or whatever else), which is available elsewhere (e.g., the at the library), and
+or whatever else), which is available elsewhere (e.g., at the library), and
 which is unavailable.
 
 For an example of what it can do, see [the example config
