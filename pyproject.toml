@@ -67,9 +67,3 @@ addopts = """\
 
 [tool.setuptools.packages.find]
 include = ["rock_paper_sand", "rock_paper_sand.*"]
-
-[tool.setuptools-protobuf]
-protobufs = [
-  "rock_paper_sand/proto/config.proto",
-  "rock_paper_sand/proto/state.proto",
-]
