@@ -175,7 +175,7 @@ class Report:
         for header, value in self._config.email_headers.items():
             message[header] = value
         message["Rock-Paper-Sand-Report-Name"] = self._config.name
-        message.add_attachment("", disposition="inline")
+        message.add_attachment(self._config.email_body, disposition="inline")
         for section_name, section_results in results.items():
             if section_name not in previous_results:
                 section_previous_results = None

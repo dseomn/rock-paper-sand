@@ -141,6 +141,9 @@ message Report {
   // notifications are sent for this report.
   map<string, string> email_headers = 3;
 
+  // The body of any email notifications.
+  string email_body = 4;
+
   // A section of a report.
   message Section {
     // Required, must be unique. Name of the section.

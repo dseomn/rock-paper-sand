@@ -303,6 +303,7 @@ class ReportTest(parameterized.TestCase):
                 {
                     "name": "some-report-name",
                     "emailHeaders": {"To": "alice@example.com"},
+                    "emailBody": "some-email-body",
                     "sections": [
                         {
                             "name": name,
@@ -350,7 +351,7 @@ class ReportTest(parameterized.TestCase):
         self.assertEqual("multipart/mixed", message.get_content_type())
         self.assertSequenceEqual(
             (
-                (None, "\n"),  # The message body.
+                (None, "some-email-body\n"),
                 *expected_message_parts,
             ),
             tuple(
