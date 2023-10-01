@@ -65,8 +65,8 @@ addopts = """\
   --cov-report=term-missing \
   """
 
-[tool.setuptools]
-packages = ["rock_paper_sand"]
+[tool.setuptools.packages.find]
+include = ["rock_paper_sand", "rock_paper_sand.*"]
 
 [tool.setuptools-protobuf]
 protobufs = [
