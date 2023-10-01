@@ -63,3 +63,32 @@ jobs:
       run: |
         pip install pytest pytest-cov
         pytest
+  install-test:
+    strategy:
+      matrix:
+        python-version:
+        - '3.11'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install system dependencies
+      run: |
+        # TODO(dseomn): Install protobuf-compiler from the system repos once the
+        # version there is new enough to work with the version of protobuf from
+        # pypi: https://protobuf.dev/news/2022-05-06/#python-updates
+        curl \
+          --location \
+          -o protoc.zip \
+          https://github.com/protocolbuffers/protobuf/releases/download/v24.3/protoc-24.3-linux-x86_64.zip
+        sudo unzip protoc.zip -d /usr/local
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Python package
+      run: |
+        python -m pip install --upgrade pip
+        pip install pipx
+        pipx install .
+    - name: Smoke test
+      run: |
+        rock-paper-sand --config_file=config.example.yaml config lint
