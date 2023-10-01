@@ -31,7 +31,7 @@ class _TestContainer(subcommand.ContainerSubcommand):
         self,
         parser: argparse.ArgumentParser,
         *,
-        mock_subcommands: Mapping[str, type[subcommand.Subcommand]]
+        mock_subcommands: Mapping[str, type[subcommand.Subcommand]],
     ) -> None:
         super().__init__(parser)
         subparsers = parser.add_subparsers()
