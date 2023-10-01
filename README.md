@@ -11,6 +11,12 @@ file](config.example.yaml) and the [output from that config
 file](output.example.yaml). For more documentation on the config file format,
 see [the schema definition](rock_paper_sand/proto/config.proto).
 
+## Installation
+
+1.  Install the [protobuf compiler](https://grpc.io/docs/protoc-installation/)
+    and [pipx](https://pypa.github.io/pipx/).
+1.  `pipx install git+https://github.com/dseomn/rock-paper-sand.git`
+
 ## What's with the name?
 
 Rock, paper, and sand are all used in different types of physical filters, and
