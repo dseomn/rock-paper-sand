@@ -13,13 +13,34 @@
 # limitations under the License.
 
 [build-system]
-requires = ["setuptools", "setuptools-protobuf"]
+requires = [
+  "setuptools",
+  "setuptools-protobuf[mypy]",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "rock-paper-sand"
 version = "0"
 requires-python = ">=3.11"
+dependencies = [
+  "absl-py",
+  "cachecontrol[filecache]",
+  "immutabledict",
+  "protobuf",
+  "python-dateutil",
+  "pyyaml",
+  "requests",
+  "urllib3",
+]
+
+[project.optional-dependencies]
+test = [
+  "types-protobuf",
+  "types-python-dateutil",
+  "types-pyyaml",
+  "types-requests",
+]
 
 [project.scripts]
 rock-paper-sand = "rock_paper_sand.main:main"
