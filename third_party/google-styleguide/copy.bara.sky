@@ -42,6 +42,17 @@ core.workflow(
             "indent-string='    '",
             paths=glob(["pylintrc"]),
         ),
+        # TODO(dseomn): Stop disabling inconsistent-quotes once the minimum
+        # python version is >= 3.12. In earlier versions, inconsistent quotes
+        # were needed for some f-strings, but
+        # https://docs.python.org/3.12/whatsnew/3.12.html#pep-701-syntactic-formalization-of-f-strings
+        # changed that.
+        core.replace(
+            "${line_start}disable=",
+            "disable=inconsistent-quotes,",
+            regex_groups={"line_start": "^"},
+            paths=glob(["pylintrc"]),
+        ),
         core.move("", "third_party/google-styleguide"),
     ],
 )
