@@ -385,6 +385,31 @@ class FilterTest(parameterized.TestCase):
             ),
         ),
         dict(
+            testcase_name="not_available_after",
+            filter_config={
+                "locale": "en_US",
+                "notAvailableAfterDays": 1.5,
+                "anyAvailability": True,
+            },
+            item={"name": "foo", "justwatchId": "movie/1"},
+            api_data={
+                "titles/movie/1/locale/en_US": {
+                    "offers": [
+                        _offer(
+                            package_short_name="foo",
+                            monetization_type="bar",
+                            available_to=_TIME_IN_FUTURE_1.isoformat(),
+                        ),
+                        _offer(available_to=_TIME_IN_FUTURE_2.isoformat()),
+                        _offer(),
+                    ]
+                }
+            },
+            expected_result=media_filter.FilterResult(
+                True, extra={f"Foo+ (bar, until {_TIME_IN_FUTURE_1})"}
+            ),
+        ),
+        dict(
             testcase_name="all_done_true",
             filter_config={
                 "locale": "en_US",

@@ -248,6 +248,7 @@ class Filter(media_filter.CachedFilter):
         *,
         relative_url: str,
         now: datetime.datetime,
+        not_available_after: datetime.datetime | None,
     ) -> _Availability:
         availability = _Availability(total_episode_count=1)
         for offer in content.get("offers", ()):
@@ -271,6 +272,10 @@ class Filter(media_filter.CachedFilter):
                 offer["available_to"], relative_url=relative_url
             )
             if available_to is not None and now > available_to:
+                continue
+            if not_available_after is not None and (
+                available_to is None or available_to > not_available_after
+            ):
                 continue
             comments = [monetization_type]
             if available_from is not None and now < available_from:
@@ -312,6 +317,12 @@ class Filter(media_filter.CachedFilter):
             or self._config.monetization_types
             or self._config.any_availability
         ):
+            not_available_after = (
+                now
+                + datetime.timedelta(days=self._config.not_available_after_days)
+                if self._config.HasField("not_available_after_days")
+                else None
+            )
             availability = _Availability()
             for (
                 episode,
@@ -330,6 +341,7 @@ class Filter(media_filter.CachedFilter):
                         episode,
                         relative_url=episode_relative_url,
                         now=now,
+                        not_available_after=not_available_after,
                     )
                 )
             if not availability.episode_count_by_offer:
