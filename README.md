@@ -77,3 +77,5 @@ filtering is one of the main focuses of this program.
     config files that are used by the same local user, it might be worth
     thinking through the security implications first.
 *   This is not an officially supported Google product.
+*   See also [a disclaimer about JustWatch's
+    API](https://github.com/dawoudt/JustWatchAPI#disclaimer).
