@@ -228,7 +228,7 @@ class Filter(media_filter.CachedFilter):
             raise ValueError("The locale field is required.")
 
     def _should_check_availability(self) -> bool:
-        return (
+        return bool(
             self._config.providers
             or self._config.monetization_types
             or self._config.any_availability
