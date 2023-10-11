@@ -57,7 +57,13 @@ def _filter_media_item(
     extra_information = []
     if not item_result.matches:
         extra_information.append("parent did not match, but children did")
-    extra_information.extend(sorted(item_result.extra))
+    extra_information.extend(
+        sorted(
+            extra_str
+            for extra in item_result.extra
+            if (extra_str := extra.human_readable()) is not None
+        )
+    )
     if extra_information:
         result["extraInformation"] = extra_information
     if parts:

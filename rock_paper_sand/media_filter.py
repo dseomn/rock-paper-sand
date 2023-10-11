@@ -18,10 +18,25 @@ from collections.abc import Callable, Iterable, Set
 import dataclasses
 import itertools
 import re
+from typing import Any
+
+import immutabledict
 
 from rock_paper_sand import media_item
 from rock_paper_sand import multi_level_set
 from rock_paper_sand.proto import config_pb2
+
+
+class ResultExtra(immutabledict.immutabledict[str, Any]):
+    """Extra information about a filter result.
+
+    Keys should generally be scoped with dots. E.g., the justwatch filter should
+    use keys like "justwatch.provider" instead of just "provider".
+    """
+
+    def human_readable(self) -> str | None:
+        """Returns a human-readable description of the extra info, or None."""
+        return None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -30,13 +45,12 @@ class FilterResult:
 
     Attributes:
         matches: Whether the media matches the filter.
-        extra: Any extra information provided by the filter, e.g., what
-            streaming services the media is available on.
+        extra: Any extra information provided by the filter.
     """
 
     matches: bool
     _: dataclasses.KW_ONLY
-    extra: Set[str] = frozenset()
+    extra: Set[ResultExtra] = frozenset()
 
 
 class Filter(abc.ABC):

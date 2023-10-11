@@ -35,7 +35,7 @@ class _ExtraInfoFilter(media_filter.CachedFilter):
         call_count: Number of times filter_implementation() was called.
     """
 
-    def __init__(self, extra: Set[str]) -> None:
+    def __init__(self, extra: Set[media_filter.ResultExtra]) -> None:
         super().__init__()
         self._extra = extra
         self.call_count = 0
@@ -48,6 +48,10 @@ class _ExtraInfoFilter(media_filter.CachedFilter):
         return media_filter.FilterResult(True, extra=self._extra)
 
 
+_EXTRA_1 = media_filter.ResultExtra(test="extra-1")
+_EXTRA_2 = media_filter.ResultExtra(test="extra-2")
+
+
 class MediaFilterTest(parameterized.TestCase):
     @parameterized.named_parameters(
         dict(
@@ -58,9 +62,9 @@ class MediaFilterTest(parameterized.TestCase):
         ),
         dict(
             testcase_name="ref",
-            filter_by_name=dict(foo=_ExtraInfoFilter({"foo"})),
+            filter_by_name=dict(foo=_ExtraInfoFilter({_EXTRA_1})),
             filter_config={"ref": "foo"},
-            expected_result=media_filter.FilterResult(True, extra={"foo"}),
+            expected_result=media_filter.FilterResult(True, extra={_EXTRA_1}),
         ),
         dict(
             testcase_name="not_of_true",
@@ -70,15 +74,15 @@ class MediaFilterTest(parameterized.TestCase):
         ),
         dict(
             testcase_name="not_of_false",
-            filter_by_name=dict(foo=_ExtraInfoFilter({"foo"})),
+            filter_by_name=dict(foo=_ExtraInfoFilter({_EXTRA_1})),
             filter_config={"not": {"not": {"ref": "foo"}}},
-            expected_result=media_filter.FilterResult(True, extra={"foo"}),
+            expected_result=media_filter.FilterResult(True, extra={_EXTRA_1}),
         ),
         dict(
             testcase_name="and_true",
             filter_by_name=dict(
-                foo=_ExtraInfoFilter({"foo"}),
-                bar=_ExtraInfoFilter({"bar"}),
+                foo=_ExtraInfoFilter({_EXTRA_1}),
+                bar=_ExtraInfoFilter({_EXTRA_2}),
             ),
             filter_config={
                 "and": {
@@ -89,12 +93,12 @@ class MediaFilterTest(parameterized.TestCase):
                 }
             },
             expected_result=media_filter.FilterResult(
-                True, extra={"foo", "bar"}
+                True, extra={_EXTRA_1, _EXTRA_2}
             ),
         ),
         dict(
             testcase_name="and_false_without_short_circuit",
-            filter_by_name=dict(foo=_ExtraInfoFilter({"foo"})),
+            filter_by_name=dict(foo=_ExtraInfoFilter({_EXTRA_1})),
             filter_config={
                 "and": {
                     "filters": [
@@ -103,13 +107,13 @@ class MediaFilterTest(parameterized.TestCase):
                     ]
                 }
             },
-            expected_result=media_filter.FilterResult(False, extra={"foo"}),
+            expected_result=media_filter.FilterResult(False, extra={_EXTRA_1}),
         ),
         dict(
             testcase_name="or_true_without_short_circuit",
             filter_by_name=dict(
-                foo=_ExtraInfoFilter({"foo"}),
-                bar=_ExtraInfoFilter({"bar"}),
+                foo=_ExtraInfoFilter({_EXTRA_1}),
+                bar=_ExtraInfoFilter({_EXTRA_2}),
             ),
             filter_config={
                 "or": {
@@ -121,7 +125,7 @@ class MediaFilterTest(parameterized.TestCase):
                 }
             },
             expected_result=media_filter.FilterResult(
-                True, extra={"foo", "bar"}
+                True, extra={_EXTRA_1, _EXTRA_2}
             ),
         ),
         dict(
@@ -243,11 +247,11 @@ class MediaFilterTest(parameterized.TestCase):
         self.assertEqual(expected_result, result)
 
     def test_cached_filter(self) -> None:
-        test_filter = _ExtraInfoFilter({"foo"})
+        test_filter = _ExtraInfoFilter({_EXTRA_1})
         item = media_item.MediaItem.from_config(
             config_pb2.MediaItem(name="bar")
         )
-        expected_result = media_filter.FilterResult(True, extra={"foo"})
+        expected_result = media_filter.FilterResult(True, extra={_EXTRA_1})
 
         first_result = test_filter.filter(item)
         second_result = test_filter.filter(item)

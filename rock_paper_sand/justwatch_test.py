@@ -51,6 +51,18 @@ def _offer(
     }
 
 
+def _offer_extra(
+    provider: str,
+    comments: tuple[str, ...],
+) -> justwatch._OfferResultExtra:
+    return justwatch._OfferResultExtra(  # pylint: disable=protected-access
+        {
+            justwatch._OfferResultExtra.PROVIDER: provider,  # pylint: disable=protected-access
+            justwatch._OfferResultExtra.COMMENTS: comments,  # pylint: disable=protected-access
+        }
+    )
+
+
 class JustWatchApiTest(parameterized.TestCase):
     def setUp(self) -> None:
         super().setUp()
@@ -222,10 +234,14 @@ class FilterTest(parameterized.TestCase):
             expected_result=media_filter.FilterResult(
                 True,
                 extra={
-                    "Foo+ (bar)",
-                    (
-                        f"Quux+ (baz, starting {_TIME_IN_FUTURE_1}, until "
-                        f"{_TIME_IN_FUTURE_2})"
+                    _offer_extra("Foo+", ("bar",)),
+                    _offer_extra(
+                        "Quux+",
+                        (
+                            "baz",
+                            f"starting {_TIME_IN_FUTURE_1}",
+                            f"until {_TIME_IN_FUTURE_2}",
+                        ),
                     ),
                 },
             ),
@@ -261,7 +277,7 @@ class FilterTest(parameterized.TestCase):
                 },
             },
             expected_result=media_filter.FilterResult(
-                True, extra={"Foo+ (bar)"}
+                True, extra={_offer_extra("Foo+", ("bar",))}
             ),
         ),
         dict(
@@ -299,7 +315,7 @@ class FilterTest(parameterized.TestCase):
                 # Showing "1/3 episodes" isn't ideal because it counts the
                 # upcoming season as an episode, but I'm not sure it's worth the
                 # effort to improve it.
-                extra={"Foo+ (1/3 episodes, bar)"},
+                extra={_offer_extra("Foo+", ("1/3 episodes", "bar"))},
             ),
         ),
         dict(
@@ -359,7 +375,7 @@ class FilterTest(parameterized.TestCase):
                 },
             },
             expected_result=media_filter.FilterResult(
-                True, extra={"Foo+ (1/2 episodes, bar)"}
+                True, extra={_offer_extra("Foo+", ("1/2 episodes", "bar"))}
             ),
         ),
         dict(
@@ -381,7 +397,7 @@ class FilterTest(parameterized.TestCase):
                 }
             },
             expected_result=media_filter.FilterResult(
-                True, extra={"Foo+ (bar)"}
+                True, extra={_offer_extra("Foo+", ("bar",))}
             ),
         ),
         dict(
@@ -406,7 +422,10 @@ class FilterTest(parameterized.TestCase):
                 }
             },
             expected_result=media_filter.FilterResult(
-                True, extra={f"Foo+ (bar, until {_TIME_IN_FUTURE_1})"}
+                True,
+                extra={
+                    _offer_extra("Foo+", ("bar", f"until {_TIME_IN_FUTURE_1}"))
+                },
             ),
         ),
         dict(
@@ -495,6 +514,38 @@ class FilterTest(parameterized.TestCase):
         with self.assertRaisesRegex(ValueError, "locale"):
             justwatch.Filter(config_pb2.JustWatchFilter(), api=self._mock_api)
 
+    def test_extra_human_readable(self) -> None:
+        self._mock_api.get.return_value = {
+            "offers": [
+                _offer(
+                    package_short_name="foo",
+                    monetization_type="bar",
+                    available_to=_TIME_IN_FUTURE_1.isoformat(),
+                )
+            ]
+        }
+        test_filter = justwatch.Filter(
+            json_format.ParseDict(
+                {"locale": "en_US", "anyAvailability": True},
+                config_pb2.JustWatchFilter(),
+            ),
+            api=self._mock_api,
+        )
+
+        result = test_filter.filter(
+            media_item.MediaItem.from_config(
+                json_format.ParseDict(
+                    {"name": "foo", "justwatchId": "movie/1"},
+                    config_pb2.MediaItem(),
+                )
+            )
+        )
+
+        self.assertEqual(
+            {f"Foo+ (bar, until {_TIME_IN_FUTURE_1})"},
+            {extra.human_readable() for extra in result.extra},
+        )
+
     def test_possible_unknown_placeholder_datetime(self) -> None:
         self._mock_api.get.return_value = {
             "offers": [
@@ -523,7 +574,10 @@ class FilterTest(parameterized.TestCase):
                 )
             )
         self.assertEqual(
-            media_filter.FilterResult(True, extra={"Foo+ (bar)"}), result
+            media_filter.FilterResult(
+                True, extra={_offer_extra("Foo+", ("bar",))}
+            ),
+            result,
         )
 
 

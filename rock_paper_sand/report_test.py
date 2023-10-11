@@ -37,12 +37,21 @@ from rock_paper_sand.proto import state_pb2
 
 
 class _ExtraInfoFilter(media_filter.Filter):
-    def __init__(self, extra: Set[str]) -> None:
+    def __init__(self, extra: Set[media_filter.ResultExtra]) -> None:
         self._extra = extra
 
     def filter(self, item: media_item.MediaItem) -> media_filter.FilterResult:
         """See base class."""
         return media_filter.FilterResult(True, extra=self._extra)
+
+
+class _ResultExtraStr(media_filter.ResultExtra):
+    def __init__(self, extra_str: str) -> None:
+        super().__init__({"str": extra_str})
+
+    def human_readable(self) -> str | None:
+        """See base class."""
+        return self["str"]
 
 
 class ReportTest(parameterized.TestCase):
@@ -107,7 +116,19 @@ class ReportTest(parameterized.TestCase):
         dict(
             testcase_name="with_extra",
             report_config={
-                "sections": [{"name": "extra", "filter": {"ref": "extra"}}]
+                "sections": [
+                    {
+                        "name": "extra",
+                        "filter": {
+                            "or": {
+                                "filters": [
+                                    {"ref": "extra-without-str"},
+                                    {"ref": "extra-with-str"},
+                                ]
+                            }
+                        },
+                    }
+                ]
             },
             media=[{"name": "foo"}],
             expected_result={
@@ -181,7 +202,12 @@ class ReportTest(parameterized.TestCase):
     ) -> None:
         filter_registry = media_filter.Registry()
         filter_registry.register(
-            "extra", _ExtraInfoFilter({"example extra info"})
+            "extra-without-str",
+            _ExtraInfoFilter({media_filter.ResultExtra(test="no-str")}),
+        )
+        filter_registry.register(
+            "extra-with-str",
+            _ExtraInfoFilter({_ResultExtraStr("example extra info")}),
         )
         report_ = report.Report(
             json_format.ParseDict(report_config, config_pb2.Report()),

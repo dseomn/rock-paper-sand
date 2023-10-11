@@ -153,6 +153,15 @@ class _Offer:
     comments: tuple[str, ...]
 
 
+class _OfferResultExtra(media_filter.ResultExtra):
+    PROVIDER = "justwatch.provider"
+    COMMENTS = "justwatch._comments"
+
+    def human_readable(self) -> str | None:
+        """See base class."""
+        return f"{self[self.PROVIDER]} ({', '.join(self[self.COMMENTS])})"
+
+
 @dataclasses.dataclass(kw_only=True)
 class _Availability:
     """Per-episode availability of a media item."""
@@ -167,7 +176,7 @@ class _Availability:
         self.total_episode_count += other.total_episode_count
         self.episode_count_by_offer.update(other.episode_count_by_offer)
 
-    def to_extra_information(self) -> Set[str]:
+    def to_extra_information(self) -> Set[media_filter.ResultExtra]:
         """Returns availability info for the FilterResult.extra field."""
         extra_information = set()
         for (
@@ -182,7 +191,12 @@ class _Availability:
                     *offer.comments,
                 )
             extra_information.add(
-                f"{offer.provider_name} ({', '.join(comments)})"
+                _OfferResultExtra(
+                    {
+                        _OfferResultExtra.PROVIDER: offer.provider_name,
+                        _OfferResultExtra.COMMENTS: comments,
+                    }
+                )
             )
         return extra_information
 
@@ -311,7 +325,7 @@ class Filter(media_filter.CachedFilter):
             f"titles/{item.proto.justwatch_id}/locale/{self._config.locale}"
         )
         content = self._api.get(relative_url)
-        extra_information: set[str] = set()
+        extra_information: set[media_filter.ResultExtra] = set()
         if (
             self._config.providers
             or self._config.monetization_types
