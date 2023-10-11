@@ -31,6 +31,8 @@ class MediaItem:
         id: Unique ID of the media item. This is not stable across runs of the
             program, so it should not be stored anywhere or shown to the user.
             It's designed for caching filter results in memory.
+        debug_description: Description of the media item for use in logs or
+            exceptions.
         proto: Proto from the config file.
         done: Parsed proto.done field.
         parts: Parsed proto.parts field.
@@ -40,6 +42,7 @@ class MediaItem:
         default_factory=lambda: str(uuid.uuid4()),
         repr=False,
     )
+    debug_description: str
     proto: config_pb2.MediaItem
     done: multi_level_set.MultiLevelSet
     parts: Sequence["MediaItem"]
@@ -72,10 +75,12 @@ class MediaItem:
             )
         else:
             path = "unknown media item"
-        with exceptions.add_note(f"In {path} with name {proto.name!r}."):
+        debug_description = f"{path} with name {proto.name!r}"
+        with exceptions.add_note(f"In {debug_description}."):
             if not proto.name:
                 raise ValueError("The name field is required.")
             return cls(
+                debug_description=debug_description,
                 proto=proto,
                 done=multi_level_set.MultiLevelSet.from_string(proto.done),
                 parts=parts,

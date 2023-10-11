@@ -44,11 +44,15 @@ class MediaItemTest(parameterized.TestCase):
         self.assertEqual(
             media_item.MediaItem(
                 id=mock.ANY,
+                debug_description="unknown media item with name 'some-name'",
                 proto=proto,
                 done=mock.ANY,
                 parts=(
                     media_item.MediaItem(
                         id=mock.ANY,
+                        debug_description=(
+                            "unknown media item with name 'some-part'"
+                        ),
                         proto=config_pb2.MediaItem(name="some-part"),
                         done=mock.ANY,
                         parts=(),
