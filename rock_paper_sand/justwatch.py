@@ -33,6 +33,7 @@ import cachecontrol.heuristics
 import dateutil.parser
 import requests
 
+from rock_paper_sand import exceptions
 from rock_paper_sand import media_filter
 from rock_paper_sand import media_item
 from rock_paper_sand import multi_level_set
@@ -369,28 +370,32 @@ class Filter(media_filter.CachedFilter):
         self, item: media_item.MediaItem
     ) -> media_filter.FilterResult:
         """See base class."""
-        now = datetime.datetime.now(tz=datetime.timezone.utc)
-        if not item.proto.justwatch_id:
-            return media_filter.FilterResult(False)
-        relative_url = (
-            f"titles/{item.proto.justwatch_id}/locale/{self._config.locale}"
-        )
-        content = self._api.get(relative_url)
-        extra_information: set[media_filter.ResultExtra] = set()
-        if self._should_check_availability():
-            availability = self._availability(
-                content,
-                item=item,
-                relative_url=relative_url,
-                now=now,
-            )
-            if not availability.episode_count_by_offer:
-                return media_filter.FilterResult(False)
-            extra_information.update(availability.to_extra_information())
-        if self._config.all_done and not self._all_done(
-            content,
-            done=item.done,
-            relative_url=relative_url,
+        with exceptions.add_note(
+            f"While filtering {item.debug_description} using JustWatch filter "
+            f"config:\n{self._config}"
         ):
-            return media_filter.FilterResult(False)
-        return media_filter.FilterResult(True, extra=extra_information)
+            now = datetime.datetime.now(tz=datetime.timezone.utc)
+            if not item.proto.justwatch_id:
+                return media_filter.FilterResult(False)
+            relative_url = (
+                f"titles/{item.proto.justwatch_id}/locale/{self._config.locale}"
+            )
+            content = self._api.get(relative_url)
+            extra_information: set[media_filter.ResultExtra] = set()
+            if self._should_check_availability():
+                availability = self._availability(
+                    content,
+                    item=item,
+                    relative_url=relative_url,
+                    now=now,
+                )
+                if not availability.episode_count_by_offer:
+                    return media_filter.FilterResult(False)
+                extra_information.update(availability.to_extra_information())
+            if self._config.all_done and not self._all_done(
+                content,
+                done=item.done,
+                relative_url=relative_url,
+            ):
+                return media_filter.FilterResult(False)
+            return media_filter.FilterResult(True, extra=extra_information)

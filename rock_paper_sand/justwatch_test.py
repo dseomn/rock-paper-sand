@@ -538,6 +538,32 @@ class FilterTest(parameterized.TestCase):
         with self.assertRaisesRegex(ValueError, "locale"):
             justwatch.Filter(config_pb2.JustWatchFilter(), api=self._mock_api)
 
+    def test_exception_note(self) -> None:
+        self._mock_api.get.side_effect = ValueError("kumquat")
+        test_filter = justwatch.Filter(
+            json_format.ParseDict(
+                {"locale": "en_US"}, config_pb2.JustWatchFilter()
+            ),
+            api=self._mock_api,
+        )
+
+        with self.assertRaisesRegex(ValueError, "kumquat") as error:
+            test_filter.filter(
+                media_item.MediaItem.from_config(
+                    json_format.ParseDict(
+                        {"name": "foo", "justwatchId": "movie/1"},
+                        config_pb2.MediaItem(),
+                    )
+                )
+            )
+        self.assertSequenceEqual(
+            (
+                "While filtering unknown media item with name 'foo' using "
+                'JustWatch filter config:\nlocale: "en_US"\n',
+            ),
+            error.exception.__notes__,
+        )
+
     def test_extra_human_readable(self) -> None:
         self._mock_api.get.return_value = {
             "offers": [
