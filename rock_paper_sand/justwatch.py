@@ -271,7 +271,7 @@ class Filter(media_filter.CachedFilter):
         else:
             yield content, relative_url
 
-    def _availability(
+    def _leaf_node_availability(
         self,
         content: Any,
         *,
@@ -316,6 +316,42 @@ class Filter(media_filter.CachedFilter):
             ] = 1
         return availability
 
+    def _availability(
+        self,
+        content: Any,
+        *,
+        item: media_item.MediaItem,
+        relative_url: str,
+        now: datetime.datetime,
+    ) -> _Availability:
+        not_available_after = (
+            now + datetime.timedelta(days=self._config.not_available_after_days)
+            if self._config.HasField("not_available_after_days")
+            else None
+        )
+        availability = _Availability()
+        for (
+            episode,
+            episode_relative_url,
+        ) in self._iter_episodes_and_relative_url(
+            content,
+            relative_url=relative_url,
+            exclude=(
+                multi_level_set.MultiLevelSet(())
+                if self._config.include_done
+                else item.done
+            ),
+        ):
+            availability.update(
+                self._leaf_node_availability(
+                    episode,
+                    relative_url=episode_relative_url,
+                    now=now,
+                    not_available_after=not_available_after,
+                )
+            )
+        return availability
+
     def _all_done(
         self,
         content: Any,
@@ -342,33 +378,12 @@ class Filter(media_filter.CachedFilter):
         content = self._api.get(relative_url)
         extra_information: set[media_filter.ResultExtra] = set()
         if self._should_check_availability():
-            not_available_after = (
-                now
-                + datetime.timedelta(days=self._config.not_available_after_days)
-                if self._config.HasField("not_available_after_days")
-                else None
-            )
-            availability = _Availability()
-            for (
-                episode,
-                episode_relative_url,
-            ) in self._iter_episodes_and_relative_url(
+            availability = self._availability(
                 content,
+                item=item,
                 relative_url=relative_url,
-                exclude=(
-                    multi_level_set.MultiLevelSet(())
-                    if self._config.include_done
-                    else item.done
-                ),
-            ):
-                availability.update(
-                    self._availability(
-                        episode,
-                        relative_url=episode_relative_url,
-                        now=now,
-                        not_available_after=not_available_after,
-                    )
-                )
+                now=now,
+            )
             if not availability.episode_count_by_offer:
                 return media_filter.FilterResult(False)
             extra_information.update(availability.to_extra_information())
