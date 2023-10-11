@@ -56,6 +56,10 @@ class FilterResult:
 class Filter(abc.ABC):
     """Base class for filtering media and optionally adding additional info."""
 
+    def valid_extra_keys(self) -> Set[str]:
+        """Returns valid keys that could be used in FilterResult.extra."""
+        return frozenset()
+
     @abc.abstractmethod
     def filter(self, item: media_item.MediaItem) -> FilterResult:
         """Returns the result of the filter on the media item."""
@@ -89,6 +93,10 @@ class Not(Filter):
     def __init__(self, child: Filter, /) -> None:
         self._child = child
 
+    def valid_extra_keys(self) -> Set[str]:
+        """See base class."""
+        return self._child.valid_extra_keys()
+
     def filter(self, item: media_item.MediaItem) -> FilterResult:
         """See base class."""
         child_result = self._child.filter(item)
@@ -103,6 +111,14 @@ class BinaryLogic(Filter):
     ) -> None:
         self._children = children
         self._op = op
+
+    def valid_extra_keys(self) -> Set[str]:
+        """See base class."""
+        return frozenset(
+            itertools.chain.from_iterable(
+                child.valid_extra_keys() for child in self._children
+            )
+        )
 
     def filter(self, item: media_item.MediaItem) -> FilterResult:
         """See base class."""

@@ -156,6 +156,7 @@ class _Offer:
 class _OfferResultExtra(media_filter.ResultExtra):
     PROVIDER = "justwatch.provider"
     COMMENTS = "justwatch._comments"
+    PUBLIC_KEYS = (PROVIDER,)
 
     def human_readable(self) -> str | None:
         """See base class."""
@@ -225,6 +226,20 @@ class Filter(media_filter.CachedFilter):
         self._api = api
         if not self._config.locale:
             raise ValueError("The locale field is required.")
+
+    def _should_check_availability(self) -> bool:
+        return (
+            self._config.providers
+            or self._config.monetization_types
+            or self._config.any_availability
+        )
+
+    def valid_extra_keys(self) -> Set[str]:
+        """See base class."""
+        keys: set[str] = set()
+        if self._should_check_availability():
+            keys.update(_OfferResultExtra.PUBLIC_KEYS)
+        return keys
 
     def _iter_episodes_and_relative_url(
         self,
@@ -326,11 +341,7 @@ class Filter(media_filter.CachedFilter):
         )
         content = self._api.get(relative_url)
         extra_information: set[media_filter.ResultExtra] = set()
-        if (
-            self._config.providers
-            or self._config.monetization_types
-            or self._config.any_availability
-        ):
+        if self._should_check_availability():
             not_available_after = (
                 now
                 + datetime.timedelta(days=self._config.not_available_after_days)

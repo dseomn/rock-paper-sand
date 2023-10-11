@@ -15,6 +15,7 @@
 # pylint: disable=missing-module-docstring
 
 from collections.abc import Mapping, Set
+import itertools
 import re
 from typing import Any
 from unittest import mock
@@ -22,6 +23,7 @@ from unittest import mock
 from absl.testing import absltest
 from absl.testing import parameterized
 from google.protobuf import json_format
+import immutabledict
 
 from rock_paper_sand import media_filter
 from rock_paper_sand import media_item
@@ -39,6 +41,10 @@ class _ExtraInfoFilter(media_filter.CachedFilter):
         super().__init__()
         self._extra = extra
         self.call_count = 0
+
+    def valid_extra_keys(self) -> Set[str]:
+        """See base class."""
+        return frozenset(itertools.chain.from_iterable(self._extra))
 
     def filter_implementation(
         self, item: media_item.MediaItem
@@ -245,6 +251,66 @@ class MediaFilterTest(parameterized.TestCase):
         )
         result = test_filter.filter(media_item.MediaItem.from_config(item))
         self.assertEqual(expected_result, result)
+
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="ref",
+            filter_by_name=dict(
+                foo=_ExtraInfoFilter({media_filter.ResultExtra(some_key="bar")})
+            ),
+            filter_config={"ref": "foo"},
+            valid_extra_keys={"some_key"},
+        ),
+        dict(
+            testcase_name="not",
+            filter_by_name=dict(
+                foo=_ExtraInfoFilter({media_filter.ResultExtra(some_key="bar")})
+            ),
+            filter_config={"not": {"ref": "foo"}},
+            valid_extra_keys={"some_key"},
+        ),
+        dict(
+            testcase_name="and",
+            filter_by_name=dict(
+                foo=_ExtraInfoFilter({media_filter.ResultExtra(key_1="baz")}),
+                bar=_ExtraInfoFilter({media_filter.ResultExtra(key_2="baz")}),
+            ),
+            filter_config={
+                "and": {"filters": [{"ref": "foo"}, {"ref": "bar"}]}
+            },
+            valid_extra_keys={"key_1", "key_2"},
+        ),
+        dict(
+            testcase_name="or",
+            filter_by_name=dict(
+                foo=_ExtraInfoFilter({media_filter.ResultExtra(key_1="baz")}),
+                bar=_ExtraInfoFilter({media_filter.ResultExtra(key_2="baz")}),
+            ),
+            filter_config={"or": {"filters": [{"ref": "foo"}, {"ref": "bar"}]}},
+            valid_extra_keys={"key_1", "key_2"},
+        ),
+        dict(
+            testcase_name="has_parts",
+            filter_config={"hasParts": True},
+            valid_extra_keys=frozenset(),
+        ),
+    )
+    def test_basic_filter_valid_extra_keys(
+        self,
+        *,
+        filter_by_name: Mapping[str, media_filter.Filter] = (
+            immutabledict.immutabledict()
+        ),
+        filter_config: Any,
+        valid_extra_keys: Set[str],
+    ) -> None:
+        registry = media_filter.Registry()
+        for name, filter_ in filter_by_name.items():
+            registry.register(name, filter_)
+        test_filter = registry.parse(
+            json_format.ParseDict(filter_config, config_pb2.Filter())
+        )
+        self.assertEqual(valid_extra_keys, test_filter.valid_extra_keys())
 
     def test_cached_filter(self) -> None:
         test_filter = _ExtraInfoFilter({_EXTRA_1})

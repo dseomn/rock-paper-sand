@@ -14,7 +14,7 @@
 
 # pylint: disable=missing-module-docstring
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Set
 import datetime
 from typing import Any
 from unittest import mock
@@ -509,6 +509,30 @@ class FilterTest(parameterized.TestCase):
         )
 
         self.assertEqual(expected_result, result)
+
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="no_match_conditions",
+            filter_config={"locale": "en_US"},
+            valid_extra_keys=frozenset(),
+        ),
+        dict(
+            testcase_name="availability_conditions",
+            filter_config={"locale": "en_US", "anyAvailability": True},
+            valid_extra_keys={"justwatch.provider"},
+        ),
+    )
+    def test_valid_extra_keys(
+        self,
+        *,
+        filter_config: Any,
+        valid_extra_keys: Set[str],
+    ) -> None:
+        test_filter = justwatch.Filter(
+            json_format.ParseDict(filter_config, config_pb2.JustWatchFilter()),
+            api=self._mock_api,
+        )
+        self.assertEqual(valid_extra_keys, test_filter.valid_extra_keys())
 
     def test_missing_locale_field(self) -> None:
         with self.assertRaisesRegex(ValueError, "locale"):
