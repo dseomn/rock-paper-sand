@@ -52,8 +52,7 @@ message StringFieldMatcher {
 // available on "foo" with monetization type "bar", not on "foo" with another
 // monetization type and also on another service with monetization type "bar".
 message JustWatchFilter {
-  // Required. Run `rock-paper-sand justwatch locales` to see the possible
-  // values.
+  // Required.
   string locale = 1;
 
   // For the conditions below that match on availability, whether they should
@@ -231,8 +230,7 @@ message MediaItem {
   // URL.
   string custom_availability = 4;
 
-  // JustWatch type and id, e.g., "show/22164" or "movie/127384". Run
-  // `rock-paper-sand justwatch search` to find these values.
+  // JustWatch type and id, e.g., "show/22164" or "movie/127384".
   string justwatch_id = 6;
 
   // Parts of a media item. E.g., if the outer item is a fictional universe, the

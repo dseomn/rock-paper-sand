@@ -110,20 +110,6 @@ class Api:
         self._cache[relative_url] = response_json
         return response_json
 
-    def post(self, relative_url: str, payload: Any) -> Any:
-        """Returns the decoded JSON response to a POST request."""
-        response = self._session.post(
-            f"{self._base_url}/{relative_url}", json=payload
-        )
-        response.raise_for_status()
-        return response.json()
-
-    def locales(self) -> Collection[str]:
-        """Returns the the JustWatch locale names."""
-        return frozenset(
-            locale["full_locale"] for locale in self.get("locales/state")
-        )
-
     def providers(self, *, locale: str) -> Mapping[str, str]:
         """Returns a mapping from provider short name to human-readable name."""
         if locale not in self._provider_name_by_short_name_by_locale:

@@ -100,34 +100,6 @@ class JustWatchApiTest(parameterized.TestCase):
         self.assertEqual("foo", data)
         self.assertEmpty(self._mock_session.mock_calls)
 
-    def test_post(self) -> None:
-        self._mock_session.post.return_value.json.return_value = "foo"
-
-        data = self._api.post("bar", ["payload"])
-
-        self.assertEqual("foo", data)
-        self.assertSequenceEqual(
-            (
-                mock.call.post(f"{self._base_url}/bar", json=["payload"]),
-                mock.call.post().raise_for_status(),
-                mock.call.post().json(),
-            ),
-            self._mock_session.mock_calls,
-        )
-
-    def test_locales(self) -> None:
-        self._mock_session.get.return_value.json.return_value = [
-            {"full_locale": "foo"},
-            {"full_locale": "bar"},
-        ]
-
-        locales = self._api.locales()
-
-        self.assertCountEqual(("foo", "bar"), locales)
-        self._mock_session.get.assert_called_once_with(
-            f"{self._base_url}/locales/state"
-        )
-
     def test_providers(self) -> None:
         self._mock_session.get.return_value.json.return_value = [
             {"short_name": "foo", "clear_name": "Foo+"},

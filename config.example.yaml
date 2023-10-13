@@ -141,8 +141,7 @@ media:
   name: "Monty Python and the Holy Grail (1975)"
   done: "all"
 - # This is a movie that the user still wants to watch. It's available at the
-  # library, and it may or may not also be available on streaming services. Run
-  # `rock-paper-sand justwatch search life of brian` to find the justwatchId.
+  # library, and it may or may not also be available on streaming services.
   name: "Life of Brian (1979)"
   customAvailability: "borrow from the library"
   justwatchId: movie/70993  # https://www.justwatch.com/us/movie/life-of-brian
