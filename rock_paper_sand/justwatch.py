@@ -64,8 +64,11 @@ def _parse_datetime(
     return value
 
 
-class Api:
-    """Wrapper around JustWatch's API."""
+class ObsoleteApi:
+    """Wrapper around JustWatch's old, obsolete API.
+
+    This will go away once migration to the new API is done.
+    """
 
     def __init__(
         self,
@@ -206,7 +209,7 @@ class Filter(media_filter.CachedFilter):
         self,
         filter_config: config_pb2.JustWatchFilter,
         *,
-        api: Api,
+        api: ObsoleteApi,
     ) -> None:
         super().__init__()
         self._config = filter_config

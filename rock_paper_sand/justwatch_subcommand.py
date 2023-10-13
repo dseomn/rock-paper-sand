@@ -37,7 +37,7 @@ class MonetizationTypes(subcommand.Subcommand):
     def run(self, args: argparse.Namespace) -> None:
         """See base class."""
         with network.requests_session() as session:
-            api = justwatch.Api(session=session)
+            api = justwatch.ObsoleteApi(session=session)
             print(
                 yaml.safe_dump(
                     sorted(api.monetization_types(locale=args.locale))
@@ -57,7 +57,7 @@ class Providers(subcommand.Subcommand):
     def run(self, args: argparse.Namespace) -> None:
         """See base class."""
         with network.requests_session() as session:
-            api = justwatch.Api(session=session)
+            api = justwatch.ObsoleteApi(session=session)
             print(yaml.safe_dump(api.providers(locale=args.locale)), end="")
 
 

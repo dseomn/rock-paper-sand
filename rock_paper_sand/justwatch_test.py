@@ -63,14 +63,14 @@ def _offer_extra(
     )
 
 
-class JustWatchApiTest(parameterized.TestCase):
+class JustWatchObsoleteApiTest(parameterized.TestCase):
     def setUp(self) -> None:
         super().setUp()
         self._mock_session = mock.create_autospec(
             requests.Session, spec_set=True, instance=True
         )
         self._base_url = "http://localhost"
-        self._api = justwatch.Api(
+        self._api = justwatch.ObsoleteApi(
             session=self._mock_session, base_url=self._base_url
         )
         self._mock_session.reset_mock()
@@ -155,7 +155,7 @@ class JustWatchApiTest(parameterized.TestCase):
 class FilterTest(parameterized.TestCase):
     def setUp(self) -> None:
         self._mock_api = mock.create_autospec(
-            justwatch.Api, spec_set=True, instance=True
+            justwatch.ObsoleteApi, spec_set=True, instance=True
         )
         self._mock_api.provider_name.side_effect = (
             lambda short_name, locale: f"{short_name.capitalize()}+"
