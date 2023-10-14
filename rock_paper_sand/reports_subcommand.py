@@ -20,7 +20,7 @@ from typing import Any
 import yaml
 
 from rock_paper_sand import config
-from rock_paper_sand import network
+from rock_paper_sand import justwatch
 from rock_paper_sand import state
 from rock_paper_sand import subcommand
 
@@ -31,8 +31,10 @@ class Notify(subcommand.Subcommand):
     def run(self, args: argparse.Namespace) -> None:
         """See base class."""
         del args  # Unused.
-        with network.requests_session() as session:
-            config_ = config.Config.from_config_file(session=session)
+        with justwatch.requests_session() as justwatch_session:
+            config_ = config.Config.from_config_file(
+                justwatch_session=justwatch_session
+            )
             state_ = state.from_file()
             for report_name, report_ in config_.reports.items():
                 report_.notify(
@@ -57,8 +59,10 @@ class Print(subcommand.Subcommand):
 
     def run(self, args: argparse.Namespace) -> None:
         """See base class."""
-        with network.requests_session() as session:
-            config_ = config.Config.from_config_file(session=session)
+        with justwatch.requests_session() as justwatch_session:
+            config_ = config.Config.from_config_file(
+                justwatch_session=justwatch_session
+            )
             results: Any
             if args.report is None:
                 results = {

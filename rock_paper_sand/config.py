@@ -55,14 +55,14 @@ class Config:
     def from_config_file(
         cls,
         *,
-        session: requests.Session,
+        justwatch_session: requests.Session,
     ) -> Self:
         """Parses a config file."""
         with open(flags_and_constants.CONFIG_FILE.value, "rb") as config_file:
             proto = json_format.ParseDict(
                 yaml.safe_load(config_file), config_pb2.Config()
             )
-        justwatch_api = justwatch.Api(session=session)
+        justwatch_api = justwatch.Api(session=justwatch_session)
         filter_registry = media_filter.Registry(
             justwatch_factory=functools.partial(
                 justwatch.Filter, api=justwatch_api

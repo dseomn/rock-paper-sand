@@ -19,7 +19,6 @@ import typing
 import yaml
 
 from rock_paper_sand import justwatch
-from rock_paper_sand import network
 from rock_paper_sand import subcommand
 
 
@@ -37,7 +36,7 @@ class MonetizationTypes(subcommand.Subcommand):
 
     def run(self, args: argparse.Namespace) -> None:
         """See base class."""
-        with network.requests_session() as session:
+        with justwatch.requests_session() as session:
             api = justwatch.Api(session=session)
             print(
                 yaml.safe_dump(
@@ -57,7 +56,7 @@ class Providers(subcommand.Subcommand):
 
     def run(self, args: argparse.Namespace) -> None:
         """See base class."""
-        with network.requests_session() as session:
+        with justwatch.requests_session() as session:
             api = justwatch.Api(session=session)
             print(yaml.safe_dump(api.providers(country=args.country)), end="")
 
@@ -73,7 +72,7 @@ class Node(subcommand.Subcommand):
 
     def run(self, args: argparse.Namespace) -> None:
         """See base class."""
-        with network.requests_session() as session:
+        with justwatch.requests_session() as session:
             api = justwatch.Api(session=session)
             print(
                 yaml.safe_dump(

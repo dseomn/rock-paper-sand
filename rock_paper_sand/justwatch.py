@@ -22,7 +22,8 @@ to enable useful things like caching and retrying specific errors.
 """
 
 import collections
-from collections.abc import Collection, Iterable, Mapping, Set
+from collections.abc import Collection, Generator, Iterable, Mapping, Set
+import contextlib
 import dataclasses
 import datetime
 from typing import Any
@@ -35,6 +36,7 @@ from rock_paper_sand import exceptions
 from rock_paper_sand import media_filter
 from rock_paper_sand import media_item
 from rock_paper_sand import multi_level_set
+from rock_paper_sand import network
 from rock_paper_sand.proto import config_pb2
 
 _GRAPHQL_URL = "https://apis.justwatch.com/graphql"
@@ -65,6 +67,14 @@ def _parse_datetime(
             UserWarning,
         )
     return value
+
+
+@contextlib.contextmanager
+def requests_session() -> Generator[requests.Session, None, None]:
+    """Returns a context manager for a session for the JustWatch API."""
+    with requests.session() as session:
+        network.configure_session(session)
+        yield session
 
 
 class Api:

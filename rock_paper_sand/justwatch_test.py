@@ -66,6 +66,14 @@ def _offer_extra(
     )
 
 
+class JustWatchSessionTest(parameterized.TestCase):
+    def test_session(self) -> None:
+        # For now this is basicaly just a smoke test, because it's probably not
+        # worth the effort to really test this function.
+        with justwatch.requests_session() as session:
+            self.assertIsInstance(session, requests.Session)
+
+
 class JustWatchApiTest(parameterized.TestCase):
     def setUp(self) -> None:
         super().setUp()

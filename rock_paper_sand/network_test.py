@@ -30,10 +30,11 @@ class NetworkTest(parameterized.TestCase):
             network.requests_http_adapter(), requests.adapters.HTTPAdapter
         )
 
-    def test_requests_session(self) -> None:
+    def test_configure_session(self) -> None:
         # For now this is basicaly just a smoke test, because it's probably not
         # worth the effort to really test this function.
-        with network.requests_session() as session:
+        with requests.session() as session:
+            network.configure_session(session)
             self.assertIn("User-Agent", session.headers)
 
     @parameterized.parameters(

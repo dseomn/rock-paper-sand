@@ -81,7 +81,9 @@ class ConfigTest(parameterized.TestCase):
         )
         with self.assertRaisesRegex(ValueError, error_regex) as error:
             config.Config.from_config_file(
-                session=self.enter_context(network.null_requests_session())
+                justwatch_session=self.enter_context(
+                    network.null_requests_session()
+                )
             )
         self.assertSequenceEqual(error_notes, error.exception.__notes__)
 
@@ -191,7 +193,9 @@ class ConfigTest(parameterized.TestCase):
             )
         )
         config_ = config.Config.from_config_file(
-            session=self.enter_context(network.null_requests_session())
+            justwatch_session=self.enter_context(
+                network.null_requests_session()
+            )
         )
 
         results = config_.lint()
@@ -208,7 +212,7 @@ class ConfigTest(parameterized.TestCase):
             )
         ):
             config_ = config.Config.from_config_file(
-                session=network.null_requests_session()
+                justwatch_session=network.null_requests_session()
             )
             self.assertEmpty(config_.lint())
 

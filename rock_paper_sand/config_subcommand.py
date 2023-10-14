@@ -31,7 +31,7 @@ class Lint(subcommand.Subcommand):
         """See base class."""
         del args  # Unused.
         with network.null_requests_session() as session:
-            config_ = config.Config.from_config_file(session=session)
+            config_ = config.Config.from_config_file(justwatch_session=session)
             if results := config_.lint():
                 print(
                     yaml.safe_dump(
