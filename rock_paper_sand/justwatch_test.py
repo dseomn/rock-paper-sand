@@ -63,6 +63,68 @@ def _offer_extra(
     )
 
 
+class JustWatchApiTest(parameterized.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self._mock_session = mock.create_autospec(
+            requests.Session, spec_set=True, instance=True
+        )
+        self._api = justwatch.Api(session=self._mock_session)
+
+    def test_query(self) -> None:
+        self._mock_session.post.return_value.json.return_value = "some-result"
+
+        result = self._api.query(
+            "some-document",
+            operation_name="SomeOperation",
+            variables={"foo": "bar"},
+        )
+
+        self.assertEqual("some-result", result)
+        self.assertSequenceEqual(
+            (
+                mock.call.post(
+                    mock.ANY,
+                    json={
+                        "query": "some-document",
+                        "operationName": "SomeOperation",
+                        "variables": {"foo": "bar"},
+                    },
+                ),
+                mock.call.post().raise_for_status(),
+                mock.call.post().json(),
+            ),
+            self._mock_session.mock_calls,
+        )
+
+    def test_providers(self) -> None:
+        self._mock_session.post.return_value.json.return_value = {
+            "data": {
+                "packages": [{"technicalName": "foo", "clearName": "Foo+"}]
+            }
+        }
+
+        providers = self._api.providers(country="US")
+
+        self.assertEqual({"foo": "Foo+"}, providers)
+        self._mock_session.post.assert_called_once()
+
+    def test_monetization_types(self) -> None:
+        self._mock_session.post.return_value.json.return_value = {
+            "data": {
+                "packages": [
+                    {"monetizationTypes": ["FOO"]},
+                    {"monetizationTypes": ["BAR", "QUUX"]},
+                ]
+            }
+        }
+
+        monetization_types = self._api.monetization_types(country="US")
+
+        self.assertCountEqual(("foo", "bar", "quux"), monetization_types)
+        self._mock_session.post.assert_called_once()
+
+
 class JustWatchObsoleteApiTest(parameterized.TestCase):
     def setUp(self) -> None:
         super().setUp()
@@ -136,20 +198,6 @@ class JustWatchObsoleteApiTest(parameterized.TestCase):
     def test_provider_name_not_found(self) -> None:
         self._mock_session.get.return_value.json.return_value = []
         self.assertEqual("foo", self._api.provider_name("foo", locale="en_US"))
-
-    def test_monetization_types(self) -> None:
-        self._mock_session.get.return_value.json.return_value = [
-            {"monetization_types": ["foo"]},
-            {"monetization_types": ["bar", "quux"]},
-            {"monetization_types": None},
-        ]
-
-        monetization_types = self._api.monetization_types(locale="en_US")
-
-        self.assertCountEqual(("foo", "bar", "quux"), monetization_types)
-        self._mock_session.get.assert_called_once_with(
-            f"{self._base_url}/providers/locale/en_US"
-        )
 
 
 class FilterTest(parameterized.TestCase):

@@ -25,7 +25,6 @@ import collections
 from collections.abc import Collection, Iterable, Mapping, Set
 import dataclasses
 import datetime
-import itertools
 from typing import Any
 import warnings
 
@@ -40,6 +39,7 @@ from rock_paper_sand import multi_level_set
 from rock_paper_sand import network
 from rock_paper_sand.proto import config_pb2
 
+_GRAPHQL_URL = "https://apis.justwatch.com/graphql"
 _BASE_URL = "https://apis.justwatch.com/content"
 
 
@@ -62,6 +62,91 @@ def _parse_datetime(
             UserWarning,
         )
     return value
+
+
+class Api:
+    """Wrapper around JustWatch's GraphQL API."""
+
+    def __init__(
+        self,
+        *,
+        session: requests.Session,
+    ) -> None:
+        # TODO(dseomn): Figure out caching.
+        self._session = session
+
+    def query(
+        self,
+        document: str,
+        *,
+        operation_name: str,
+        variables: Mapping[str, Any],
+    ) -> Any:
+        """Returns the result of a GraphQL query operation.
+
+        Args:
+            document: GraphQL document with at least one query.
+            operation_name: Name of the query in the document to use.
+            variables: Variables for the query.
+        """
+        response = self._session.post(
+            _GRAPHQL_URL,
+            json={
+                "query": document,
+                "operationName": operation_name,
+                "variables": variables,
+            },
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def providers(self, *, country: str) -> Mapping[str, str]:
+        """Returns a mapping from technical name to human-readable name."""
+        result = self.query(
+            """
+            query GetProviders($country: Country!) {
+                packages(
+                    country: $country,
+                    platform: WEB,
+                    includeAddons: true,
+                ) {
+                    technicalName
+                    clearName
+                }
+            }
+            """,
+            operation_name="GetProviders",
+            variables={"country": country},
+        )
+        return {
+            package["technicalName"]: package["clearName"]
+            for package in result["data"]["packages"]
+        }
+
+    def monetization_types(self, *, country: str) -> Collection[str]:
+        """Returns the monetization types."""
+        result = self.query(
+            """
+            query GetMonetizationTypes($country: Country!) {
+                packages(
+                    country: $country,
+                    platform: WEB,
+                    includeAddons: true,
+                ) {
+                    monetizationTypes
+                }
+            }
+            """,
+            operation_name="GetMonetizationTypes",
+            variables={"country": country},
+        )
+        monetization_types: set[str] = set()
+        for package in result["data"]["packages"]:
+            monetization_types.update(
+                monetization_type.lower()
+                for monetization_type in package["monetizationTypes"]
+            )
+        return monetization_types
 
 
 class ObsoleteApi:
@@ -125,16 +210,6 @@ class ObsoleteApi:
     def provider_name(self, short_name: str, *, locale: str) -> str:
         """Returns the human-readable provider name."""
         return self.providers(locale=locale).get(short_name, short_name)
-
-    def monetization_types(self, *, locale: str) -> Collection[str]:
-        """Returns the monetization types."""
-        return frozenset(
-            itertools.chain.from_iterable(
-                provider["monetization_types"]
-                for provider in self.get(f"providers/locale/{locale}")
-                if provider["monetization_types"] is not None
-            )
-        )
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

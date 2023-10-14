@@ -22,8 +22,8 @@ from rock_paper_sand import network
 from rock_paper_sand import subcommand
 
 
-def _add_locale_arg(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--locale", help="JustWatch locale.", required=True)
+def _add_country_arg(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--country", help="JustWatch country.", required=True)
 
 
 class MonetizationTypes(subcommand.Subcommand):
@@ -32,15 +32,15 @@ class MonetizationTypes(subcommand.Subcommand):
     def __init__(self, parser: argparse.ArgumentParser) -> None:
         """See base class."""
         super().__init__(parser)
-        _add_locale_arg(parser)
+        _add_country_arg(parser)
 
     def run(self, args: argparse.Namespace) -> None:
         """See base class."""
         with network.requests_session() as session:
-            api = justwatch.ObsoleteApi(session=session)
+            api = justwatch.Api(session=session)
             print(
                 yaml.safe_dump(
-                    sorted(api.monetization_types(locale=args.locale))
+                    sorted(api.monetization_types(country=args.country))
                 ),
                 end="",
             )
@@ -52,13 +52,13 @@ class Providers(subcommand.Subcommand):
     def __init__(self, parser: argparse.ArgumentParser) -> None:
         """See base class."""
         super().__init__(parser)
-        _add_locale_arg(parser)
+        _add_country_arg(parser)
 
     def run(self, args: argparse.Namespace) -> None:
         """See base class."""
         with network.requests_session() as session:
-            api = justwatch.ObsoleteApi(session=session)
-            print(yaml.safe_dump(api.providers(locale=args.locale)), end="")
+            api = justwatch.Api(session=session)
+            print(yaml.safe_dump(api.providers(country=args.country)), end="")
 
 
 class Main(subcommand.ContainerSubcommand):
