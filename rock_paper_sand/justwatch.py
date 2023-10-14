@@ -90,7 +90,6 @@ class Api:
         *,
         session: requests.Session,
     ) -> None:
-        # TODO(dseomn): Figure out caching.
         self._session = session
 
         # While this cache *might* help with performance, the main reason to use
