@@ -107,9 +107,9 @@ class Api:
             """
             query GetProviders($country: Country!) {
                 packages(
-                    country: $country,
-                    platform: WEB,
-                    includeAddons: true,
+                    country: $country
+                    platform: WEB
+                    includeAddons: true
                 ) {
                     technicalName
                     clearName
@@ -130,9 +130,9 @@ class Api:
             """
             query GetMonetizationTypes($country: Country!) {
                 packages(
-                    country: $country,
-                    platform: WEB,
-                    includeAddons: true,
+                    country: $country
+                    platform: WEB
+                    includeAddons: true
                 ) {
                     monetizationTypes
                 }
