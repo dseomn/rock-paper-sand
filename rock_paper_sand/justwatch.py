@@ -113,7 +113,10 @@ class Api:
         )
         with exceptions.add_note(f"Response body: {response.text}"):
             response.raise_for_status()
-        return response.json()
+        response_json = response.json()
+        if "errors" in response_json:
+            raise ValueError(f"GraphQL query failed: {response_json}")
+        return response_json
 
     def providers(self, *, country: str) -> Mapping[str, str]:
         """Returns a mapping from technical name to human-readable name."""

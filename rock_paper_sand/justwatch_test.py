@@ -99,6 +99,18 @@ class JustWatchApiTest(parameterized.TestCase):
             ),
         )
 
+    def test_query_graphql_errors(self) -> None:
+        self._mock_session.post.return_value.json.return_value = {
+            "errors": "some-error"
+        }
+
+        with self.assertRaisesRegex(ValueError, "some-error"):
+            self._api.query(
+                "some-document",
+                operation_name="SomeOperation",
+                variables={},
+            )
+
     def test_providers(self) -> None:
         self._mock_session.post.return_value.json.return_value = {
             "data": {
