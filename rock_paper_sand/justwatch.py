@@ -75,6 +75,20 @@ class Api:
         # TODO(dseomn): Figure out caching.
         self._session = session
 
+        # While this cache *might* help with performance, the main reason to use
+        # one here is to avoid race conditions. Without this, if a report were
+        # generated around the time that data was expiring from the requests
+        # cache, it would be possible for a section with {"justwatch": ...} and
+        # another with {"not": {"justwatch": ...}} to either both match the same
+        # media item or neither match the item. This cache makes sure that those
+        # two filters see identical data, so that the mutual exclusion can be
+        # preserved. NOTE: If this code is ever used in a long-running process,
+        # this might need more work to avoid stale data.
+        self._node_id_by_url_path: dict[str, str] = {}
+        self._node_by_id_by_country: (
+            dict[str, dict[str, Any]]
+        ) = collections.defaultdict(dict)
+
     def query(
         self,
         document: str,
@@ -148,6 +162,70 @@ class Api:
                 for monetization_type in package["monetizationTypes"]
             )
         return monetization_types
+
+    def get_node(self, node_id_or_url: str, *, country: str) -> Any:
+        """Returns a node (e.g., movie or TV show)."""
+        query_document = """
+        fragment Movie on Movie {
+            offers(country: $country, platform: WEB) {
+                monetizationType
+                availableToTime
+                availableFromTime
+                package {
+                    clearName
+                    technicalName
+                }
+            }
+        }
+
+        fragment Node on Node {
+            __typename
+            id
+            ...Movie
+        }
+
+        query GetNodeById($nodeId: ID!, $country: Country!) {
+            node(id: $nodeId) {
+                ...Node
+            }
+        }
+
+        query GetNodeByUrlPath($urlPath: String!, $country: Country!) {
+            urlV2(fullPath: $urlPath) {
+                node {
+                    ...Node
+                }
+            }
+        }
+        """
+        node_by_id = self._node_by_id_by_country[country]
+        if (
+            url_path := node_id_or_url.removeprefix("https://www.justwatch.com")
+        ).startswith("/"):
+            if url_path not in self._node_id_by_url_path:
+                node = self.query(
+                    query_document,
+                    operation_name="GetNodeByUrlPath",
+                    variables={
+                        "urlPath": url_path,
+                        "country": country,
+                    },
+                )["data"]["urlV2"]["node"]
+                self._node_id_by_url_path[url_path] = node["id"]
+                node_by_id.setdefault(node["id"], node)
+            node_id = self._node_id_by_url_path[url_path]
+        else:
+            node_id = node_id_or_url
+        if node_id not in node_by_id:
+            node_by_id[node_id] = self.query(
+                query_document,
+                operation_name="GetNodeById",
+                variables={
+                    "nodeId": node_id,
+                    "country": country,
+                },
+            )["data"]["node"]
+        return node_by_id[node_id]
 
 
 class ObsoleteApi:

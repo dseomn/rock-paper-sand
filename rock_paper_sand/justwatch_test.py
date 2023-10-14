@@ -126,6 +126,122 @@ class JustWatchApiTest(parameterized.TestCase):
         self.assertCountEqual(("foo", "bar", "quux"), monetization_types)
         self._mock_session.post.assert_called_once()
 
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="url_full",
+            node_id_or_url="https://www.justwatch.com/some-url",
+            operation_name="GetNodeByUrlPath",
+            variables={"urlPath": "/some-url", "country": "US"},
+            json_response={"data": {"urlV2": {"node": {"id": "some-id"}}}},
+        ),
+        dict(
+            testcase_name="url_path",
+            node_id_or_url="/some-url",
+            operation_name="GetNodeByUrlPath",
+            variables={"urlPath": "/some-url", "country": "US"},
+            json_response={"data": {"urlV2": {"node": {"id": "some-id"}}}},
+        ),
+        dict(
+            testcase_name="node_id",
+            node_id_or_url="some-id",
+            operation_name="GetNodeById",
+            variables={"nodeId": "some-id", "country": "US"},
+            json_response={"data": {"node": {"id": "some-id"}}},
+        ),
+    )
+    def test_get_node(
+        self,
+        *,
+        node_id_or_url: str,
+        operation_name: str,
+        variables: Mapping[str, Any],
+        json_response: Any,
+    ) -> None:
+        self._mock_session.post.return_value.json.return_value = json_response
+
+        node = self._api.get_node(node_id_or_url, country="US")
+
+        self.assertEqual({"id": "some-id"}, node)
+        self._mock_session.post.assert_called_once_with(
+            mock.ANY,
+            json={
+                "query": mock.ANY,
+                "operationName": operation_name,
+                "variables": variables,
+            },
+        )
+
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="url_path",
+            node_id_or_url="/some-url",
+            json_response={"data": {"urlV2": {"node": {"id": "some-id"}}}},
+        ),
+        dict(
+            testcase_name="node_id",
+            node_id_or_url="some-id",
+            json_response={"data": {"node": {"id": "some-id"}}},
+        ),
+    )
+    def test_get_node_cached(
+        self,
+        *,
+        node_id_or_url: str,
+        json_response: Any,
+    ) -> None:
+        self._mock_session.post.return_value.json.return_value = json_response
+        self._api.get_node(node_id_or_url, country="US")
+        self._mock_session.reset_mock()
+
+        node = self._api.get_node(node_id_or_url, country="US")
+
+        self.assertEqual({"id": "some-id"}, node)
+        self.assertEmpty(self._mock_session.mock_calls)
+
+    def test_get_node_by_url_path_with_cache_by_node_id(self) -> None:
+        self._mock_session.post.return_value.json.return_value = {
+            "data": {"node": {"id": "some-id", "foo": "old-value"}}
+        }
+        self._api.get_node("some-id", country="US")
+        self._mock_session.reset_mock()
+        self._mock_session.post.return_value.json.return_value = {
+            "data": {"urlV2": {"node": {"id": "some-id", "foo": "new-value"}}}
+        }
+
+        node = self._api.get_node("/some-url", country="US")
+
+        self.assertEqual({"id": "some-id", "foo": "old-value"}, node)
+        self._mock_session.post.assert_called_once_with(
+            mock.ANY,
+            json={
+                "query": mock.ANY,
+                "operationName": "GetNodeByUrlPath",
+                "variables": {"urlPath": "/some-url", "country": "US"},
+            },
+        )
+
+    def test_get_node_by_url_path_with_cache_in_other_country(self) -> None:
+        self._mock_session.post.return_value.json.return_value = {
+            "data": {"urlV2": {"node": {"id": "some-id", "foo": "CA-value"}}}
+        }
+        self._api.get_node("/some-url", country="CA")
+        self._mock_session.reset_mock()
+        self._mock_session.post.return_value.json.return_value = {
+            "data": {"node": {"id": "some-id", "foo": "US-value"}}
+        }
+
+        node = self._api.get_node("/some-url", country="US")
+
+        self.assertEqual({"id": "some-id", "foo": "US-value"}, node)
+        self._mock_session.post.assert_called_once_with(
+            mock.ANY,
+            json={
+                "query": mock.ANY,
+                "operationName": "GetNodeById",
+                "variables": {"nodeId": "some-id", "country": "US"},
+            },
+        )
+
 
 class JustWatchObsoleteApiTest(parameterized.TestCase):
     def setUp(self) -> None:
