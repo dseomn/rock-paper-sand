@@ -81,7 +81,8 @@ class JustWatchApiTest(parameterized.TestCase):
         )
 
         self.assertEqual("some-result", result)
-        self.assertSequenceEqual(
+        self.assertContainsSubsequence(
+            self._mock_session.mock_calls,
             (
                 mock.call.post(
                     mock.ANY,
@@ -91,10 +92,11 @@ class JustWatchApiTest(parameterized.TestCase):
                         "variables": {"foo": "bar"},
                     },
                 ),
+                # There's a call to mock.call.post().text.__str__() here that's
+                # a bit hard to test for, and not that important.
                 mock.call.post().raise_for_status(),
                 mock.call.post().json(),
             ),
-            self._mock_session.mock_calls,
         )
 
     def test_providers(self) -> None:

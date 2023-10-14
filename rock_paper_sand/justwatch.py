@@ -97,7 +97,8 @@ class Api:
                 "variables": variables,
             },
         )
-        response.raise_for_status()
+        with exceptions.add_note(f"Response body: {response.text}"):
+            response.raise_for_status()
         return response.json()
 
     def providers(self, *, country: str) -> Mapping[str, str]:
