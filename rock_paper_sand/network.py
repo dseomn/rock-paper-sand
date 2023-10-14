@@ -13,9 +13,32 @@
 # limitations under the License.
 """Utilities for accessing network resources."""
 
+from collections.abc import Mapping
+import os.path
+from typing import Any
+
 import requests
 import requests.adapters
+import requests_cache
 import urllib3.util
+
+from rock_paper_sand import flags_and_constants
+
+
+def requests_cache_defaults() -> Mapping[str, Any]:
+    """Returns default kwargs for requests_cache.CachedSession."""
+    # TODO(requests-cache >= 1.0.0): Delete old cache entries using the
+    # older_than parameter.
+    return dict(
+        backend=requests_cache.SQLiteCache(
+            db_path=os.path.join(
+                flags_and_constants.CACHE_DIR.value,
+                "requests-cache",
+                "cache.sqlite",
+            )
+        ),
+        serializer="json",
+    )
 
 
 def requests_http_adapter() -> requests.adapters.HTTPAdapter:

@@ -30,6 +30,7 @@ dependencies = [
   "python-dateutil",
   "pyyaml",
   "requests",
+  "requests-cache",
   "urllib3",
 ]
 

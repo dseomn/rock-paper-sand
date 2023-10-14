@@ -31,6 +31,7 @@ import warnings
 
 import dateutil.parser
 import requests
+import requests_cache
 
 from rock_paper_sand import exceptions
 from rock_paper_sand import media_filter
@@ -72,7 +73,11 @@ def _parse_datetime(
 @contextlib.contextmanager
 def requests_session() -> Generator[requests.Session, None, None]:
     """Returns a context manager for a session for the JustWatch API."""
-    with requests.session() as session:
+    with requests_cache.CachedSession(
+        **network.requests_cache_defaults(),
+        expire_after=datetime.timedelta(hours=20),
+        allowable_methods=("GET", "HEAD", "POST"),
+    ) as session:
         network.configure_session(session)
         yield session
 

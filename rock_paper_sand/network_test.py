@@ -18,11 +18,18 @@ from absl.testing import absltest
 from absl.testing import parameterized
 import requests.adapters
 import requests.exceptions
+import requests_cache
 
 from rock_paper_sand import network
 
 
 class NetworkTest(parameterized.TestCase):
+    def test_requests_cache_defaults(self) -> None:
+        # For now this is basicaly just a smoke test, because it's probably not
+        # worth the effort to really test this function.
+        with requests_cache.CachedSession(**network.requests_cache_defaults()):
+            pass
+
     def test_requests_http_adapter(self) -> None:
         # For now this is basicaly just a smoke test, because it's probably not
         # worth the effort to really test this function.
