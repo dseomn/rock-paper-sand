@@ -169,7 +169,50 @@ class Api:
     def get_node(self, node_id_or_url: str, *, country: str) -> Any:
         """Returns a node (e.g., movie or TV show)."""
         query_document = """
+        fragment Episode on Episode {
+            __typename
+            id
+            # JustWatch seems to need a language for the seasonNumber and
+            # episodeNumber, but the language also doesn't seem to have any
+            # effect on them. So this uses a syntactically valid but nonexistent
+            # language.
+            content(country: $country, language: "qa-INVALID") {
+                seasonNumber
+                episodeNumber
+            }
+            offers(country: $country, platform: WEB) {
+                monetizationType
+                availableToTime
+                availableFromTime
+                package {
+                    clearName
+                    technicalName
+                }
+            }
+        }
+
+        fragment Season on Season {
+            __typename
+            id
+            content(country: $country, language: "qa-INVALID") {
+                seasonNumber
+            }
+            episodes {
+                ...Episode
+            }
+        }
+
+        fragment Show on Show {
+            __typename
+            id
+            seasons {
+                ...Season
+            }
+        }
+
         fragment Movie on Movie {
+            __typename
+            id
             offers(country: $country, platform: WEB) {
                 monetizationType
                 availableToTime
@@ -184,6 +227,9 @@ class Api:
         fragment Node on Node {
             __typename
             id
+            ...Episode
+            ...Season
+            ...Show
             ...Movie
         }
 
