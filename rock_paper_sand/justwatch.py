@@ -28,7 +28,6 @@ import datetime
 from typing import Any
 import warnings
 
-import cachecontrol.heuristics
 import dateutil.parser
 import requests
 
@@ -36,7 +35,6 @@ from rock_paper_sand import exceptions
 from rock_paper_sand import media_filter
 from rock_paper_sand import media_item
 from rock_paper_sand import multi_level_set
-from rock_paper_sand import network
 from rock_paper_sand.proto import config_pb2
 
 _GRAPHQL_URL = "https://apis.justwatch.com/graphql"
@@ -280,69 +278,6 @@ class Api:
                 },
             )["data"]["node"]
         return node_by_id[node_id]
-
-
-class ObsoleteApi:
-    """Wrapper around JustWatch's old, obsolete API.
-
-    This will go away once migration to the new API is done.
-    """
-
-    def __init__(
-        self,
-        *,
-        session: requests.Session,
-        base_url: str = _BASE_URL,
-    ) -> None:
-        self._session = session
-        self._base_url = base_url
-        self._cache: dict[str, Any] = {}
-        self._provider_name_by_short_name_by_locale: (
-            dict[str, dict[str, str]]
-        ) = {}
-
-        # JustWatch seems to rate-limit the API enough to make this code pretty
-        # slow when the requests are all cache misses, and they only tell
-        # clients to cache for 10 minutes. Increasing that makes the code much
-        # more responsive when called less often than every 10 minutes.
-        self._session.mount(
-            f"{self._base_url}/",
-            network.requests_http_adapter(
-                cache_heuristic=cachecontrol.heuristics.ExpiresAfter(hours=20)
-            ),
-        )
-
-    def get(self, relative_url: str) -> Any:
-        """Returns the decoded JSON response."""
-        # While this cache *might* help with performance, the main reason to use
-        # one here is to avoid race conditions. Without this, if a report were
-        # generated around the time that data was expiring from the cachecontrol
-        # cache, it would be possible for a section with {"justwatch": ...} and
-        # another with {"not": {"justwatch": ...}} to either both match the same
-        # media item or neither match the item. This cache makes sure that those
-        # two filters see identical data, so that the mutual exclusion can be
-        # preserved. NOTE: If this code is ever used in a long-running process,
-        # this might need more work to avoid stale data.
-        if relative_url in self._cache:
-            return self._cache[relative_url]
-        response = self._session.get(f"{self._base_url}/{relative_url}")
-        response.raise_for_status()
-        response_json = response.json()
-        self._cache[relative_url] = response_json
-        return response_json
-
-    def providers(self, *, locale: str) -> Mapping[str, str]:
-        """Returns a mapping from provider short name to human-readable name."""
-        if locale not in self._provider_name_by_short_name_by_locale:
-            self._provider_name_by_short_name_by_locale[locale] = {
-                provider["short_name"]: provider["clear_name"]
-                for provider in self.get(f"providers/locale/{locale}")
-            }
-        return self._provider_name_by_short_name_by_locale[locale]
-
-    def provider_name(self, short_name: str, *, locale: str) -> str:
-        """Returns the human-readable provider name."""
-        return self.providers(locale=locale).get(short_name, short_name)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
