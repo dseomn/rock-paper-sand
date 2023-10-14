@@ -13,8 +13,7 @@
 # limitations under the License.
 """Configuration handling code."""
 
-import collections
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 import dataclasses
 import difflib
 import functools
@@ -32,14 +31,6 @@ from rock_paper_sand import media_filter
 from rock_paper_sand import media_item
 from rock_paper_sand import report
 from rock_paper_sand.proto import config_pb2
-
-
-def _recurse_media_items(
-    items: Sequence[media_item.MediaItem],
-) -> Iterable[media_item.MediaItem]:
-    for item in items:
-        yield item
-        yield from _recurse_media_items(item.parts)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -153,25 +144,9 @@ class Config:
             return {}
         return {"issuesReport": results}
 
-    def _lint_justwatch_id(self) -> Mapping[str, Any]:
-        if not self.proto.lint.require_unique_justwatch_id:
-            return {}
-        counter = collections.Counter(
-            item.proto.justwatch_id
-            for item in _recurse_media_items(self.media)
-            if item.proto.justwatch_id
-        )
-        duplicates = {
-            justwatch_id for justwatch_id, count in counter.items() if count > 1
-        }
-        if not duplicates:
-            return {}
-        return {"duplicateJustwatchIds": sorted(duplicates)}
-
     def lint(self) -> Mapping[str, Any]:
         """Returns lint issues, if there are any."""
         return {
             **self._lint_sort(),
             **self._lint_issues_report(),
-            **self._lint_justwatch_id(),
         }

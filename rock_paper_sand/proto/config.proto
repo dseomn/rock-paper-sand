@@ -168,6 +168,9 @@ message Report {
 
 // Lint configuration.
 message Lint {
+  reserved 3;
+  reserved "require_unique_justwatch_id";
+
   // Media sorting options.
   message Sort {
     // Whether sorting should be case sensitive or not.
@@ -181,11 +184,6 @@ message Lint {
   // If present, the name of a report that should be empty if there are no
   // issues.
   string issues_report = 2;
-
-  // Whether to require that justwatch_id fields are unique. Since they're
-  // mostly pretty opaque, this might help prevent copy/paste errors where the
-  // ID is pasted from the wrong place by accident.
-  bool require_unique_justwatch_id = 3;
 }
 
 // A (possibly composite) item of media, e.g., a movie, TV show, or book, or
