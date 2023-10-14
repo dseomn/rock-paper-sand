@@ -14,6 +14,7 @@
 """JustWatch commands."""
 
 import argparse
+import typing
 
 import yaml
 
@@ -61,6 +62,30 @@ class Providers(subcommand.Subcommand):
             print(yaml.safe_dump(api.providers(country=args.country)), end="")
 
 
+class Node(subcommand.Subcommand):
+    """Prints a JustWatch node."""
+
+    def __init__(self, parser: argparse.ArgumentParser) -> None:
+        """See base class."""
+        super().__init__(parser)
+        _add_country_arg(parser)
+        parser.add_argument("id_or_url", help="JustWatch node ID or URL.")
+
+    def run(self, args: argparse.Namespace) -> None:
+        """See base class."""
+        with network.requests_session() as session:
+            api = justwatch.Api(session=session)
+            print(
+                yaml.safe_dump(
+                    api.get_node(args.id_or_url, country=args.country),
+                    sort_keys=False,
+                    allow_unicode=True,
+                    width=typing.cast(int, float("inf")),
+                ),
+                end="",
+            )
+
+
 class Main(subcommand.ContainerSubcommand):
     """Main JustWatch API command."""
 
@@ -79,4 +104,10 @@ class Main(subcommand.ContainerSubcommand):
             Providers,
             "providers",
             help="Print the available JustWatch providers.",
+        )
+        self.add_subcommand(
+            subparsers,
+            Node,
+            "node",
+            help="Print a JustWatch node. This is mainly for debugging.",
         )
