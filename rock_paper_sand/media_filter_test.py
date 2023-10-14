@@ -333,7 +333,7 @@ class MediaFilterTest(parameterized.TestCase):
         justwatch_factory = mock.Mock(spec_set=(), return_value=mock_filter)
         registry = media_filter.Registry(justwatch_factory=justwatch_factory)
         filter_config = json_format.ParseDict(
-            {"justwatch": {"locale": "en_US"}}, config_pb2.Filter()
+            {"justwatch": {"country": "US"}}, config_pb2.Filter()
         )
 
         returned_filter = registry.parse(filter_config)

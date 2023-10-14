@@ -43,9 +43,14 @@ _GRAPHQL_URL = "https://apis.justwatch.com/graphql"
 _BASE_URL = "https://apis.justwatch.com/content"
 
 
+# TODO(dseomn): Check some real data to see if the new API still uses
+# placeholders, and delete/simplify this function if not. From glancing at a few
+# examples, it seems to use JSON null instead now.
 def _parse_datetime(
-    raw_value: str, *, relative_url: str
+    raw_value: str | None, *, node_id: str
 ) -> datetime.datetime | None:
+    if raw_value is None:
+        return None
     value = dateutil.parser.isoparse(raw_value)
     if value in (datetime.datetime(1, 1, 1, tzinfo=datetime.timezone.utc),):
         return None
@@ -56,8 +61,8 @@ def _parse_datetime(
         # https://en.wikipedia.org/wiki/Film#History it looks unlikely that any
         # original release date predates 1800 though.
         warnings.warn(
-            f"{_BASE_URL}/{relative_url} has a date field that's improbably "
-            f"old, {raw_value!r}. If it looks like it might be a placeholder, "
+            f"{node_id!r} has a date field that's improbably old, "
+            f"{raw_value!r}. If it looks like it might be a placeholder, "
             "consider adding it to the _parse_datetime function.",
             UserWarning,
         )
@@ -395,9 +400,10 @@ class _Availability:
         return extra_information
 
 
-def _content_number(content: Any) -> multi_level_set.MultiLevelNumber:
+def _content_number(node: Any) -> multi_level_set.MultiLevelNumber:
+    content = node.get("content", {})
     parts = []
-    for part_key in ("season_number", "episode_number"):
+    for part_key in ("seasonNumber", "episodeNumber"):
         if part_key in content:
             parts.append(content[part_key])
         else:
@@ -412,13 +418,13 @@ class Filter(media_filter.CachedFilter):
         self,
         filter_config: config_pb2.JustWatchFilter,
         *,
-        api: ObsoleteApi,
+        api: Api,
     ) -> None:
         super().__init__()
         self._config = filter_config
         self._api = api
-        if not self._config.locale:
-            raise ValueError("The locale field is required.")
+        if not self._config.country:
+            raise ValueError("The country field is required.")
 
     def _should_check_availability(self) -> bool:
         return bool(
@@ -434,51 +440,35 @@ class Filter(media_filter.CachedFilter):
             keys.update(_OfferResultExtra.PUBLIC_KEYS)
         return keys
 
-    def _iter_episodes_and_relative_url(
+    def _iter_leaf_nodes(
         self,
-        content: Any,
+        node: Any,
         *,
         exclude: multi_level_set.MultiLevelSet,
-        relative_url: str,
-    ) -> Iterable[tuple[Any, str]]:
-        if _content_number(content) in exclude:
+    ) -> Iterable[Any]:
+        if _content_number(node) in exclude:
             return
-        elif "seasons" in content:
-            for season in content["seasons"]:
-                if _content_number(season) in exclude:
-                    continue
-                season_relative_url = (
-                    f"titles/{season['object_type']}/{season['id']}/locale/"
-                    f"{self._config.locale}"
-                )
-                yield from self._iter_episodes_and_relative_url(
-                    self._api.get(season_relative_url),
-                    exclude=exclude,
-                    relative_url=season_relative_url,
-                )
-        elif "episodes" in content:
-            for episode in content["episodes"]:
-                if _content_number(episode) in exclude:
-                    continue
-                yield episode, relative_url
+        elif "seasons" in node:
+            for season in node["seasons"]:
+                yield from self._iter_leaf_nodes(season, exclude=exclude)
+        elif "episodes" in node:
+            for episode in node["episodes"]:
+                yield from self._iter_leaf_nodes(episode, exclude=exclude)
         else:
-            yield content, relative_url
+            yield node
 
     def _leaf_node_availability(
         self,
-        content: Any,
+        node: Any,
         *,
-        relative_url: str,
         now: datetime.datetime,
         not_available_after: datetime.datetime | None,
     ) -> _Availability:
         availability = _Availability(total_episode_count=1)
-        for offer in content.get("offers", ()):
-            provider = offer["package_short_name"]
-            provider_name = self._api.provider_name(
-                provider, locale=self._config.locale
-            )
-            monetization_type = offer["monetization_type"]
+        for offer in node.get("offers", ()):
+            provider = offer["package"]["technicalName"]
+            provider_name = offer["package"]["clearName"]
+            monetization_type = offer["monetizationType"].lower()
             if (
                 self._config.providers
                 and provider not in self._config.providers
@@ -488,10 +478,10 @@ class Filter(media_filter.CachedFilter):
             ):
                 continue
             available_from = _parse_datetime(
-                offer["available_from"], relative_url=relative_url
+                offer["availableFromTime"], node_id=node["id"]
             )
             available_to = _parse_datetime(
-                offer["available_to"], relative_url=relative_url
+                offer["availableToTime"], node_id=node["id"]
             )
             if available_to is not None and now > available_to:
                 continue
@@ -511,10 +501,9 @@ class Filter(media_filter.CachedFilter):
 
     def _availability(
         self,
-        content: Any,
+        node: Any,
         *,
         item: media_item.MediaItem,
-        relative_url: str,
         now: datetime.datetime,
     ) -> _Availability:
         not_available_after = (
@@ -523,12 +512,8 @@ class Filter(media_filter.CachedFilter):
             else None
         )
         availability = _Availability()
-        for (
-            episode,
-            episode_relative_url,
-        ) in self._iter_episodes_and_relative_url(
-            content,
-            relative_url=relative_url,
+        for leaf_node in self._iter_leaf_nodes(
+            node,
             exclude=(
                 multi_level_set.MultiLevelSet(())
                 if self._config.include_done
@@ -537,8 +522,7 @@ class Filter(media_filter.CachedFilter):
         ):
             availability.update(
                 self._leaf_node_availability(
-                    episode,
-                    relative_url=episode_relative_url,
+                    leaf_node,
                     now=now,
                     not_available_after=not_available_after,
                 )
@@ -547,14 +531,11 @@ class Filter(media_filter.CachedFilter):
 
     def _all_done(
         self,
-        content: Any,
+        node: Any,
         *,
-        relative_url: str,
         done: multi_level_set.MultiLevelSet,
     ) -> bool:
-        for _ in self._iter_episodes_and_relative_url(
-            content, relative_url=relative_url, exclude=done
-        ):
+        for _ in self._iter_leaf_nodes(node, exclude=done):
             return False
         return True
 
@@ -567,27 +548,20 @@ class Filter(media_filter.CachedFilter):
             f"config:\n{self._config}"
         ):
             now = datetime.datetime.now(tz=datetime.timezone.utc)
-            if not item.proto.justwatch_id:
+            if not item.proto.justwatch:
                 return media_filter.FilterResult(False)
-            relative_url = (
-                f"titles/{item.proto.justwatch_id}/locale/{self._config.locale}"
+            node = self._api.get_node(
+                item.proto.justwatch, country=self._config.country
             )
-            content = self._api.get(relative_url)
             extra_information: set[media_filter.ResultExtra] = set()
             if self._should_check_availability():
-                availability = self._availability(
-                    content,
-                    item=item,
-                    relative_url=relative_url,
-                    now=now,
-                )
+                availability = self._availability(node, item=item, now=now)
                 if not availability.episode_count_by_offer:
                     return media_filter.FilterResult(False)
                 extra_information.update(availability.to_extra_information())
             if self._config.all_done and not self._all_done(
-                content,
+                node,
                 done=item.done,
-                relative_url=relative_url,
             ):
                 return media_filter.FilterResult(False)
             return media_filter.FilterResult(True, extra=extra_information)

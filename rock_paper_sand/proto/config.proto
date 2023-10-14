@@ -52,8 +52,12 @@ message StringFieldMatcher {
 // available on "foo" with monetization type "bar", not on "foo" with another
 // monetization type and also on another service with monetization type "bar".
 message JustWatchFilter {
-  // Required.
-  string locale = 1;
+  reserved 1;
+  reserved "locale";
+
+  // Required. Country code for JustWatch's API. These seem to be a subset of
+  // <https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2>.
+  string country = 8;
 
   // For the conditions below that match on availability, whether they should
   // include already done episodes or not.
@@ -189,8 +193,8 @@ message Lint {
 // A (possibly composite) item of media, e.g., a movie, TV show, or book, or
 // fictional universe in which media is set.
 message MediaItem {
-  reserved 5;
-  reserved "extra_information";
+  reserved 5 to 6;
+  reserved "extra_information", "justwatch_id";
 
   // Required. Name of the item.
   string name = 1;
@@ -228,8 +232,12 @@ message MediaItem {
   // URL.
   string custom_availability = 4;
 
-  // JustWatch type and id, e.g., "show/22164" or "movie/127384".
-  string justwatch_id = 6;
+  // JustWatch URL or ID, e.g.,
+  // "https://www.justwatch.com/us/tv-show/monty-pythons-flying-circus" or
+  // "ts22164". The `rock-paper-sand justwatch node` command can be used to find
+  // IDs for episodes of a show/season, because individual episodes don't seem
+  // to have URLs.
+  string justwatch = 8;
 
   // Parts of a media item. E.g., if the outer item is a fictional universe, the
   // parts could be movies in that universe.

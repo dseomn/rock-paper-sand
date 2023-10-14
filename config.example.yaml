@@ -27,18 +27,18 @@ filters:
   # available to watch at home at no additional cost on specific streaming
   # services, not including already watched movies or episodes. Run
   # `rock-paper-sand justwatch` and its subcommands to see the possible values
-  # for `locale`, `providers`, and `monetizationTypes`. Note that this will only
-  # work for media items that have a `justwatchId` field.
+  # for `providers` and `monetizationTypes`. Note that this will only work for
+  # media items that have a `justwatch` field.
   #
   # For media items that match, this will also add extra information in reports
   # to show which of the listed streaming services the item is available on.
   name: todo_availability_free_at_home_justwatch
   filter:
     justwatch:
-      locale: en_US
+      country: US
       providers:
-      - amp  # Amazon Prime Video
-      - nfx  # Netflix
+      - amazonprime
+      - netflix
       monetizationTypes:
       - flatrate  # E.g., a paid subscription.
       - free
@@ -54,7 +54,7 @@ filters:
       filters:
       - done: "all"
       - justwatch:
-          locale: en_US
+          country: US
           allDone: true
 - # Matches still-to-do media items that are available at no additional cost
   # somewhere other than at home. Unlike
@@ -144,7 +144,7 @@ media:
   # library, and it may or may not also be available on streaming services.
   name: "Life of Brian (1979)"
   customAvailability: "borrow from the library"
-  justwatchId: movie/70993  # https://www.justwatch.com/us/movie/life-of-brian
+  justwatch: https://www.justwatch.com/us/movie/life-of-brian
 - # This is a TV show with 4 series/seasons, and series 1 through 3 have been
   # watched, so the todo_availability_free_at_home_justwatch filter above will
   # check the specified streaming services for availability of series 4 only.
@@ -154,7 +154,7 @@ media:
   # matching after the next series/season is released.
   name: "Monty Python's Flying Circus (1969)"
   done: "1 - 3"
-  justwatchId: show/22164  # https://www.justwatch.com/us/tv-show/monty-pythons-flying-circus
+  justwatch: https://www.justwatch.com/us/tv-show/monty-pythons-flying-circus
 - # You can also keep track of more obscure media that isn't in public databases
   # like JustWatch. And you can group related media together however you want.
   name: "Rock, Paper, Sand! the Extended Universe"

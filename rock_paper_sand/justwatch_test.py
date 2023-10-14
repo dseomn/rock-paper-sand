@@ -38,16 +38,19 @@ _TIME_IN_FUTURE_2 = _NOW + datetime.timedelta(days=2)
 
 def _offer(
     *,
-    package_short_name: str = "some_package",
     monetization_type: str = "some_monetization_type",
-    available_from: str = "0001-01-01T00:00:00Z",
-    available_to: str = "0001-01-01T00:00:00Z",
+    available_to: str | None = None,
+    available_from: str | None = None,
+    package_technical_name: str = "some_package",
 ) -> Any:
     return {
-        "package_short_name": package_short_name,
-        "monetization_type": monetization_type,
-        "available_from": available_from,
-        "available_to": available_to,
+        "monetizationType": monetization_type.upper(),
+        "availableToTime": available_to,
+        "availableFromTime": available_from,
+        "package": {
+            "clearName": f"{package_technical_name.capitalize()}+",
+            "technicalName": package_technical_name,
+        },
     }
 
 
@@ -333,46 +336,44 @@ class JustWatchObsoleteApiTest(parameterized.TestCase):
 class FilterTest(parameterized.TestCase):
     def setUp(self) -> None:
         self._mock_api = mock.create_autospec(
-            justwatch.ObsoleteApi, spec_set=True, instance=True
-        )
-        self._mock_api.provider_name.side_effect = (
-            lambda short_name, locale: f"{short_name.capitalize()}+"
+            justwatch.Api, spec_set=True, instance=True
         )
 
     @parameterized.named_parameters(
         dict(
-            testcase_name="no_id",
-            filter_config={"locale": "en_US"},
+            testcase_name="no_url",
+            filter_config={"country": "US"},
             item={"name": "foo"},
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
             testcase_name="no_match_conditions",
-            filter_config={"locale": "en_US"},
-            item={"name": "foo", "justwatchId": "movie/1"},
-            api_data={"titles/movie/1/locale/en_US": {}},
+            filter_config={"country": "US"},
+            item={"name": "foo", "justwatch": "tm1"},
+            api_data={("tm1", "US"): {}},
             expected_result=media_filter.FilterResult(True),
         ),
         dict(
             testcase_name="any_availability_no_match",
-            filter_config={"locale": "en_US", "anyAvailability": True},
-            item={"name": "foo", "justwatchId": "movie/1"},
-            api_data={"titles/movie/1/locale/en_US": {}},
+            filter_config={"country": "US", "anyAvailability": True},
+            item={"name": "foo", "justwatch": "tm1"},
+            api_data={("tm1", "US"): {}},
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
             testcase_name="any_availability_matches",
-            filter_config={"locale": "en_US", "anyAvailability": True},
-            item={"name": "foo", "justwatchId": "movie/1"},
+            filter_config={"country": "US", "anyAvailability": True},
+            item={"name": "foo", "justwatch": "tm1"},
             api_data={
-                "titles/movie/1/locale/en_US": {
+                ("tm1", "US"): {
+                    "id": "tm1",
                     "offers": [
                         _offer(
-                            package_short_name="foo",
+                            package_technical_name="foo",
                             monetization_type="bar",
                         ),
                         _offer(
-                            package_short_name="quux",
+                            package_technical_name="quux",
                             monetization_type="baz",
                             available_from=_TIME_IN_FUTURE_1.isoformat(),
                             available_to=_TIME_IN_FUTURE_2.isoformat(),
@@ -399,28 +400,29 @@ class FilterTest(parameterized.TestCase):
         dict(
             testcase_name="specific_availability_matches",
             filter_config={
-                "locale": "en_US",
+                "country": "US",
                 "providers": ["foo"],
                 "monetizationTypes": ["bar"],
             },
-            item={"name": "foo", "justwatchId": "movie/1"},
+            item={"name": "foo", "justwatch": "tm1"},
             api_data={
-                "titles/movie/1/locale/en_US": {
+                ("tm1", "US"): {
+                    "id": "tm1",
                     "offers": [
                         _offer(
-                            package_short_name="foo",
+                            package_technical_name="foo",
                             monetization_type="bar",
                         ),
                         _offer(
-                            package_short_name="hidden",
+                            package_technical_name="hidden",
                             monetization_type="bar",
                         ),
                         _offer(
-                            package_short_name="foo",
+                            package_technical_name="foo",
                             monetization_type="hidden",
                         ),
                         _offer(
-                            package_short_name="hidden",
+                            package_technical_name="hidden",
                             monetization_type="hidden",
                         ),
                     ],
@@ -432,32 +434,33 @@ class FilterTest(parameterized.TestCase):
         ),
         dict(
             testcase_name="partial_availability",
-            filter_config={"locale": "en_US", "anyAvailability": True},
-            item={"name": "foo", "justwatchId": "show/1"},
+            filter_config={"country": "US", "anyAvailability": True},
+            item={"name": "foo", "justwatch": "ts1"},
             api_data={
-                "titles/show/1/locale/en_US": {
+                ("ts1", "US"): {
                     "seasons": [
-                        {"object_type": "show_season", "id": 1},
-                        {"object_type": "show_season", "id": 2},
-                    ],
-                },
-                "titles/show_season/1/locale/en_US": {
-                    "episodes": [
                         {
-                            "offers": [
-                                _offer(
-                                    package_short_name="foo",
-                                    monetization_type="bar",
-                                ),
+                            "episodes": [
+                                {
+                                    "id": "tse111",
+                                    "offers": [
+                                        _offer(
+                                            package_technical_name="foo",
+                                            monetization_type="bar",
+                                        ),
+                                    ],
+                                },
+                                {
+                                    # This represents an episode that's
+                                    # unavailable.
+                                },
                             ],
                         },
                         {
-                            # This represents an episode that's unavailable.
+                            # This represents an upcoming season with no
+                            # episodes yet.
                         },
                     ],
-                },
-                "titles/show_season/2/locale/en_US": {
-                    # This represents an upcoming season with no episodes yet.
                 },
             },
             expected_result=media_filter.FilterResult(
@@ -471,54 +474,70 @@ class FilterTest(parameterized.TestCase):
         dict(
             testcase_name="exclude_done",
             filter_config={
-                "locale": "en_US",
+                "country": "US",
                 "includeDone": False,
                 "anyAvailability": True,
             },
-            item={"name": "foo", "done": "all", "justwatchId": "movie/1"},
-            api_data={"titles/movie/1/locale/en_US": {"offers": [_offer()]}},
+            item={"name": "foo", "done": "all", "justwatch": "tm1"},
+            api_data={("tm1", "US"): {"id": "tm1", "offers": [_offer()]}},
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
             testcase_name="exclude_done_partial",
             filter_config={
-                "locale": "en_US",
+                "country": "US",
                 "includeDone": False,
                 "anyAvailability": True,
             },
             item={
                 "name": "foo",
                 "done": "1-2.1",
-                "justwatchId": "show/1",
+                "justwatch": "ts1",
             },
             api_data={
-                "titles/show/1/locale/en_US": {
+                ("ts1", "US"): {
                     "seasons": [
                         {
-                            "object_type": "show_season",
-                            "id": 1,
-                            "season_number": 1,
+                            "content": {"seasonNumber": 1},
+                            "episodes": [
+                                {
+                                    "id": "tse111",
+                                    "content": {
+                                        "seasonNumber": 1,
+                                        "episodeNumber": 1,
+                                    },
+                                    "offers": [_offer()],
+                                },
+                            ],
                         },
                         {
-                            "object_type": "show_season",
-                            "id": 2,
-                            "season_number": 2,
-                        },
-                    ],
-                },
-                "titles/show_season/2/locale/en_US": {
-                    "season_number": 2,
-                    "episodes": [
-                        {"season_number": 2, "episode_number": 1},
-                        {"season_number": 2, "episode_number": 2},
-                        {
-                            "season_number": 2,
-                            "episode_number": 3,
-                            "offers": [
-                                _offer(
-                                    package_short_name="foo",
-                                    monetization_type="bar",
-                                ),
+                            "content": {"seasonNumber": 2},
+                            "episodes": [
+                                {
+                                    "content": {
+                                        "seasonNumber": 2,
+                                        "episodeNumber": 1,
+                                    },
+                                },
+                                {
+                                    "content": {
+                                        "seasonNumber": 2,
+                                        "episodeNumber": 2,
+                                    },
+                                },
+                                {
+                                    "id": "tse123",
+                                    "content": {
+                                        "seasonNumber": 2,
+                                        "episodeNumber": 3,
+                                    },
+                                    "offers": [
+                                        _offer(
+                                            package_technical_name="foo",
+                                            monetization_type="bar",
+                                        ),
+                                    ],
+                                },
                             ],
                         },
                     ],
@@ -531,19 +550,20 @@ class FilterTest(parameterized.TestCase):
         dict(
             testcase_name="include_done",
             filter_config={
-                "locale": "en_US",
+                "country": "US",
                 "includeDone": True,
                 "anyAvailability": True,
             },
-            item={"name": "foo", "done": "all", "justwatchId": "movie/1"},
+            item={"name": "foo", "done": "all", "justwatch": "tm1"},
             api_data={
-                "titles/movie/1/locale/en_US": {
+                ("tm1", "US"): {
+                    "id": "tm1",
                     "offers": [
                         _offer(
-                            package_short_name="foo",
+                            package_technical_name="foo",
                             monetization_type="bar",
                         )
-                    ]
+                    ],
                 }
             },
             expected_result=media_filter.FilterResult(
@@ -553,22 +573,23 @@ class FilterTest(parameterized.TestCase):
         dict(
             testcase_name="not_available_after",
             filter_config={
-                "locale": "en_US",
+                "country": "US",
                 "notAvailableAfterDays": 1.5,
                 "anyAvailability": True,
             },
-            item={"name": "foo", "justwatchId": "movie/1"},
+            item={"name": "foo", "justwatch": "tm1"},
             api_data={
-                "titles/movie/1/locale/en_US": {
+                ("tm1", "US"): {
+                    "id": "tm1",
                     "offers": [
                         _offer(
-                            package_short_name="foo",
+                            package_technical_name="foo",
                             monetization_type="bar",
                             available_to=_TIME_IN_FUTURE_1.isoformat(),
                         ),
                         _offer(available_to=_TIME_IN_FUTURE_2.isoformat()),
                         _offer(),
-                    ]
+                    ],
                 }
             },
             expected_result=media_filter.FilterResult(
@@ -581,33 +602,39 @@ class FilterTest(parameterized.TestCase):
         dict(
             testcase_name="all_done_true",
             filter_config={
-                "locale": "en_US",
+                "country": "US",
                 "allDone": True,
             },
             item={
                 "name": "foo",
                 "done": "1-2.1",
-                "justwatchId": "show/1",
+                "justwatch": "ts1",
             },
             api_data={
-                "titles/show/1/locale/en_US": {
+                ("ts1", "US"): {
                     "seasons": [
                         {
-                            "object_type": "show_season",
-                            "id": 1,
-                            "season_number": 1,
+                            "content": {"seasonNumber": 1},
+                            "episodes": [
+                                {
+                                    "content": {
+                                        "seasonNumber": 1,
+                                        "episodeNumber": 1,
+                                    },
+                                },
+                            ],
                         },
                         {
-                            "object_type": "show_season",
-                            "id": 2,
-                            "season_number": 2,
+                            "content": {"seasonNumber": 2},
+                            "episodes": [
+                                {
+                                    "content": {
+                                        "seasonNumber": 2,
+                                        "episodeNumber": 1,
+                                    },
+                                },
+                            ],
                         },
-                    ],
-                },
-                "titles/show_season/2/locale/en_US": {
-                    "season_number": 2,
-                    "episodes": [
-                        {"season_number": 2, "episode_number": 1},
                     ],
                 },
             },
@@ -616,20 +643,30 @@ class FilterTest(parameterized.TestCase):
         dict(
             testcase_name="all_done_false",
             filter_config={
-                "locale": "en_US",
+                "country": "US",
                 "allDone": True,
             },
-            item={"name": "foo", "done": "1.1", "justwatchId": "show/1"},
+            item={"name": "foo", "done": "1.1", "justwatch": "ts1"},
             api_data={
-                "titles/show/1/locale/en_US": {
+                ("ts1", "US"): {
                     "seasons": [
-                        {"object_type": "show_season", "id": 1},
-                    ],
-                },
-                "titles/show_season/1/locale/en_US": {
-                    "episodes": [
-                        {"season_number": 1, "episode_number": 1},
-                        {"season_number": 1, "episode_number": 2},
+                        {
+                            "content": {"seasonNumber": 1},
+                            "episodes": [
+                                {
+                                    "content": {
+                                        "seasonNumber": 1,
+                                        "episodeNumber": 1,
+                                    },
+                                },
+                                {
+                                    "content": {
+                                        "seasonNumber": 1,
+                                        "episodeNumber": 2,
+                                    },
+                                },
+                            ],
+                        },
                     ],
                 },
             },
@@ -641,12 +678,12 @@ class FilterTest(parameterized.TestCase):
         *,
         filter_config: Any,
         item: Any,
-        api_data: Mapping[str, Any] = immutabledict.immutabledict(),
+        api_data: Mapping[tuple[str, str], Any] = immutabledict.immutabledict(),
         expected_result: media_filter.FilterResult,
     ) -> None:
-        self._mock_api.get.side_effect = lambda relative_url: api_data[
-            relative_url
-        ]
+        self._mock_api.get_node.side_effect = (
+            lambda node_id_or_url, country: api_data[(node_id_or_url, country)]
+        )
         test_filter = justwatch.Filter(
             json_format.ParseDict(filter_config, config_pb2.JustWatchFilter()),
             api=self._mock_api,
@@ -663,12 +700,12 @@ class FilterTest(parameterized.TestCase):
     @parameterized.named_parameters(
         dict(
             testcase_name="no_match_conditions",
-            filter_config={"locale": "en_US"},
+            filter_config={"country": "US"},
             valid_extra_keys=frozenset(),
         ),
         dict(
             testcase_name="availability_conditions",
-            filter_config={"locale": "en_US", "anyAvailability": True},
+            filter_config={"country": "US", "anyAvailability": True},
             valid_extra_keys={"justwatch.provider"},
         ),
     )
@@ -684,15 +721,15 @@ class FilterTest(parameterized.TestCase):
         )
         self.assertEqual(valid_extra_keys, test_filter.valid_extra_keys())
 
-    def test_missing_locale_field(self) -> None:
-        with self.assertRaisesRegex(ValueError, "locale"):
+    def test_missing_country_field(self) -> None:
+        with self.assertRaisesRegex(ValueError, "country"):
             justwatch.Filter(config_pb2.JustWatchFilter(), api=self._mock_api)
 
     def test_exception_note(self) -> None:
-        self._mock_api.get.side_effect = ValueError("kumquat")
+        self._mock_api.get_node.side_effect = ValueError("kumquat")
         test_filter = justwatch.Filter(
             json_format.ParseDict(
-                {"locale": "en_US"}, config_pb2.JustWatchFilter()
+                {"country": "US"}, config_pb2.JustWatchFilter()
             ),
             api=self._mock_api,
         )
@@ -701,7 +738,7 @@ class FilterTest(parameterized.TestCase):
             test_filter.filter(
                 media_item.MediaItem.from_config(
                     json_format.ParseDict(
-                        {"name": "foo", "justwatchId": "movie/1"},
+                        {"name": "foo", "justwatch": "tm1"},
                         config_pb2.MediaItem(),
                     )
                 )
@@ -709,24 +746,25 @@ class FilterTest(parameterized.TestCase):
         self.assertSequenceEqual(
             (
                 "While filtering unknown media item with name 'foo' using "
-                'JustWatch filter config:\nlocale: "en_US"\n',
+                'JustWatch filter config:\ncountry: "US"\n',
             ),
             error.exception.__notes__,
         )
 
     def test_extra_human_readable(self) -> None:
-        self._mock_api.get.return_value = {
+        self._mock_api.get_node.return_value = {
+            "id": "tm1",
             "offers": [
                 _offer(
-                    package_short_name="foo",
+                    package_technical_name="foo",
                     monetization_type="bar",
                     available_to=_TIME_IN_FUTURE_1.isoformat(),
                 )
-            ]
+            ],
         }
         test_filter = justwatch.Filter(
             json_format.ParseDict(
-                {"locale": "en_US", "anyAvailability": True},
+                {"country": "US", "anyAvailability": True},
                 config_pb2.JustWatchFilter(),
             ),
             api=self._mock_api,
@@ -735,7 +773,7 @@ class FilterTest(parameterized.TestCase):
         result = test_filter.filter(
             media_item.MediaItem.from_config(
                 json_format.ParseDict(
-                    {"name": "foo", "justwatchId": "movie/1"},
+                    {"name": "foo", "justwatch": "tm1"},
                     config_pb2.MediaItem(),
                 )
             )
@@ -747,18 +785,19 @@ class FilterTest(parameterized.TestCase):
         )
 
     def test_possible_unknown_placeholder_datetime(self) -> None:
-        self._mock_api.get.return_value = {
+        self._mock_api.get_node.return_value = {
+            "id": "tm1",
             "offers": [
                 _offer(
-                    package_short_name="foo",
+                    package_technical_name="foo",
                     monetization_type="bar",
                     available_from="0042-01-01T00:00:00Z",
                 )
-            ]
+            ],
         }
         test_filter = justwatch.Filter(
             json_format.ParseDict(
-                {"locale": "en_US", "anyAvailability": True},
+                {"country": "US", "anyAvailability": True},
                 config_pb2.JustWatchFilter(),
             ),
             api=self._mock_api,
@@ -768,7 +807,7 @@ class FilterTest(parameterized.TestCase):
             result = test_filter.filter(
                 media_item.MediaItem.from_config(
                     json_format.ParseDict(
-                        {"name": "foo", "justwatchId": "movie/1"},
+                        {"name": "foo", "justwatch": "tm1"},
                         config_pb2.MediaItem(),
                     )
                 )

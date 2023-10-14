@@ -39,14 +39,14 @@ class Config:
 
     Attributes:
         proto: Parsed config proto.
-        justwatch_obsolete_api: JustWatch API.
+        justwatch_api: JustWatch API.
         filter_registry: Filter registry populated from the config file.
         reports: Mapping from report name to report.
         media: Media.
     """
 
     proto: config_pb2.Config
-    justwatch_obsolete_api: justwatch.ObsoleteApi
+    justwatch_api: justwatch.Api
     filter_registry: media_filter.Registry
     reports: Mapping[str, report.Report]
     media: Sequence[media_item.MediaItem]
@@ -62,10 +62,10 @@ class Config:
             proto = json_format.ParseDict(
                 yaml.safe_load(config_file), config_pb2.Config()
             )
-        justwatch_obsolete_api = justwatch.ObsoleteApi(session=session)
+        justwatch_api = justwatch.Api(session=session)
         filter_registry = media_filter.Registry(
             justwatch_factory=functools.partial(
-                justwatch.Filter, api=justwatch_obsolete_api
+                justwatch.Filter, api=justwatch_api
             ),
         )
         for filter_index, filter_config in enumerate(proto.filters):
@@ -92,7 +92,7 @@ class Config:
                 )
         return cls(
             proto=proto,
-            justwatch_obsolete_api=justwatch_obsolete_api,
+            justwatch_api=justwatch_api,
             filter_registry=filter_registry,
             reports=reports,
             media=tuple(
