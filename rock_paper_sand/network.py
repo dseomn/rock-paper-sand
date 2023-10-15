@@ -13,7 +13,7 @@
 # limitations under the License.
 """Utilities for accessing network resources."""
 
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 import os.path
 from typing import Any
 
@@ -41,19 +41,41 @@ def requests_cache_defaults() -> Mapping[str, Any]:
     )
 
 
-def requests_http_adapter() -> requests.adapters.HTTPAdapter:
-    """Returns an HTTPAdapter for requests."""
+def requests_http_adapter(
+    *,
+    additional_retry_methods: Collection[str] = (),
+) -> requests.adapters.HTTPAdapter:
+    """Returns an HTTPAdapter for requests.
+
+    Args:
+        additional_retry_methods: Methods other than the defaults to retry on.
+    """
     return requests.adapters.HTTPAdapter(
         max_retries=urllib3.util.Retry(
+            allowed_methods={
+                *urllib3.util.Retry.DEFAULT_ALLOWED_METHODS,
+                *additional_retry_methods,
+            },
             status_forcelist=urllib3.util.Retry.RETRY_AFTER_STATUS_CODES,
             backoff_factor=0.1,
         ),
     )
 
 
-def configure_session(session: requests.Session) -> None:
-    """Configures a session with some defaults."""
-    http_adapter = requests_http_adapter()
+def configure_session(
+    session: requests.Session,
+    *,
+    additional_retry_methods: Collection[str] = (),
+) -> None:
+    """Configures a session with some defaults.
+
+    Args:
+        session: Session to configure.
+        additional_retry_methods: See requests_http_adapter().
+    """
+    http_adapter = requests_http_adapter(
+        additional_retry_methods=additional_retry_methods,
+    )
     session.mount("http://", http_adapter)
     session.mount("https://", http_adapter)
     session.headers[

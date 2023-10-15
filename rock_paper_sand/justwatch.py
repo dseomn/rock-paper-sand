@@ -78,7 +78,7 @@ def requests_session() -> Generator[requests.Session, None, None]:
         expire_after=datetime.timedelta(hours=20),
         allowable_methods=("GET", "HEAD", "POST"),
     ) as session:
-        network.configure_session(session)
+        network.configure_session(session, additional_retry_methods=("POST",))
         yield session
 
 
