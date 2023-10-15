@@ -27,7 +27,6 @@ import contextlib
 import dataclasses
 import datetime
 from typing import Any
-import warnings
 
 import dateutil.parser
 import requests
@@ -44,30 +43,10 @@ _GRAPHQL_URL = "https://apis.justwatch.com/graphql"
 _BASE_URL = "https://apis.justwatch.com/content"
 
 
-# TODO(dseomn): Check some real data to see if the new API still uses
-# placeholders, and delete/simplify this function if not. From glancing at a few
-# examples, it seems to use JSON null instead now.
-def _parse_datetime(
-    raw_value: str | None, *, node_id: str
-) -> datetime.datetime | None:
+def _parse_datetime(raw_value: str | None) -> datetime.datetime | None:
     if raw_value is None:
         return None
-    value = dateutil.parser.isoparse(raw_value)
-    if value in (datetime.datetime(1, 1, 1, tzinfo=datetime.timezone.utc),):
-        return None
-    if value < datetime.datetime(1800, 1, 1, tzinfo=datetime.timezone.utc):
-        # It looks like some of JustWatch's data uses the original release date
-        # for the available_from field, despite the original release date being
-        # before video streaming on the internet existed. From
-        # https://en.wikipedia.org/wiki/Film#History it looks unlikely that any
-        # original release date predates 1800 though.
-        warnings.warn(
-            f"{node_id!r} has a date field that's improbably old, "
-            f"{raw_value!r}. If it looks like it might be a placeholder, "
-            "consider adding it to the _parse_datetime function.",
-            UserWarning,
-        )
-    return value
+    return dateutil.parser.isoparse(raw_value)
 
 
 @contextlib.contextmanager
@@ -426,12 +405,8 @@ class Filter(media_filter.CachedFilter):
                 and monetization_type not in self._config.monetization_types
             ):
                 continue
-            available_from = _parse_datetime(
-                offer["availableFromTime"], node_id=node["id"]
-            )
-            available_to = _parse_datetime(
-                offer["availableToTime"], node_id=node["id"]
-            )
+            available_from = _parse_datetime(offer["availableFromTime"])
+            available_to = _parse_datetime(offer["availableToTime"])
             if available_to is not None and now > available_to:
                 continue
             if not_available_after is not None and (

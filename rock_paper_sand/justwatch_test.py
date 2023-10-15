@@ -299,7 +299,6 @@ class FilterTest(parameterized.TestCase):
             item={"name": "foo", "justwatch": "tm1"},
             api_data={
                 ("tm1", "US"): {
-                    "id": "tm1",
                     "offers": [
                         _offer(
                             package_technical_name="foo",
@@ -340,7 +339,6 @@ class FilterTest(parameterized.TestCase):
             item={"name": "foo", "justwatch": "tm1"},
             api_data={
                 ("tm1", "US"): {
-                    "id": "tm1",
                     "offers": [
                         _offer(
                             package_technical_name="foo",
@@ -375,7 +373,6 @@ class FilterTest(parameterized.TestCase):
                         {
                             "episodes": [
                                 {
-                                    "id": "tse111",
                                     "offers": [
                                         _offer(
                                             package_technical_name="foo",
@@ -412,7 +409,7 @@ class FilterTest(parameterized.TestCase):
                 "anyAvailability": True,
             },
             item={"name": "foo", "done": "all", "justwatch": "tm1"},
-            api_data={("tm1", "US"): {"id": "tm1", "offers": [_offer()]}},
+            api_data={("tm1", "US"): {"offers": [_offer()]}},
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
@@ -434,7 +431,6 @@ class FilterTest(parameterized.TestCase):
                             "content": {"seasonNumber": 1},
                             "episodes": [
                                 {
-                                    "id": "tse111",
                                     "content": {
                                         "seasonNumber": 1,
                                         "episodeNumber": 1,
@@ -459,7 +455,6 @@ class FilterTest(parameterized.TestCase):
                                     },
                                 },
                                 {
-                                    "id": "tse123",
                                     "content": {
                                         "seasonNumber": 2,
                                         "episodeNumber": 3,
@@ -490,7 +485,6 @@ class FilterTest(parameterized.TestCase):
             item={"name": "foo", "done": "all", "justwatch": "tm1"},
             api_data={
                 ("tm1", "US"): {
-                    "id": "tm1",
                     "offers": [
                         _offer(
                             package_technical_name="foo",
@@ -513,7 +507,6 @@ class FilterTest(parameterized.TestCase):
             item={"name": "foo", "justwatch": "tm1"},
             api_data={
                 ("tm1", "US"): {
-                    "id": "tm1",
                     "offers": [
                         _offer(
                             package_technical_name="foo",
@@ -686,7 +679,6 @@ class FilterTest(parameterized.TestCase):
 
     def test_extra_human_readable(self) -> None:
         self._mock_api.get_node.return_value = {
-            "id": "tm1",
             "offers": [
                 _offer(
                     package_technical_name="foo",
@@ -715,41 +707,6 @@ class FilterTest(parameterized.TestCase):
         self.assertEqual(
             {f"Foo+ (bar, until {_TIME_IN_FUTURE_1})"},
             {extra.human_readable() for extra in result.extra},
-        )
-
-    def test_possible_unknown_placeholder_datetime(self) -> None:
-        self._mock_api.get_node.return_value = {
-            "id": "tm1",
-            "offers": [
-                _offer(
-                    package_technical_name="foo",
-                    monetization_type="bar",
-                    available_from="0042-01-01T00:00:00Z",
-                )
-            ],
-        }
-        test_filter = justwatch.Filter(
-            json_format.ParseDict(
-                {"country": "US", "anyAvailability": True},
-                config_pb2.JustWatchFilter(),
-            ),
-            api=self._mock_api,
-        )
-
-        with self.assertWarnsRegex(UserWarning, "0042.*might be a placeholder"):
-            result = test_filter.filter(
-                media_item.MediaItem.from_config(
-                    json_format.ParseDict(
-                        {"name": "foo", "justwatch": "tm1"},
-                        config_pb2.MediaItem(),
-                    )
-                )
-            )
-        self.assertEqual(
-            media_filter.FilterResult(
-                True, extra={_offer_extra("Foo+", ("bar",))}
-            ),
-            result,
         )
 
 
