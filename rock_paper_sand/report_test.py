@@ -102,12 +102,22 @@ class ReportTest(parameterized.TestCase):
                 ]
             },
             media=[
-                {"name": "foo", "comment": "FOO!", "done": "all"},
+                {
+                    "name": "foo",
+                    "comment": "FOO!",
+                    "done": "all",
+                    "justwatch": "jw",
+                },
                 {"name": "bar", "parts": [{"name": "quux"}]},
             ],
             expected_result={
                 "all": [
-                    {"name": "foo", "comment": "FOO!", "done": "all"},
+                    {
+                        "name": "foo",
+                        "comment": "FOO!",
+                        "done": "all",
+                        "justwatch": "jw",
+                    },
                     {"name": "bar", "parts": [{"name": "quux"}]},
                 ],
                 "none": [],

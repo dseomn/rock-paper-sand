@@ -2,10 +2,12 @@ My Favorite Report:
   free-at-home:
   - name: Life of Brian (1979)
     customAvailability: borrow from the library
+    justwatch: https://www.justwatch.com/us/movie/life-of-brian
     extraInformation:
     - Netflix (flatrate)
   - name: Monty Python's Flying Circus (1969)
     done: 1 - 3
+    justwatch: https://www.justwatch.com/us/tv-show/monty-pythons-flying-circus
     extraInformation:
     - Netflix (flatrate)
   - name: Rock, Paper, Sand! the Extended Universe
@@ -32,8 +34,10 @@ My Favorite Report:
     done: all
   - name: Life of Brian (1979)
     customAvailability: borrow from the library
+    justwatch: https://www.justwatch.com/us/movie/life-of-brian
   - name: Monty Python's Flying Circus (1969)
     done: 1 - 3
+    justwatch: https://www.justwatch.com/us/tv-show/monty-pythons-flying-circus
   - name: Rock, Paper, Sand! the Extended Universe
     parts:
     - name: Rock, Paper, Sand! the Book
