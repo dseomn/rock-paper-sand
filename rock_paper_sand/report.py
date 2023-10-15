@@ -14,12 +14,13 @@
 """Reports about media."""
 
 from collections.abc import Mapping, Sequence
+import dataclasses
 import difflib
 import email.message
 import json
 import subprocess
 import typing
-from typing import Any
+from typing import Any, Self
 
 import yaml
 
@@ -112,6 +113,33 @@ def _add_diff_attachment(
     )
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _Section:
+    """Section of a report.
+
+    Attributes:
+        proto: Proto from the config file.
+        filter: Parsed proto.filter field.
+    """
+
+    proto: config_pb2.Report.Section
+    filter: media_filter.Filter
+
+    @classmethod
+    def from_config(
+        cls,
+        proto: config_pb2.Report.Section,
+        *,
+        filter_registry: media_filter.Registry,
+    ) -> Self:
+        if not proto.name:
+            raise ValueError("The name field is required.")
+        return cls(
+            proto=proto,
+            filter=filter_registry.parse(proto.filter),
+        )
+
+
 class Report:
     """A report about the media."""
 
@@ -122,31 +150,26 @@ class Report:
         filter_registry: media_filter.Registry,
     ) -> None:
         self._config = report_config
-        self._sections: dict[str, media_filter.Filter] = {}
-        self._collapse_diff_sections: set[str] = set()
+        self._sections: dict[str, _Section] = {}
         for section_index, section in enumerate(report_config.sections):
             with exceptions.add_note(
                 f"In sections[{section_index}] with name {section.name!r}."
             ):
-                if not section.name:
-                    raise ValueError("The name field is required.")
                 if section.name in self._sections:
                     raise ValueError("The name field must be unique.")
-                self._sections[section.name] = filter_registry.parse(
-                    section.filter
+                self._sections[section.name] = _Section.from_config(
+                    section, filter_registry=filter_registry
                 )
-                if section.collapse_diff:
-                    self._collapse_diff_sections.add(section.name)
 
     def generate(
         self, media: Sequence[media_item.MediaItem]
     ) -> Mapping[str, Any]:
         """Returns a mapping from section name to results of the section."""
         result = {}
-        for section_name, section_filter in self._sections.items():
+        for section_name, section in self._sections.items():
             section_results = []
             for item in media:
-                item_result = _filter_media_item(section_filter, item)
+                item_result = _filter_media_item(section.filter, item)
                 if item_result is not None:
                     section_results.append(item_result)
             result[section_name] = section_results
@@ -198,7 +221,7 @@ class Report:
                 name=section_name,
                 old=section_previous_results,
                 new=_dump_for_email(section_results),
-                collapse=section_name in self._collapse_diff_sections,
+                collapse=self._sections[section_name].proto.collapse_diff,
             )
         for section_name, section_results in previous_results.items():
             if section_name not in results:
