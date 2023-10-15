@@ -110,6 +110,28 @@ class MediaItemTest(parameterized.TestCase):
             )
         self.assertSequenceEqual(error_notes, error.exception.__notes__)
 
+    def test_iter_all_items(self) -> None:
+        item_1 = media_item.MediaItem.from_config(
+            json_format.ParseDict(
+                {
+                    "name": "some-name",
+                    "parts": [{"name": "some-part"}],
+                },
+                config_pb2.MediaItem(),
+            )
+        )
+        item_2 = media_item.MediaItem.from_config(
+            json_format.ParseDict(
+                {"name": "some-other-name"},
+                config_pb2.MediaItem(),
+            )
+        )
+
+        self.assertSequenceEqual(
+            (item_1, *item_1.parts, item_2),
+            tuple(media_item.iter_all_items((item_1, item_2))),
+        )
+
 
 if __name__ == "__main__":
     absltest.main()

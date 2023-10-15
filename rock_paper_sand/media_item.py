@@ -13,7 +13,7 @@
 # limitations under the License.
 """Media items."""
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 import dataclasses
 from typing import Self
 import uuid
@@ -100,3 +100,10 @@ class MediaItem:
                 done=multi_level_set.MultiLevelSet.from_string(proto.done),
                 parts=parts,
             )
+
+
+def iter_all_items(media: Iterable[MediaItem]) -> Iterable[MediaItem]:
+    """Yields all media items, recursively."""
+    for item in media:
+        yield item
+        yield from iter_all_items(item.parts)
