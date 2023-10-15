@@ -46,6 +46,7 @@ class MediaItemTest(parameterized.TestCase):
                 id=mock.ANY,
                 debug_description="unknown media item with name 'some-name'",
                 proto=proto,
+                fully_qualified_name="some-name",
                 done=mock.ANY,
                 parts=(
                     media_item.MediaItem(
@@ -54,6 +55,7 @@ class MediaItemTest(parameterized.TestCase):
                             "unknown media item with name 'some-part'"
                         ),
                         proto=config_pb2.MediaItem(name="some-part"),
+                        fully_qualified_name="some-name: some-part",
                         done=mock.ANY,
                         parts=(),
                     ),

@@ -34,6 +34,7 @@ class MediaItem:
         debug_description: Description of the media item for use in logs or
             exceptions.
         proto: Proto from the config file.
+        fully_qualified_name: Name, including names of parents.
         done: Parsed proto.done field.
         parts: Parsed proto.parts field.
     """
@@ -44,6 +45,7 @@ class MediaItem:
     )
     debug_description: str
     proto: config_pb2.MediaItem
+    fully_qualified_name: str
     done: multi_level_set.MultiLevelSet
     parts: Sequence["MediaItem"]
 
@@ -53,6 +55,7 @@ class MediaItem:
         proto: config_pb2.MediaItem,
         *,
         index: Sequence[int] = (),
+        parent_fully_qualified_name: str | None = None,
     ) -> Self:
         """Parses from a config proto.
 
@@ -61,9 +64,20 @@ class MediaItem:
             index: Index within the config file. () means it's not from a config
                 file. (0,) means it's media[0]. (0, 1, 2) means it's
                 media[0].parts[1].parts[2].
+            parent_fully_qualified_name: fully_qualified_name of the parent, or
+                None if there is no parent.
         """
+        fully_qualified_name = (
+            proto.name
+            if parent_fully_qualified_name is None
+            else f"{parent_fully_qualified_name}: {proto.name}"
+        )
         parts = tuple(
-            cls.from_config(part, index=(*index, part_index) if index else ())
+            cls.from_config(
+                part,
+                index=(*index, part_index) if index else (),
+                parent_fully_qualified_name=fully_qualified_name,
+            )
             for part_index, part in enumerate(proto.parts)
         )
         if index:
@@ -82,6 +96,7 @@ class MediaItem:
             return cls(
                 debug_description=debug_description,
                 proto=proto,
+                fully_qualified_name=fully_qualified_name,
                 done=multi_level_set.MultiLevelSet.from_string(proto.done),
                 parts=parts,
             )
