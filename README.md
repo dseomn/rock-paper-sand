@@ -33,9 +33,10 @@ filtering is one of the main focuses of this program.
 *   Filter that media based on:
     *   Whether it's done, partially done, or to-do.
     *   What streaming services it's available on or if it's currently in
-        theaters, using [JustWatch](https://www.justwatch.com/)'s API. This
-        filter also adds extra information to the output to show where the media
-        is available, and if only some episodes are available, how many.
+        theaters, using [JustWatch](https://www.justwatch.com/)'s unofficial
+        API. This filter also adds extra information to the output to show where
+        the media is available, and if only some episodes are available, how
+        many.
     *   Custom string field matching. E.g., you can put "borrow from the
         library" in the `customAvailability` field, and filter on that to show
         media that's at the library (possibly excluding media that's also on a
@@ -77,5 +78,5 @@ filtering is one of the main focuses of this program.
     config files that are used by the same local user, it might be worth
     thinking through the security implications first.
 *   This is not an officially supported Google product.
-*   See also [a disclaimer about JustWatch's
+*   See also [a disclaimer about JustWatch's unofficial
     API](https://github.com/dawoudt/JustWatchAPI#disclaimer).
