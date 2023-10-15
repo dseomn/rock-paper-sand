@@ -139,6 +139,17 @@ class _Section:
             filter=filter_registry.parse(proto.filter),
         )
 
+    def _generate_normal(self, media: Sequence[media_item.MediaItem]) -> Any:
+        return [
+            result
+            for item in media
+            if (result := _filter_media_item(self.filter, item)) is not None
+        ]
+
+    def generate(self, media: Sequence[media_item.MediaItem]) -> Any:
+        """Returns the section's results."""
+        return self._generate_normal(media)
+
 
 class Report:
     """A report about the media."""
@@ -165,15 +176,10 @@ class Report:
         self, media: Sequence[media_item.MediaItem]
     ) -> Mapping[str, Any]:
         """Returns a mapping from section name to results of the section."""
-        result = {}
-        for section_name, section in self._sections.items():
-            section_results = []
-            for item in media:
-                item_result = _filter_media_item(section.filter, item)
-                if item_result is not None:
-                    section_results.append(item_result)
-            result[section_name] = section_results
-        return result
+        return {
+            section_name: section.generate(media)
+            for section_name, section in self._sections.items()
+        }
 
     def notify(
         self,
