@@ -45,6 +45,20 @@ class _ExtraInfoFilter(media_filter.Filter):
         return media_filter.FilterResult(True, extra=self._extra)
 
 
+class _FirstWordIsNotNo(media_filter.Filter):
+    def valid_extra_keys(self) -> Set[str]:
+        """See base class."""
+        return {"first_word"}
+
+    def filter(self, item: media_item.MediaItem) -> media_filter.FilterResult:
+        """See base class."""
+        first_word, _, _ = item.proto.name.partition(" ")
+        return media_filter.FilterResult(
+            first_word != "no",
+            extra={media_filter.ResultExtra(first_word=first_word)},
+        )
+
+
 class _ResultExtraStr(media_filter.ResultExtra):
     def __init__(self, extra_str: str) -> None:
         super().__init__({"str": extra_str})
@@ -76,6 +90,30 @@ class ReportTest(parameterized.TestCase):
             },
             error_regex="name field must be unique",
             error_notes=("In sections[1] with name 'foo'.",),
+        ),
+        dict(
+            testcase_name="group_by_missing_key",
+            report_config={
+                "sections": [
+                    {"name": "foo", "filter": {"all": {}}, "groupBy": {}},
+                ],
+            },
+            error_regex="key field is required",
+            error_notes=("In sections[0] with name 'foo'.",),
+        ),
+        dict(
+            testcase_name="group_by_invalid_key",
+            report_config={
+                "sections": [
+                    {
+                        "name": "foo",
+                        "filter": {"all": {}},
+                        "groupBy": {"key": "kumquat"},
+                    },
+                ],
+            },
+            error_regex="Group key 'kumquat' is not a valid key",
+            error_notes=("In sections[0] with name 'foo'.",),
         ),
     )
     def test_invalid_config(
@@ -203,6 +241,37 @@ class ReportTest(parameterized.TestCase):
                 ],
             },
         ),
+        dict(
+            testcase_name="group_by",
+            report_config={
+                "sections": [
+                    {
+                        "name": "grouped",
+                        "filter": {"ref": "first-word-is-not-no"},
+                        "groupBy": {"key": "first_word"},
+                    }
+                ]
+            },
+            media=[
+                {"name": "foo"},
+                {"name": "foo and other words"},
+                {
+                    "name": "no this is not included",
+                    "parts": [{"name": "but this is"}],
+                },
+            ],
+            expected_result={
+                "grouped": {
+                    "but": [
+                        "no this is not included: but this is",
+                    ],
+                    "foo": [
+                        "foo",
+                        "foo and other words",
+                    ],
+                },
+            },
+        ),
     )
     def test_report_generate(
         self,
@@ -219,6 +288,7 @@ class ReportTest(parameterized.TestCase):
             "extra-with-str",
             _ExtraInfoFilter({_ResultExtraStr("example extra info")}),
         )
+        filter_registry.register("first-word-is-not-no", _FirstWordIsNotNo())
         report_ = report.Report(
             json_format.ParseDict(report_config, config_pb2.Report()),
             filter_registry=filter_registry,

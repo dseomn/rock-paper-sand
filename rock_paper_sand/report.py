@@ -13,6 +13,7 @@
 # limitations under the License.
 """Reports about media."""
 
+import collections
 from collections.abc import Mapping, Sequence
 import dataclasses
 import difflib
@@ -134,10 +135,38 @@ class _Section:
     ) -> Self:
         if not proto.name:
             raise ValueError("The name field is required.")
+        filter_ = filter_registry.parse(proto.filter)
+        if proto.HasField("group_by"):
+            if not proto.group_by.key:
+                raise ValueError("The key field is required in group_by.")
+            valid_keys = filter_.valid_extra_keys()
+            if proto.group_by.key not in valid_keys:
+                raise ValueError(
+                    f"Group key {proto.group_by.key!r} is not a valid key for "
+                    f"the specified filter. Valid keys: {sorted(valid_keys)}"
+                )
         return cls(
             proto=proto,
-            filter=filter_registry.parse(proto.filter),
+            filter=filter_,
         )
+
+    def _generate_group_by(self, media: Sequence[media_item.MediaItem]) -> Any:
+        results = collections.defaultdict(list)
+        for item in media_item.iter_all_items(media):
+            item_result = self.filter.filter(item)
+            if not item_result.matches:
+                continue
+            groups = {
+                extra[self.proto.group_by.key]
+                for extra in item_result.extra
+                if self.proto.group_by.key in extra
+            }
+            for group in groups:
+                results[group].append(item.fully_qualified_name)
+        return {
+            group: names
+            for group, names in sorted(results.items(), key=lambda kv: kv[0])
+        }
 
     def _generate_normal(self, media: Sequence[media_item.MediaItem]) -> Any:
         return [
@@ -148,7 +177,10 @@ class _Section:
 
     def generate(self, media: Sequence[media_item.MediaItem]) -> Any:
         """Returns the section's results."""
-        return self._generate_normal(media)
+        if self.proto.HasField("group_by"):
+            return self._generate_group_by(media)
+        else:
+            return self._generate_normal(media)
 
 
 class Report:

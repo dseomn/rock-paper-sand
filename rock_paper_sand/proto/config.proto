@@ -51,6 +51,9 @@ message StringFieldMatcher {
 // providers has "foo" and monetization_types has "bar", the media must be
 // available on "foo" with monetization type "bar", not on "foo" with another
 // monetization type and also on another service with monetization type "bar".
+//
+// If any of the fields that match on availability are set, this filter will
+// make a key called "justwatch.provider" available for grouping on.
 message JustWatchFilter {
   reserved 1;
   reserved "locale";
@@ -140,6 +143,12 @@ message NamedFilter {
   Filter filter = 2;
 }
 
+// Configuration for grouping the result of a filter by a key.
+message GroupBy {
+  // Required. Key to group by. See filter documentation for the available keys.
+  string key = 1;
+}
+
 // A report about the media.
 message Report {
   // Required, must be unique. Name of the report.
@@ -164,6 +173,9 @@ message Report {
 
     // Required. Which media items to include in this section.
     Filter filter = 2;
+
+    // How to group the result of the filter.
+    GroupBy group_by = 4;
   }
 
   // Sections to include in the report.
