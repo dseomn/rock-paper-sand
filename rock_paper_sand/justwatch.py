@@ -11,15 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Code that uses JustWatch's API.
-
-There doesn't seem to be much documentation of the API, but
-https://github.com/dawoudt/JustWatchAPI shows some ways it can be used. This
-file does not use that library because 1) the library doesn't seem to add much
-value over doing plain REST calls, so it's probably not worth the extra
-dependency, and 2) the library doesn't give enough control over the HTTP calls
-to enable useful things like caching and retrying specific errors.
-"""
+"""Code that uses JustWatch's API."""
 
 import collections
 from collections.abc import Collection, Generator, Iterable, Mapping, Set
