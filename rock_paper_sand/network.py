@@ -35,9 +35,9 @@ def requests_cache_defaults() -> Mapping[str, Any]:
                 flags_and_constants.CACHE_DIR.value,
                 "requests-cache",
                 "cache.sqlite",
-            )
+            ),
+            serializer="json",
         ),
-        serializer="json",
     )
 
 
