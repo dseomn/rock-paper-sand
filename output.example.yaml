@@ -29,6 +29,21 @@ My Favorite Report:
       customAvailability: borrow from the library
     - 'unmatched part: Rock, Paper, Sand! the Movie'
     - 'unmatched part: Rock, Paper, Sand! the Sequel'
+  potential-future-subscriptions:
+    DIRECTV:
+    - Everything Everywhere All at Once (2022)
+    'Paramount Plus Apple TV Channel ':
+    - Everything Everywhere All at Once (2022)
+    Paramount+ Amazon Channel:
+    - Everything Everywhere All at Once (2022)
+    Paramount+ with Showtime:
+    - Everything Everywhere All at Once (2022)
+    Showtime:
+    - Everything Everywhere All at Once (2022)
+    Showtime Amazon Channel:
+    - Everything Everywhere All at Once (2022)
+    Showtime Roku Premium Channel:
+    - Everything Everywhere All at Once (2022)
   all:
   - name: Monty Python and the Holy Grail (1975)
     done: all
@@ -48,3 +63,5 @@ My Favorite Report:
       customAvailability: https://www.youtube.com/watch?v=dQw4w9WgXcQ
     - name: Rock, Paper, Sand! the Sequel
       comment: Maybe check if this will screen at the Rick Astley Film Festival?
+  - name: Everything Everywhere All at Once (2022)
+    justwatch: https://www.justwatch.com/us/movie/everything-everywhere-all-at-once
