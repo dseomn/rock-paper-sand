@@ -198,7 +198,7 @@ media:
   - # The movie's sequel (not based on the original book or comic book sequel)
     # hasn't been released yet. Note that as this is defined now, it will never
     # match one of the todo_availability_... filters because it doesn't have a
-    # `customAvailability` or `justwatchId` field. But it would be possible to
+    # `customAvailability` or `justwatch` field. But it would be possible to
     # create a report section for unavailable media, and check it occasionally
     # to see if anything has changed. The free-form `comment` field could make
     # that easier to check, or you could use it for whatever else you want.
