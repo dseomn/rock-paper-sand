@@ -47,7 +47,11 @@ filtering is one of the main focuses of this program.
         released in a range of years.
     *   Logical combinations of any of the above, including `and`, `or`, and
         `not`.
-*   Print the output of those filters to the console in reports.
+*   Group results by keys provided by filters. E.g., it's possible to filter for
+    media on streaming services that you don't already have, and group the
+    result by streaming service, in order to see which streaming service it
+    might make sense to subscribe to.
+*   Print the results to the console in reports.
 *   Send email notifications when one of those reports changes.
 *   Enforce some conditions on the list of media. E.g., if you want to keep the
     list sorted, that can be checked automatically. Or if you want to make sure
@@ -62,10 +66,6 @@ filtering is one of the main focuses of this program.
     the final book has already been released.
 *   Relatedly, support for filtering on incompleteness. E.g., letting you know
     when a book you liked has a new sequel available.
-*   Grouping and sorting the results of a filter. E.g., to make it easier to
-    pick a new streaming service to subscribe to, filter for media on streaming
-    services that you don't already have, group by service, and sort by how much
-    media each service has.
 *   Integration with public libraries' APIs if possible, to automatically find
     which media can be borrowed from the library.
 
