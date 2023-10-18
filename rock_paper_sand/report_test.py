@@ -40,7 +40,9 @@ class _ExtraInfoFilter(media_filter.Filter):
     def __init__(self, extra: Set[media_filter.ResultExtra]) -> None:
         self._extra = extra
 
-    def filter(self, item: media_item.MediaItem) -> media_filter.FilterResult:
+    def filter(
+        self, request: media_filter.FilterRequest
+    ) -> media_filter.FilterResult:
         """See base class."""
         return media_filter.FilterResult(True, extra=self._extra)
 
@@ -50,9 +52,11 @@ class _FirstWordIsNotNo(media_filter.Filter):
         """See base class."""
         return {"first_word"}
 
-    def filter(self, item: media_item.MediaItem) -> media_filter.FilterResult:
+    def filter(
+        self, request: media_filter.FilterRequest
+    ) -> media_filter.FilterResult:
         """See base class."""
-        first_word, _, _ = item.proto.name.partition(" ")
+        first_word, _, _ = request.item.proto.name.partition(" ")
         return media_filter.FilterResult(
             first_word != "no",
             extra={media_filter.ResultExtra(first_word=first_word)},

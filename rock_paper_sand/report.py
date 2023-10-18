@@ -46,7 +46,7 @@ def _filter_media_item(
         else:
             matched_any_part = True
             parts.append(part_result)
-    item_result = filter_.filter(item)
+    item_result = filter_.filter(media_filter.FilterRequest(item))
     if not item_result.matches and not matched_any_part:
         return None
     result: dict[str, Any] = {"name": item.proto.name}
@@ -155,7 +155,7 @@ class _Section:
     def _generate_group_by(self, media: Sequence[media_item.MediaItem]) -> Any:
         results = collections.defaultdict(list)
         for item in media_item.iter_all_items(media):
-            item_result = self.filter.filter(item)
+            item_result = self.filter.filter(media_filter.FilterRequest(item))
             if not item_result.matches:
                 continue
             groups = {

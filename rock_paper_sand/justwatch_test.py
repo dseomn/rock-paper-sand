@@ -616,8 +616,10 @@ class FilterTest(parameterized.TestCase):
         )
 
         result = test_filter.filter(
-            media_item.MediaItem.from_config(
-                json_format.ParseDict(item, config_pb2.MediaItem())
+            media_filter.FilterRequest(
+                media_item.MediaItem.from_config(
+                    json_format.ParseDict(item, config_pb2.MediaItem())
+                )
             )
         )
 
@@ -662,10 +664,12 @@ class FilterTest(parameterized.TestCase):
 
         with self.assertRaisesRegex(ValueError, "kumquat") as error:
             test_filter.filter(
-                media_item.MediaItem.from_config(
-                    json_format.ParseDict(
-                        {"name": "foo", "justwatch": "tm1"},
-                        config_pb2.MediaItem(),
+                media_filter.FilterRequest(
+                    media_item.MediaItem.from_config(
+                        json_format.ParseDict(
+                            {"name": "foo", "justwatch": "tm1"},
+                            config_pb2.MediaItem(),
+                        )
                     )
                 )
             )
@@ -696,10 +700,12 @@ class FilterTest(parameterized.TestCase):
         )
 
         result = test_filter.filter(
-            media_item.MediaItem.from_config(
-                json_format.ParseDict(
-                    {"name": "foo", "justwatch": "tm1"},
-                    config_pb2.MediaItem(),
+            media_filter.FilterRequest(
+                media_item.MediaItem.from_config(
+                    json_format.ParseDict(
+                        {"name": "foo", "justwatch": "tm1"},
+                        config_pb2.MediaItem(),
+                    )
                 )
             )
         )

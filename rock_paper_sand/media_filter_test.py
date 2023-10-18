@@ -47,7 +47,7 @@ class _ExtraInfoFilter(media_filter.CachedFilter):
         return frozenset(itertools.chain.from_iterable(self._extra))
 
     def filter_implementation(
-        self, item: media_item.MediaItem
+        self, request: media_filter.FilterRequest
     ) -> media_filter.FilterResult:
         """See base class."""
         self.call_count += 1
@@ -249,7 +249,9 @@ class MediaFilterTest(parameterized.TestCase):
         test_filter = registry.parse(
             json_format.ParseDict(filter_config, config_pb2.Filter())
         )
-        result = test_filter.filter(media_item.MediaItem.from_config(item))
+        result = test_filter.filter(
+            media_filter.FilterRequest(media_item.MediaItem.from_config(item))
+        )
         self.assertEqual(expected_result, result)
 
     @parameterized.named_parameters(
@@ -314,13 +316,13 @@ class MediaFilterTest(parameterized.TestCase):
 
     def test_cached_filter(self) -> None:
         test_filter = _ExtraInfoFilter({_EXTRA_1})
-        item = media_item.MediaItem.from_config(
-            config_pb2.MediaItem(name="bar")
+        request = media_filter.FilterRequest(
+            media_item.MediaItem.from_config(config_pb2.MediaItem(name="bar"))
         )
         expected_result = media_filter.FilterResult(True, extra={_EXTRA_1})
 
-        first_result = test_filter.filter(item)
-        second_result = test_filter.filter(item)
+        first_result = test_filter.filter(request)
+        second_result = test_filter.filter(request)
 
         self.assertEqual(expected_result, first_result)
         self.assertEqual(expected_result, second_result)

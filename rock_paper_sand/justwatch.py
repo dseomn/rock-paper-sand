@@ -26,7 +26,6 @@ import requests_cache
 
 from rock_paper_sand import exceptions
 from rock_paper_sand import media_filter
-from rock_paper_sand import media_item
 from rock_paper_sand import multi_level_set
 from rock_paper_sand import network
 from rock_paper_sand.proto import config_pb2
@@ -419,7 +418,7 @@ class Filter(media_filter.CachedFilter):
         self,
         node: Any,
         *,
-        item: media_item.MediaItem,
+        request: media_filter.FilterRequest,
         now: datetime.datetime,
     ) -> _Availability:
         not_available_after = (
@@ -433,7 +432,7 @@ class Filter(media_filter.CachedFilter):
             exclude=(
                 multi_level_set.MultiLevelSet(())
                 if self._config.include_done
-                else item.done
+                else request.item.done
             ),
         ):
             availability.update(
@@ -456,28 +455,30 @@ class Filter(media_filter.CachedFilter):
         return True
 
     def filter_implementation(
-        self, item: media_item.MediaItem
+        self, request: media_filter.FilterRequest
     ) -> media_filter.FilterResult:
         """See base class."""
         with exceptions.add_note(
-            f"While filtering {item.debug_description} using JustWatch filter "
-            f"config:\n{self._config}"
+            f"While filtering {request.item.debug_description} using JustWatch "
+            f"filter config:\n{self._config}"
         ):
             now = datetime.datetime.now(tz=datetime.timezone.utc)
-            if not item.proto.justwatch:
+            if not request.item.proto.justwatch:
                 return media_filter.FilterResult(False)
             node = self._api.get_node(
-                item.proto.justwatch, country=self._config.country
+                request.item.proto.justwatch, country=self._config.country
             )
             extra_information: set[media_filter.ResultExtra] = set()
             if self._should_check_availability():
-                availability = self._availability(node, item=item, now=now)
+                availability = self._availability(
+                    node, request=request, now=now
+                )
                 if not availability.episode_count_by_offer:
                     return media_filter.FilterResult(False)
                 extra_information.update(availability.to_extra_information())
             if self._config.all_done and not self._all_done(
                 node,
-                done=item.done,
+                done=request.item.done,
             ):
                 return media_filter.FilterResult(False)
             return media_filter.FilterResult(True, extra=extra_information)

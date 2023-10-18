@@ -27,6 +27,21 @@ from rock_paper_sand import multi_level_set
 from rock_paper_sand.proto import config_pb2
 
 
+@dataclasses.dataclass(frozen=True)
+class FilterRequest:
+    """Arguments to a filter.
+
+    This uses a dataclass to store the arguments instead of passing multiple
+    (keyword) arguments so that new arguments can be added without changing the
+    signature of existing filters.
+
+    Attributes:
+        item: Item to filter.
+    """
+
+    item: media_item.MediaItem
+
+
 class ResultExtra(immutabledict.immutabledict[str, Any]):
     """Extra information about a filter result.
 
@@ -61,7 +76,7 @@ class Filter(abc.ABC):
         return frozenset()
 
     @abc.abstractmethod
-    def filter(self, item: media_item.MediaItem) -> FilterResult:
+    def filter(self, request: FilterRequest) -> FilterResult:
         """Returns the result of the filter on the media item."""
         raise NotImplementedError()
 
@@ -76,15 +91,17 @@ class CachedFilter(Filter, abc.ABC):
         self._result_by_id: dict[str, FilterResult] = {}
 
     @abc.abstractmethod
-    def filter_implementation(self, item: media_item.MediaItem) -> FilterResult:
+    def filter_implementation(self, request: FilterRequest) -> FilterResult:
         """See Filter.filter."""
         raise NotImplementedError()
 
-    def filter(self, item: media_item.MediaItem) -> FilterResult:
+    def filter(self, request: FilterRequest) -> FilterResult:
         """See base class."""
-        if item.id not in self._result_by_id:
-            self._result_by_id[item.id] = self.filter_implementation(item)
-        return self._result_by_id[item.id]
+        if request.item.id not in self._result_by_id:
+            self._result_by_id[request.item.id] = self.filter_implementation(
+                request
+            )
+        return self._result_by_id[request.item.id]
 
 
 class Not(Filter):
@@ -97,9 +114,9 @@ class Not(Filter):
         """See base class."""
         return self._child.valid_extra_keys()
 
-    def filter(self, item: media_item.MediaItem) -> FilterResult:
+    def filter(self, request: FilterRequest) -> FilterResult:
         """See base class."""
-        child_result = self._child.filter(item)
+        child_result = self._child.filter(request)
         return FilterResult(not child_result.matches, extra=child_result.extra)
 
 
@@ -120,9 +137,9 @@ class BinaryLogic(Filter):
             )
         )
 
-    def filter(self, item: media_item.MediaItem) -> FilterResult:
+    def filter(self, request: FilterRequest) -> FilterResult:
         """See base class."""
-        results = tuple(child.filter(item) for child in self._children)
+        results = tuple(child.filter(request) for child in self._children)
         return FilterResult(
             self._op(result.matches for result in results),
             extra=frozenset(
@@ -139,9 +156,9 @@ class HasParts(Filter):
     def __init__(self, has_parts: bool) -> None:
         self._has_parts = has_parts
 
-    def filter(self, item: media_item.MediaItem) -> FilterResult:
+    def filter(self, request: FilterRequest) -> FilterResult:
         """See base class."""
-        return FilterResult(bool(item.parts) == self._has_parts)
+        return FilterResult(bool(request.item.parts) == self._has_parts)
 
 
 class Done(Filter):
@@ -150,9 +167,9 @@ class Done(Filter):
     def __init__(self, done: str) -> None:
         self._done = multi_level_set.parse_number(done)
 
-    def filter(self, item: media_item.MediaItem) -> FilterResult:
+    def filter(self, request: FilterRequest) -> FilterResult:
         """See base class."""
-        return FilterResult(self._done in item.done)
+        return FilterResult(self._done in request.item.done)
 
 
 class StringFieldMatcher(Filter):
@@ -179,9 +196,11 @@ class StringFieldMatcher(Filter):
                     f"Unknown string field match type: {matcher_config!r}"
                 )
 
-    def filter(self, item: media_item.MediaItem) -> FilterResult:
+    def filter(self, request: FilterRequest) -> FilterResult:
         """See base class."""
-        return FilterResult(self._matcher(self._field_getter(item.proto)))
+        return FilterResult(
+            self._matcher(self._field_getter(request.item.proto))
+        )
 
 
 class Registry:
