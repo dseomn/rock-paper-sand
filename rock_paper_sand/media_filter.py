@@ -14,7 +14,7 @@
 """Filters for media items."""
 
 import abc
-from collections.abc import Callable, Iterable, Set
+from collections.abc import Callable, Hashable, Iterable, Set
 import dataclasses
 import itertools
 import re
@@ -40,6 +40,10 @@ class FilterRequest:
     """
 
     item: media_item.MediaItem
+
+    def cache_key(self) -> Hashable:
+        """Returns a key that identifies this request for caching."""
+        return (self.item.id,)
 
 
 class ResultExtra(immutabledict.immutabledict[str, Any]):
@@ -88,7 +92,7 @@ class CachedFilter(Filter, abc.ABC):
     """
 
     def __init__(self) -> None:
-        self._result_by_id: dict[str, FilterResult] = {}
+        self._results: dict[Hashable, FilterResult] = {}
 
     @abc.abstractmethod
     def filter_implementation(self, request: FilterRequest) -> FilterResult:
@@ -97,11 +101,10 @@ class CachedFilter(Filter, abc.ABC):
 
     def filter(self, request: FilterRequest) -> FilterResult:
         """See base class."""
-        if request.item.id not in self._result_by_id:
-            self._result_by_id[request.item.id] = self.filter_implementation(
-                request
-            )
-        return self._result_by_id[request.item.id]
+        cache_key = request.cache_key()
+        if cache_key not in self._results:
+            self._results[cache_key] = self.filter_implementation(request)
+        return self._results[cache_key]
 
 
 class Not(Filter):

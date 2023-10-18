@@ -59,6 +59,12 @@ _EXTRA_2 = media_filter.ResultExtra(test="extra-2")
 
 
 class MediaFilterTest(parameterized.TestCase):
+    def test_filter_request_cache_key(self) -> None:
+        request = media_filter.FilterRequest(
+            media_item.MediaItem.from_config(config_pb2.MediaItem(name="foo"))
+        )
+        self.assertEqual((request.item.id,), request.cache_key())
+
     @parameterized.named_parameters(
         dict(
             testcase_name="all",
