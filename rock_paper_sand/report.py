@@ -56,6 +56,8 @@ def _filter_media_item(
         result["done"] = item.proto.done
     if item.proto.custom_availability:
         result["customAvailability"] = item.proto.custom_availability
+    if item.proto.wikidata:
+        result["wikidata"] = item.proto.wikidata
     if item.proto.justwatch:
         result["justwatch"] = item.proto.justwatch
     extra_information = []

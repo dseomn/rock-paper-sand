@@ -244,6 +244,10 @@ message MediaItem {
   // URL.
   string custom_availability = 4;
 
+  // Wikidata item URL or QID, e.g., "https://www.wikidata.org/wiki/Q3107329" or
+  // "Q3107329".
+  string wikidata = 9;
+
   // JustWatch URL or ID, e.g.,
   // "https://www.justwatch.com/us/tv-show/monty-pythons-flying-circus" or
   // "ts22164". The `rock-paper-sand justwatch node` command can be used to find

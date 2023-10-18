@@ -48,6 +48,7 @@ class MediaItemTest(parameterized.TestCase):
                 proto=proto,
                 fully_qualified_name="some-name",
                 done=mock.ANY,
+                wikidata_qid="",
                 parts=(
                     media_item.MediaItem(
                         id=mock.ANY,
@@ -57,6 +58,7 @@ class MediaItemTest(parameterized.TestCase):
                         proto=config_pb2.MediaItem(name="some-part"),
                         fully_qualified_name="some-name: some-part",
                         done=mock.ANY,
+                        wikidata_qid="",
                         parts=(),
                     ),
                 ),
@@ -109,6 +111,42 @@ class MediaItemTest(parameterized.TestCase):
                 index=index,
             )
         self.assertSequenceEqual(error_notes, error.exception.__notes__)
+
+    @parameterized.parameters(
+        "foo",
+        "Q",
+        "Q💯",
+        "Q-1",
+        "Q1.2",
+        "Q1foo",
+        "q1",
+        "https://example.com/Q1",
+        "https://www.wikidata.org/wiki/foo",
+        "https://www.wikidata.org/wiki/Q",
+        "https://www.wikidata.org/wiki/Q1foo",
+    )
+    def test_invalid_wikidata_field(self, value: str) -> None:
+        with self.assertRaisesRegex(ValueError, "Wikidata field"):
+            media_item.MediaItem.from_config(
+                json_format.ParseDict(
+                    {"name": "foo", "wikidata": value},
+                    config_pb2.MediaItem(),
+                )
+            )
+
+    @parameterized.parameters(
+        ("", ""),
+        ("Q1", "Q1"),
+        ("https://www.wikidata.org/wiki/Q1", "Q1"),
+    )
+    def test_valid_wikidata_field(self, value: str, expected_qid: str) -> None:
+        item = media_item.MediaItem.from_config(
+            json_format.ParseDict(
+                {"name": "foo", "wikidata": value},
+                config_pb2.MediaItem(),
+            )
+        )
+        self.assertEqual(expected_qid, item.wikidata_qid)
 
     def test_iter_all_items(self) -> None:
         item_1 = media_item.MediaItem.from_config(

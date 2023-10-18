@@ -15,12 +15,34 @@
 
 from collections.abc import Iterable, Sequence
 import dataclasses
+import re
 from typing import Self
 import uuid
 
 from rock_paper_sand import exceptions
 from rock_paper_sand import multi_level_set
 from rock_paper_sand.proto import config_pb2
+
+_WIKIDATA_VALID_PREFIXES = (
+    "",
+    "https://www.wikidata.org/wiki/",
+)
+_WIKIDATA_RECOGNIZED_FORMS = tuple(
+    f"{prefix}Q3107329" for prefix in _WIKIDATA_VALID_PREFIXES
+)
+
+
+def _parse_wikidata(value: str) -> str:
+    """Returns the QID or empty string from the wikidata field."""
+    if not value:
+        return ""
+    match = re.fullmatch(r"(?P<prefix>.*)(?P<qid>Q[0-9]+)", value)
+    if match is None or match.group("prefix") not in _WIKIDATA_VALID_PREFIXES:
+        raise ValueError(
+            f"Wikidata field {value!r} is not in one of the recognized forms: "
+            f"{_WIKIDATA_RECOGNIZED_FORMS}"
+        )
+    return match.group("qid")
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -36,6 +58,7 @@ class MediaItem:
         proto: Proto from the config file.
         fully_qualified_name: Name, including names of parents.
         done: Parsed proto.done field.
+        wikidata_qid: Wikidata QID, or the empty string.
         parts: Parsed proto.parts field.
     """
 
@@ -47,6 +70,7 @@ class MediaItem:
     proto: config_pb2.MediaItem
     fully_qualified_name: str
     done: multi_level_set.MultiLevelSet
+    wikidata_qid: str
     parts: Sequence["MediaItem"]
 
     @classmethod
@@ -98,6 +122,7 @@ class MediaItem:
                 proto=proto,
                 fully_qualified_name=fully_qualified_name,
                 done=multi_level_set.MultiLevelSet.from_string(proto.done),
+                wikidata_qid=_parse_wikidata(proto.wikidata),
                 parts=parts,
             )
 
