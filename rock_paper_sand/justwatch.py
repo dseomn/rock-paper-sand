@@ -39,6 +39,10 @@ def _parse_datetime(raw_value: str | None) -> datetime.datetime | None:
     return dateutil.parser.isoparse(raw_value)
 
 
+def _response_is_ok(response: requests.Response) -> bool:
+    return "errors" not in response.json()
+
+
 @contextlib.contextmanager
 def requests_session() -> Generator[requests.Session, None, None]:
     """Returns a context manager for a session for the JustWatch API."""
@@ -46,6 +50,7 @@ def requests_session() -> Generator[requests.Session, None, None]:
         **network.requests_cache_defaults(),
         expire_after=datetime.timedelta(hours=20),
         allowable_methods=("GET", "HEAD", "POST"),
+        filter_fn=_response_is_ok,
     ) as session:
         network.configure_session(session, additional_retry_methods=("POST",))
         yield session
@@ -100,7 +105,7 @@ class Api:
         with exceptions.add_note(f"Response body: {response.text}"):
             response.raise_for_status()
         response_json = response.json()
-        if "errors" in response_json:
+        if not _response_is_ok(response):
             raise ValueError(f"GraphQL query failed: {response_json}")
         return response_json
 
