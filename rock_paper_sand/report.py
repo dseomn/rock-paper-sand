@@ -16,6 +16,7 @@
 import collections
 from collections.abc import Mapping, Sequence
 import dataclasses
+import datetime
 import difflib
 import email.message
 import json
@@ -35,18 +36,20 @@ from rock_paper_sand.proto import state_pb2
 def _filter_media_item(
     filter_: media_filter.Filter,
     item: media_item.MediaItem,
+    *,
+    now: datetime.datetime,
 ) -> Mapping[str, Any] | None:
     """Returns info about the item if it matches, or None if it doesn't."""
     parts: list[Any] = []
     matched_any_part = False
     for part in item.parts:
-        part_result = _filter_media_item(filter_, part)
+        part_result = _filter_media_item(filter_, part, now=now)
         if part_result is None:
             parts.append(f"unmatched part: {part.proto.name}")
         else:
             matched_any_part = True
             parts.append(part_result)
-    item_result = filter_.filter(media_filter.FilterRequest(item))
+    item_result = filter_.filter(media_filter.FilterRequest(item, now=now))
     if not item_result.matches and not matched_any_part:
         return None
     result: dict[str, Any] = {"name": item.proto.name}
@@ -152,10 +155,17 @@ class _Section:
             filter=filter_,
         )
 
-    def _generate_group_by(self, media: Sequence[media_item.MediaItem]) -> Any:
+    def _generate_group_by(
+        self,
+        media: Sequence[media_item.MediaItem],
+        *,
+        now: datetime.datetime,
+    ) -> Any:
         results = collections.defaultdict(list)
         for item in media_item.iter_all_items(media):
-            item_result = self.filter.filter(media_filter.FilterRequest(item))
+            item_result = self.filter.filter(
+                media_filter.FilterRequest(item, now=now)
+            )
             if not item_result.matches:
                 continue
             groups = {
@@ -170,19 +180,32 @@ class _Section:
             for group, names in sorted(results.items(), key=lambda kv: kv[0])
         }
 
-    def _generate_normal(self, media: Sequence[media_item.MediaItem]) -> Any:
+    def _generate_normal(
+        self,
+        media: Sequence[media_item.MediaItem],
+        *,
+        now: datetime.datetime,
+    ) -> Any:
         return [
             result
             for item in media
-            if (result := _filter_media_item(self.filter, item)) is not None
+            if (
+                (result := _filter_media_item(self.filter, item, now=now))
+                is not None
+            )
         ]
 
-    def generate(self, media: Sequence[media_item.MediaItem]) -> Any:
+    def generate(
+        self,
+        media: Sequence[media_item.MediaItem],
+        *,
+        now: datetime.datetime,
+    ) -> Any:
         """Returns the section's results."""
         if self.proto.HasField("group_by"):
-            return self._generate_group_by(media)
+            return self._generate_group_by(media, now=now)
         else:
-            return self._generate_normal(media)
+            return self._generate_normal(media, now=now)
 
 
 class Report:
@@ -210,8 +233,9 @@ class Report:
         self, media: Sequence[media_item.MediaItem]
     ) -> Mapping[str, Any]:
         """Returns a mapping from section name to results of the section."""
+        now = datetime.datetime.now(tz=datetime.timezone.utc)
         return {
-            section_name: section.generate(media)
+            section_name: section.generate(media, now=now)
             for section_name, section in self._sections.items()
         }
 

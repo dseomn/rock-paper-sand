@@ -419,10 +419,10 @@ class Filter(media_filter.CachedFilter):
         node: Any,
         *,
         request: media_filter.FilterRequest,
-        now: datetime.datetime,
     ) -> _Availability:
         not_available_after = (
-            now + datetime.timedelta(days=self._config.not_available_after_days)
+            request.now
+            + datetime.timedelta(days=self._config.not_available_after_days)
             if self._config.HasField("not_available_after_days")
             else None
         )
@@ -438,7 +438,7 @@ class Filter(media_filter.CachedFilter):
             availability.update(
                 self._leaf_node_availability(
                     leaf_node,
-                    now=now,
+                    now=request.now,
                     not_available_after=not_available_after,
                 )
             )
@@ -462,7 +462,6 @@ class Filter(media_filter.CachedFilter):
             f"While filtering {request.item.debug_description} using JustWatch "
             f"filter config:\n{self._config}"
         ):
-            now = datetime.datetime.now(tz=datetime.timezone.utc)
             if not request.item.proto.justwatch:
                 return media_filter.FilterResult(False)
             node = self._api.get_node(
@@ -470,9 +469,7 @@ class Filter(media_filter.CachedFilter):
             )
             extra_information: set[media_filter.ResultExtra] = set()
             if self._should_check_availability():
-                availability = self._availability(
-                    node, request=request, now=now
-                )
+                availability = self._availability(node, request=request)
                 if not availability.episode_count_by_offer:
                     return media_filter.FilterResult(False)
                 extra_information.update(availability.to_extra_information())

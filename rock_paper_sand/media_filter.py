@@ -16,6 +16,7 @@
 import abc
 from collections.abc import Callable, Hashable, Iterable, Set
 import dataclasses
+import datetime
 import itertools
 import re
 from typing import Any
@@ -37,13 +38,21 @@ class FilterRequest:
 
     Attributes:
         item: Item to filter.
+        now: Time to use as the current time for filtering. E.g., if a filter
+            checks if the item is currently available for streaming, it should
+            use this time to compare against the range of times that the item is
+            available.
     """
 
     item: media_item.MediaItem
+    _: dataclasses.KW_ONLY
+    now: datetime.datetime = dataclasses.field(
+        default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc)
+    )
 
     def cache_key(self) -> Hashable:
         """Returns a key that identifies this request for caching."""
-        return (self.item.id,)
+        return (self.item.id, self.now)
 
 
 class ResultExtra(immutabledict.immutabledict[str, Any]):

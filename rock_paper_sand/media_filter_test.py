@@ -63,7 +63,7 @@ class MediaFilterTest(parameterized.TestCase):
         request = media_filter.FilterRequest(
             media_item.MediaItem.from_config(config_pb2.MediaItem(name="foo"))
         )
-        self.assertEqual((request.item.id,), request.cache_key())
+        self.assertEqual((request.item.id, request.now), request.cache_key())
 
     @parameterized.named_parameters(
         dict(
