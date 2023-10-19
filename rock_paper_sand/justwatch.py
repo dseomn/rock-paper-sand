@@ -31,7 +31,6 @@ from rock_paper_sand import network
 from rock_paper_sand.proto import config_pb2
 
 _GRAPHQL_URL = "https://apis.justwatch.com/graphql"
-_BASE_URL = "https://apis.justwatch.com/content"
 
 
 def _parse_datetime(raw_value: str | None) -> datetime.datetime | None:
