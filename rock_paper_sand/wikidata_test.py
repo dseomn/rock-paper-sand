@@ -30,6 +30,27 @@ from rock_paper_sand import wikidata
 from rock_paper_sand.proto import config_pb2
 
 _PROLEPTIC_GREGORIAN = "http://www.wikidata.org/entity/Q1985727"
+_PRECISION_YEAR = 9
+_PRECISION_MONTH = 10
+_PRECISION_DAY = 11
+
+
+def _snak_time(time: str, *, precision: int = _PRECISION_DAY) -> Any:
+    return {
+        "snaktype": "value",
+        "datatype": "time",
+        "datavalue": {
+            "type": "time",
+            "value": {
+                "calendarmodel": _PROLEPTIC_GREGORIAN,
+                "timezone": 0,
+                "before": 0,
+                "after": 0,
+                "precision": precision,
+                "time": time,
+            },
+        },
+    }
 
 
 class WikidataSessionTest(parameterized.TestCase):
@@ -293,75 +314,21 @@ class WikidataUtilsTest(parameterized.TestCase):
 
     @parameterized.parameters(
         (
-            {
-                "snaktype": "value",
-                "datatype": "time",
-                "datavalue": {
-                    "type": "time",
-                    "value": {
-                        "calendarmodel": _PROLEPTIC_GREGORIAN,
-                        "timezone": 0,
-                        "before": 0,
-                        "after": 0,
-                        "precision": 11,  # day
-                        "time": "+1979-10-12T00:00:00Z",
-                    },
-                },
-            },
+            _snak_time("+1979-10-12T00:00:00Z", precision=_PRECISION_DAY),
             ("1979-10-12T00:00:00+00:00", "1979-10-12T23:59:59.999999+00:00"),
         ),
         (
-            {
-                "snaktype": "value",
-                "datatype": "time",
-                "datavalue": {
-                    "type": "time",
-                    "value": {
-                        "calendarmodel": _PROLEPTIC_GREGORIAN,
-                        "timezone": 0,
-                        "before": 0,
-                        "after": 0,
-                        "precision": 10,  # month
-                        "time": "+2008-07-00T00:00:00Z",  # day is 00
-                    },
-                },
-            },
+            # day is 00
+            _snak_time("+2008-07-00T00:00:00Z", precision=_PRECISION_MONTH),
             ("2008-07-01T00:00:00+00:00", "2008-07-31T23:59:59.999999+00:00"),
         ),
         (
-            {
-                "snaktype": "value",
-                "datatype": "time",
-                "datavalue": {
-                    "type": "time",
-                    "value": {
-                        "calendarmodel": _PROLEPTIC_GREGORIAN,
-                        "timezone": 0,
-                        "before": 0,
-                        "after": 0,
-                        "precision": 9,  # year
-                        "time": "+1938-01-01T00:00:00Z",
-                    },
-                },
-            },
+            _snak_time("+1938-01-01T00:00:00Z", precision=_PRECISION_YEAR),
             ("1938-01-01T00:00:00+00:00", "1938-12-31T23:59:59.999999+00:00"),
         ),
         (
-            {
-                "snaktype": "value",
-                "datatype": "time",
-                "datavalue": {
-                    "type": "time",
-                    "value": {
-                        "calendarmodel": _PROLEPTIC_GREGORIAN,
-                        "timezone": 0,
-                        "before": 0,
-                        "after": 0,
-                        "precision": 9,  # year
-                        "time": "+1600-00-00T00:00:00Z",  # month and day are 00
-                    },
-                },
-            },
+            # month and day are 00
+            _snak_time("+1600-00-00T00:00:00Z", precision=_PRECISION_YEAR),
             ("1600-01-01T00:00:00+00:00", "1600-12-31T23:59:59.999999+00:00"),
         ),
     )
