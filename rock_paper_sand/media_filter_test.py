@@ -334,26 +334,26 @@ class MediaFilterTest(parameterized.TestCase):
         self.assertEqual(expected_result, second_result)
         self.assertEqual(1, test_filter.call_count)
 
-    def test_justwatch_filter(self) -> None:
+    @parameterized.parameters("wikidata", "justwatch")
+    def test_factory_filter(self, name: str) -> None:
         mock_filter = mock.create_autospec(
             media_filter.Filter, spec_set=True, instance=True
         )
-        justwatch_factory = mock.Mock(spec_set=(), return_value=mock_filter)
-        registry = media_filter.Registry(justwatch_factory=justwatch_factory)
-        filter_config = json_format.ParseDict(
-            {"justwatch": {"country": "US"}}, config_pb2.Filter()
-        )
+        factory = mock.Mock(spec_set=(), return_value=mock_filter)
+        registry = media_filter.Registry(**{f"{name}_factory": factory})
+        filter_config = json_format.ParseDict({name: {}}, config_pb2.Filter())
 
         returned_filter = registry.parse(filter_config)
 
-        justwatch_factory.assert_called_once_with(filter_config.justwatch)
+        factory.assert_called_once_with(getattr(filter_config, name))
         self.assertIs(mock_filter, returned_filter)
 
-    def test_justwatch_filter_unsupported(self) -> None:
-        registry = media_filter.Registry(justwatch_factory=None)
-        with self.assertRaisesRegex(ValueError, "JustWatch.*no callback"):
+    @parameterized.parameters("wikidata", "justwatch")
+    def test_factory_filter_unsupported(self, name: str) -> None:
+        registry = media_filter.Registry(**{f"{name}_factory": None})
+        with self.assertRaisesRegex(ValueError, "no callback"):
             registry.parse(
-                json_format.ParseDict({"justwatch": {}}, config_pb2.Filter())
+                json_format.ParseDict({name: {}}, config_pb2.Filter())
             )
 
     @parameterized.named_parameters(

@@ -25,12 +25,14 @@ from rock_paper_sand import config
 from rock_paper_sand import justwatch
 from rock_paper_sand import state
 from rock_paper_sand import subcommand
+from rock_paper_sand import wikidata
 
 
 @contextlib.contextmanager
 def _config() -> Generator[config.Config, None, None]:
     with contextlib.ExitStack() as stack:
         yield config.Config.from_config_file(
+            wikidata_session=stack.enter_context(wikidata.requests_session()),
             justwatch_session=stack.enter_context(justwatch.requests_session()),
         )
 

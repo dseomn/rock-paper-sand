@@ -151,6 +151,9 @@ message Filter {
     // Matches on the custom_availability field.
     StringFieldMatcher custom_availability = 6;
 
+    // Filters using Wikidata APIs.
+    WikidataFilter wikidata = 11;
+
     // Filters using the JustWatch API.
     JustWatchFilter justwatch = 7;
   }

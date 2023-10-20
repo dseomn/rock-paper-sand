@@ -36,6 +36,7 @@ class ConfigTest(parameterized.TestCase):
     def _config_with_null_session(self) -> config.Config:
         session = self.enter_context(network.null_requests_session())
         return config.Config.from_config_file(
+            wikidata_session=session,
             justwatch_session=session,
         )
 

@@ -221,6 +221,9 @@ class Registry:
     def __init__(
         self,
         *,
+        wikidata_factory: (
+            Callable[[config_pb2.WikidataFilter], Filter] | None
+        ) = None,
         justwatch_factory: (
             Callable[[config_pb2.JustWatchFilter], Filter] | None
         ) = None,
@@ -228,9 +231,12 @@ class Registry:
         """Initializer.
 
         Args:
+            wikidata_factory: Callback to create a Wikidata filter, or None to
+                raise an error if there are any Wikidata filters.
             justwatch_factory: Callback to create a JustWatch filter, or None to
                 raise an error if there are any JustWatch filters.
         """
+        self._wikidata_factory = wikidata_factory
         self._justwatch_factory = justwatch_factory
         self._filter_by_name: dict[str, Filter] = {}
 
@@ -272,6 +278,13 @@ class Registry:
                     lambda item: item.custom_availability,
                     filter_config.custom_availability,
                 )
+            case "wikidata":
+                if self._wikidata_factory is None:
+                    raise ValueError(
+                        "A Wikidata filter was specified, but no callback to "
+                        "handle those was provided."
+                    )
+                return self._wikidata_factory(filter_config.wikidata)
             case "justwatch":
                 if self._justwatch_factory is None:
                     raise ValueError(

@@ -30,6 +30,7 @@ from rock_paper_sand import justwatch
 from rock_paper_sand import media_filter
 from rock_paper_sand import media_item
 from rock_paper_sand import report
+from rock_paper_sand import wikidata
 from rock_paper_sand.proto import config_pb2
 
 
@@ -39,6 +40,7 @@ class Config:
 
     Attributes:
         proto: Parsed config proto.
+        wikidata_api: Wikidata API.
         justwatch_api: JustWatch API.
         filter_registry: Filter registry populated from the config file.
         reports: Mapping from report name to report.
@@ -46,6 +48,7 @@ class Config:
     """
 
     proto: config_pb2.Config
+    wikidata_api: wikidata.Api
     justwatch_api: justwatch.Api
     filter_registry: media_filter.Registry
     reports: Mapping[str, report.Report]
@@ -55,6 +58,7 @@ class Config:
     def from_config_file(
         cls,
         *,
+        wikidata_session: requests.Session,
         justwatch_session: requests.Session,
     ) -> Self:
         """Parses a config file."""
@@ -62,8 +66,12 @@ class Config:
             proto = json_format.ParseDict(
                 yaml.safe_load(config_file), config_pb2.Config()
             )
+        wikidata_api = wikidata.Api(session=wikidata_session)
         justwatch_api = justwatch.Api(session=justwatch_session)
         filter_registry = media_filter.Registry(
+            wikidata_factory=functools.partial(
+                wikidata.Filter, api=wikidata_api
+            ),
             justwatch_factory=functools.partial(
                 justwatch.Filter, api=justwatch_api
             ),
@@ -92,6 +100,7 @@ class Config:
                 )
         return cls(
             proto=proto,
+            wikidata_api=wikidata_api,
             justwatch_api=justwatch_api,
             filter_registry=filter_registry,
             reports=reports,
