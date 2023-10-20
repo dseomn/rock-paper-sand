@@ -24,6 +24,8 @@ import requests
 
 from rock_paper_sand import wikidata
 
+_PROLEPTIC_GREGORIAN = "http://www.wikidata.org/entity/Q1985727"
+
 
 class WikidataSessionTest(parameterized.TestCase):
     def test_session(self) -> None:
@@ -142,6 +144,232 @@ class WikidataUtilsTest(parameterized.TestCase):
     ) -> None:
         self.assertSequenceEqual(
             statements, wikidata._truthy_statements(item, prop)
+        )
+
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="not_value",
+            snak={"snaktype": "somevalue"},
+            error_class=NotImplementedError,
+            error_regex=r"non-value",
+        ),
+        dict(
+            testcase_name="datatype_not_time",
+            snak={"snaktype": "value", "datatype": "string"},
+            error_class=ValueError,
+            error_regex=r"non-time",
+        ),
+        dict(
+            testcase_name="type_not_time",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {"type": "string"},
+            },
+            error_class=ValueError,
+            error_regex=r"non-time",
+        ),
+        dict(
+            testcase_name="not_gregorian",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": "http://www.wikidata.org/entity/Q1",
+                    },
+                },
+            },
+            error_class=NotImplementedError,
+            error_regex=r"non-Gregorian",
+        ),
+        dict(
+            testcase_name="not_utc",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": _PROLEPTIC_GREGORIAN,
+                        "timezone": 42,
+                    },
+                },
+            },
+            error_class=NotImplementedError,
+            error_regex=r"non-UTC",
+        ),
+        dict(
+            testcase_name="before",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": _PROLEPTIC_GREGORIAN,
+                        "timezone": 0,
+                        "before": 42,
+                        "after": 0,
+                    },
+                },
+            },
+            error_class=NotImplementedError,
+            error_regex=r"uncertainty range",
+        ),
+        dict(
+            testcase_name="after",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": _PROLEPTIC_GREGORIAN,
+                        "timezone": 0,
+                        "before": 0,
+                        "after": 42,
+                    },
+                },
+            },
+            error_class=NotImplementedError,
+            error_regex=r"uncertainty range",
+        ),
+        dict(
+            testcase_name="unimplemented_precision",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": _PROLEPTIC_GREGORIAN,
+                        "timezone": 0,
+                        "before": 0,
+                        "after": 0,
+                        "precision": 0,
+                    },
+                },
+            },
+            error_class=NotImplementedError,
+            error_regex=r"precision",
+        ),
+        dict(
+            testcase_name="no_match",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": _PROLEPTIC_GREGORIAN,
+                        "timezone": 0,
+                        "before": 0,
+                        "after": 0,
+                        "precision": 11,
+                        "time": "foo",
+                    },
+                },
+            },
+            error_class=ValueError,
+            error_regex=r"Cannot parse time",
+        ),
+    )
+    def test_parse_snak_time_error(
+        self,
+        *,
+        snak: Any,
+        error_class: type[Exception],
+        error_regex: str,
+    ) -> None:
+        with self.assertRaisesRegex(error_class, error_regex):
+            wikidata._parse_snak_time(snak)
+
+    @parameterized.parameters(
+        (
+            {
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": _PROLEPTIC_GREGORIAN,
+                        "timezone": 0,
+                        "before": 0,
+                        "after": 0,
+                        "precision": 11,  # day
+                        "time": "+1979-10-12T00:00:00Z",
+                    },
+                },
+            },
+            ("1979-10-12T00:00:00+00:00", "1979-10-12T23:59:59.999999+00:00"),
+        ),
+        (
+            {
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": _PROLEPTIC_GREGORIAN,
+                        "timezone": 0,
+                        "before": 0,
+                        "after": 0,
+                        "precision": 10,  # month
+                        "time": "+2008-07-00T00:00:00Z",  # day is 00
+                    },
+                },
+            },
+            ("2008-07-01T00:00:00+00:00", "2008-07-31T23:59:59.999999+00:00"),
+        ),
+        (
+            {
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": _PROLEPTIC_GREGORIAN,
+                        "timezone": 0,
+                        "before": 0,
+                        "after": 0,
+                        "precision": 9,  # year
+                        "time": "+1938-01-01T00:00:00Z",
+                    },
+                },
+            },
+            ("1938-01-01T00:00:00+00:00", "1938-12-31T23:59:59.999999+00:00"),
+        ),
+        (
+            {
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": _PROLEPTIC_GREGORIAN,
+                        "timezone": 0,
+                        "before": 0,
+                        "after": 0,
+                        "precision": 9,  # year
+                        "time": "+1600-00-00T00:00:00Z",  # month and day are 00
+                    },
+                },
+            },
+            ("1600-01-01T00:00:00+00:00", "1600-12-31T23:59:59.999999+00:00"),
+        ),
+    )
+    def test_parse_snak_time(
+        self,
+        snak: Any,
+        values: tuple[str, str],
+    ) -> None:
+        self.assertSequenceEqual(
+            values,
+            tuple(
+                value.isoformat() for value in wikidata._parse_snak_time(snak)
+            ),
         )
 
 
