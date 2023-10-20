@@ -29,7 +29,11 @@ from rock_paper_sand import media_item
 from rock_paper_sand import wikidata
 from rock_paper_sand.proto import config_pb2
 
-_PROLEPTIC_GREGORIAN = "http://www.wikidata.org/entity/Q1985727"
+# pylint: disable=protected-access
+_Item = wikidata._Item
+_Property = wikidata._Property
+# pylint: enable=protected-access
+
 _PRECISION_YEAR = 9
 _PRECISION_MONTH = 10
 _PRECISION_DAY = 11
@@ -42,7 +46,7 @@ def _snak_time(time: str, *, precision: int = _PRECISION_DAY) -> Any:
         "datavalue": {
             "type": "time",
             "value": {
-                "calendarmodel": _PROLEPTIC_GREGORIAN,
+                "calendarmodel": _Item.PROLEPTIC_GREGORIAN_CALENDAR.uri,
                 "timezone": 0,
                 "before": 0,
                 "after": 0,
@@ -101,7 +105,7 @@ class WikidataUtilsTest(parameterized.TestCase):
             testcase_name="preferred",
             item={
                 "claims": {
-                    "P577": [
+                    _Property.PUBLICATION_DATE.value: [
                         {"id": "foo", "rank": "preferred"},
                         {"id": "quux", "rank": "normal"},
                         {"id": "baz", "rank": "deprecated"},
@@ -109,7 +113,7 @@ class WikidataUtilsTest(parameterized.TestCase):
                     ],
                 },
             },
-            prop=wikidata._Property.PUBLICATION_DATE,
+            prop=_Property.PUBLICATION_DATE,
             statements=(
                 {"id": "foo", "rank": "preferred"},
                 {"id": "bar", "rank": "preferred"},
@@ -119,14 +123,14 @@ class WikidataUtilsTest(parameterized.TestCase):
             testcase_name="normal",
             item={
                 "claims": {
-                    "P577": [
+                    _Property.PUBLICATION_DATE.value: [
                         {"id": "foo", "rank": "normal"},
                         {"id": "quux", "rank": "deprecated"},
                         {"id": "bar", "rank": "normal"},
                     ],
                 },
             },
-            prop=wikidata._Property.PUBLICATION_DATE,
+            prop=_Property.PUBLICATION_DATE,
             statements=(
                 {"id": "foo", "rank": "normal"},
                 {"id": "bar", "rank": "normal"},
@@ -136,28 +140,28 @@ class WikidataUtilsTest(parameterized.TestCase):
             testcase_name="deprecated",
             item={
                 "claims": {
-                    "P577": [
+                    _Property.PUBLICATION_DATE.value: [
                         {"id": "quux", "rank": "deprecated"},
                     ],
                 },
             },
-            prop=wikidata._Property.PUBLICATION_DATE,
+            prop=_Property.PUBLICATION_DATE,
             statements=(),
         ),
         dict(
             testcase_name="empty",
             item={
                 "claims": {
-                    "P577": [],
+                    _Property.PUBLICATION_DATE.value: [],
                 },
             },
-            prop=wikidata._Property.PUBLICATION_DATE,
+            prop=_Property.PUBLICATION_DATE,
             statements=(),
         ),
         dict(
             testcase_name="missing",
             item={"claims": {}},
-            prop=wikidata._Property.PUBLICATION_DATE,
+            prop=_Property.PUBLICATION_DATE,
             statements=(),
         ),
     )
@@ -165,7 +169,7 @@ class WikidataUtilsTest(parameterized.TestCase):
         self,
         *,
         item: Any,
-        prop: wikidata._Property,
+        prop: _Property,
         statements: Sequence[Any],
     ) -> None:
         self.assertSequenceEqual(
@@ -218,7 +222,7 @@ class WikidataUtilsTest(parameterized.TestCase):
                 "datavalue": {
                     "type": "time",
                     "value": {
-                        "calendarmodel": _PROLEPTIC_GREGORIAN,
+                        "calendarmodel": _Item.PROLEPTIC_GREGORIAN_CALENDAR.uri,
                         "timezone": 42,
                     },
                 },
@@ -234,7 +238,7 @@ class WikidataUtilsTest(parameterized.TestCase):
                 "datavalue": {
                     "type": "time",
                     "value": {
-                        "calendarmodel": _PROLEPTIC_GREGORIAN,
+                        "calendarmodel": _Item.PROLEPTIC_GREGORIAN_CALENDAR.uri,
                         "timezone": 0,
                         "before": 42,
                         "after": 0,
@@ -252,7 +256,7 @@ class WikidataUtilsTest(parameterized.TestCase):
                 "datavalue": {
                     "type": "time",
                     "value": {
-                        "calendarmodel": _PROLEPTIC_GREGORIAN,
+                        "calendarmodel": _Item.PROLEPTIC_GREGORIAN_CALENDAR.uri,
                         "timezone": 0,
                         "before": 0,
                         "after": 42,
@@ -270,7 +274,7 @@ class WikidataUtilsTest(parameterized.TestCase):
                 "datavalue": {
                     "type": "time",
                     "value": {
-                        "calendarmodel": _PROLEPTIC_GREGORIAN,
+                        "calendarmodel": _Item.PROLEPTIC_GREGORIAN_CALENDAR.uri,
                         "timezone": 0,
                         "before": 0,
                         "after": 0,
@@ -289,7 +293,7 @@ class WikidataUtilsTest(parameterized.TestCase):
                 "datavalue": {
                     "type": "time",
                     "value": {
-                        "calendarmodel": _PROLEPTIC_GREGORIAN,
+                        "calendarmodel": _Item.PROLEPTIC_GREGORIAN_CALENDAR.uri,
                         "timezone": 0,
                         "before": 0,
                         "after": 0,
