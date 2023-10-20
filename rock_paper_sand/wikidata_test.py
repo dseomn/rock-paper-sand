@@ -15,6 +15,7 @@
 # pylint: disable=missing-module-docstring
 
 from collections.abc import Mapping, Sequence
+import datetime
 from typing import Any
 from unittest import mock
 
@@ -37,6 +38,13 @@ _Property = wikidata._Property
 _PRECISION_YEAR = 9
 _PRECISION_MONTH = 10
 _PRECISION_DAY = 11
+
+_NOW = datetime.datetime.now(tz=datetime.timezone.utc)
+_TIME_FORMAT = "+%Y-%m-%dT%H:%M:%SZ"
+_TIME_IN_PAST_2 = (_NOW - datetime.timedelta(days=4)).strftime(_TIME_FORMAT)
+_TIME_IN_PAST_1 = (_NOW - datetime.timedelta(days=2)).strftime(_TIME_FORMAT)
+_TIME_IN_FUTURE_1 = (_NOW + datetime.timedelta(days=2)).strftime(_TIME_FORMAT)
+_TIME_IN_FUTURE_2 = (_NOW + datetime.timedelta(days=4)).strftime(_TIME_FORMAT)
 
 
 def _snak_time(time: str, *, precision: int = _PRECISION_DAY) -> Any:
@@ -368,6 +376,200 @@ class WikidataFilterTest(parameterized.TestCase):
             filter_config={},
             item={"name": "foo", "wikidata": "Q1"},
             api_data={"Q1": {}},
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="release_statuses_no_match",
+            filter_config={"releaseStatuses": ["RELEASED"]},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_data={"Q1": {"claims": {}}},
+            expected_result=media_filter.FilterResult(False),
+        ),
+        dict(
+            testcase_name="release_statuses_unknown",
+            filter_config={"releaseStatuses": ["RELEASE_STATUS_UNSPECIFIED"]},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_data={"Q1": {"claims": {}}},
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="release_statuses_before_range",
+            filter_config={"releaseStatuses": ["UNRELEASED"]},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_data={
+                "Q1": {
+                    "claims": {
+                        _Property.START_TIME.value: [
+                            {
+                                "rank": "normal",
+                                "mainsnak": _snak_time(_TIME_IN_FUTURE_1),
+                            },
+                        ],
+                        _Property.END_TIME.value: [
+                            {
+                                "rank": "normal",
+                                "mainsnak": _snak_time(_TIME_IN_FUTURE_2),
+                            },
+                        ],
+                    }
+                }
+            },
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="release_statuses_before_start",
+            filter_config={"releaseStatuses": ["UNRELEASED"]},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_data={
+                "Q1": {
+                    "claims": {
+                        _Property.START_TIME.value: [
+                            {
+                                "rank": "normal",
+                                "mainsnak": _snak_time(_TIME_IN_FUTURE_1),
+                            },
+                        ],
+                    }
+                }
+            },
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="release_statuses_in_range",
+            filter_config={"releaseStatuses": ["ONGOING"]},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_data={
+                "Q1": {
+                    "claims": {
+                        _Property.START_TIME.value: [
+                            {
+                                "rank": "normal",
+                                "mainsnak": _snak_time(_TIME_IN_PAST_1),
+                            },
+                        ],
+                        _Property.END_TIME.value: [
+                            {
+                                "rank": "normal",
+                                "mainsnak": _snak_time(_TIME_IN_FUTURE_1),
+                            },
+                        ],
+                    }
+                }
+            },
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="release_statuses_after_start",
+            filter_config={"releaseStatuses": ["ONGOING"]},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_data={
+                "Q1": {
+                    "claims": {
+                        _Property.START_TIME.value: [
+                            {
+                                "rank": "normal",
+                                "mainsnak": _snak_time(_TIME_IN_PAST_1),
+                            },
+                        ],
+                    }
+                }
+            },
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="release_statuses_before_end",
+            filter_config={"releaseStatuses": ["ONGOING"]},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_data={
+                "Q1": {
+                    "claims": {
+                        _Property.END_TIME.value: [
+                            {
+                                "rank": "normal",
+                                "mainsnak": _snak_time(_TIME_IN_FUTURE_1),
+                            },
+                        ],
+                    }
+                }
+            },
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="release_statuses_after_range",
+            filter_config={"releaseStatuses": ["RELEASED"]},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_data={
+                "Q1": {
+                    "claims": {
+                        _Property.START_TIME.value: [
+                            {
+                                "rank": "normal",
+                                "mainsnak": _snak_time(_TIME_IN_PAST_2),
+                            },
+                        ],
+                        _Property.END_TIME.value: [
+                            {
+                                "rank": "normal",
+                                "mainsnak": _snak_time(_TIME_IN_PAST_1),
+                            },
+                        ],
+                    }
+                }
+            },
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="release_statuses_after_end",
+            filter_config={"releaseStatuses": ["RELEASED"]},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_data={
+                "Q1": {
+                    "claims": {
+                        _Property.END_TIME.value: [
+                            {
+                                "rank": "normal",
+                                "mainsnak": _snak_time(_TIME_IN_PAST_1),
+                            },
+                        ],
+                    }
+                }
+            },
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="release_statuses_before_release",
+            filter_config={"releaseStatuses": ["UNRELEASED"]},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_data={
+                "Q1": {
+                    "claims": {
+                        _Property.PUBLICATION_DATE.value: [
+                            {
+                                "rank": "normal",
+                                "mainsnak": _snak_time(_TIME_IN_FUTURE_1),
+                            },
+                        ],
+                    }
+                }
+            },
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="release_statuses_after_release",
+            filter_config={"releaseStatuses": ["RELEASED"]},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_data={
+                "Q1": {
+                    "claims": {
+                        _Property.PUBLICATION_DATE.value: [
+                            {
+                                "rank": "normal",
+                                "mainsnak": _snak_time(_TIME_IN_PAST_1),
+                            },
+                        ],
+                    }
+                }
+            },
             expected_result=media_filter.FilterResult(True),
         ),
     )

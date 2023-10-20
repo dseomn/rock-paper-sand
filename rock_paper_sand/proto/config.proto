@@ -48,6 +48,24 @@ message StringFieldMatcher {
 
 // Filters using Wikidata APIs.
 message WikidataFilter {
+  // Status of a media item's release/publication.
+  enum ReleaseStatus {
+    // Unknown or no data.
+    RELEASE_STATUS_UNSPECIFIED = 0;
+
+    // Released/published.
+    RELEASED = 1;
+
+    // Partially released/published, with more potentially planned to be
+    // released in the future. E.g., an ongoing TV show.
+    ONGOING = 2;
+
+    // Not released/published. E.g., a movie that hasn't come out yet.
+    UNRELEASED = 3;
+  }
+
+  // If specified, only items with one of these release statuses will match.
+  repeated ReleaseStatus release_statuses = 1;
 }
 
 // Filters using the JustWatch API. In general, all specified/non-default fields

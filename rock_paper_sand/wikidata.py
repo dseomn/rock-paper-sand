@@ -148,6 +148,54 @@ class Api:
         return self._item_by_qid[qid]
 
 
+def _release_status(
+    item: Any,
+    *,
+    now: datetime.datetime,
+) -> config_pb2.WikidataFilter.ReleaseStatus.ValueType:
+    start = min(
+        (
+            min(_parse_snak_time(statement["mainsnak"]))
+            for statement in _truthy_statements(item, _Property.START_TIME)
+        ),
+        default=None,
+    )
+    end = max(
+        (
+            max(_parse_snak_time(statement["mainsnak"]))
+            for statement in _truthy_statements(item, _Property.END_TIME)
+        ),
+        default=None,
+    )
+    if start is not None and now < start:
+        return config_pb2.WikidataFilter.ReleaseStatus.UNRELEASED
+    elif end is not None and now >= end:
+        return config_pb2.WikidataFilter.ReleaseStatus.RELEASED
+    elif end is not None and now < end:
+        return config_pb2.WikidataFilter.ReleaseStatus.ONGOING
+    elif start is not None and end is None:
+        return config_pb2.WikidataFilter.ReleaseStatus.ONGOING
+    assert start is None and end is None
+    for prop in (
+        _Property.PUBLICATION_DATE,
+        _Property.DATE_OF_FIRST_PERFORMANCE,
+    ):
+        released = min(
+            (
+                min(_parse_snak_time(statement["mainsnak"]))
+                for statement in _truthy_statements(item, prop)
+            ),
+            default=None,
+        )
+        if released is None:
+            continue
+        elif released <= now:
+            return config_pb2.WikidataFilter.ReleaseStatus.RELEASED
+        else:
+            return config_pb2.WikidataFilter.ReleaseStatus.UNRELEASED
+    return config_pb2.WikidataFilter.ReleaseStatus.RELEASE_STATUS_UNSPECIFIED
+
+
 class Filter(media_filter.CachedFilter):
     """Filter based on Wikidata APIs."""
 
@@ -172,5 +220,10 @@ class Filter(media_filter.CachedFilter):
             if not request.item.wikidata_qid:
                 return media_filter.FilterResult(False)
             item = self._api.item(request.item.wikidata_qid)
-            del item  # Unused.
+            if (
+                self._config.release_statuses
+                and _release_status(item, now=request.now)
+                not in self._config.release_statuses
+            ):
+                return media_filter.FilterResult(False)
             return media_filter.FilterResult(True)
