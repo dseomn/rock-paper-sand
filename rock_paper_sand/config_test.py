@@ -33,6 +33,12 @@ from rock_paper_sand import network
 
 
 class ConfigTest(parameterized.TestCase):
+    def _config_with_null_session(self) -> config.Config:
+        session = self.enter_context(network.null_requests_session())
+        return config.Config.from_config_file(
+            justwatch_session=session,
+        )
+
     @parameterized.named_parameters(
         dict(
             testcase_name="filter_missing_name",
@@ -80,11 +86,7 @@ class ConfigTest(parameterized.TestCase):
             )
         )
         with self.assertRaisesRegex(ValueError, error_regex) as error:
-            config.Config.from_config_file(
-                justwatch_session=self.enter_context(
-                    network.null_requests_session()
-                )
-            )
+            self._config_with_null_session()
         self.assertSequenceEqual(error_notes, error.exception.__notes__)
 
     @parameterized.named_parameters(
@@ -192,11 +194,7 @@ class ConfigTest(parameterized.TestCase):
                 )
             )
         )
-        config_ = config.Config.from_config_file(
-            justwatch_session=self.enter_context(
-                network.null_requests_session()
-            )
-        )
+        config_ = self._config_with_null_session()
 
         results = config_.lint()
 
@@ -211,9 +209,7 @@ class ConfigTest(parameterized.TestCase):
                 ),
             )
         ):
-            config_ = config.Config.from_config_file(
-                justwatch_session=network.null_requests_session()
-            )
+            config_ = self._config_with_null_session()
             self.assertEmpty(config_.lint())
 
 
