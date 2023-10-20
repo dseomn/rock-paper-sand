@@ -14,6 +14,8 @@
 """Reports commands."""
 
 import argparse
+from collections.abc import Generator
+import contextlib
 import typing
 from typing import Any
 
@@ -25,16 +27,21 @@ from rock_paper_sand import state
 from rock_paper_sand import subcommand
 
 
+@contextlib.contextmanager
+def _config() -> Generator[config.Config, None, None]:
+    with contextlib.ExitStack() as stack:
+        yield config.Config.from_config_file(
+            justwatch_session=stack.enter_context(justwatch.requests_session()),
+        )
+
+
 class Notify(subcommand.Subcommand):
     """Sends report notifications."""
 
     def run(self, args: argparse.Namespace) -> None:
         """See base class."""
         del args  # Unused.
-        with justwatch.requests_session() as justwatch_session:
-            config_ = config.Config.from_config_file(
-                justwatch_session=justwatch_session
-            )
+        with _config() as config_:
             state_ = state.from_file()
             for report_name, report_ in config_.reports.items():
                 report_.notify(
@@ -59,10 +66,7 @@ class Print(subcommand.Subcommand):
 
     def run(self, args: argparse.Namespace) -> None:
         """See base class."""
-        with justwatch.requests_session() as justwatch_session:
-            config_ = config.Config.from_config_file(
-                justwatch_session=justwatch_session
-            )
+        with _config() as config_:
             results: Any
             if args.report is None:
                 results = {
