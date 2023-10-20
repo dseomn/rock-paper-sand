@@ -14,6 +14,8 @@
 
 # pylint: disable=missing-module-docstring
 
+from collections.abc import Sequence
+from typing import Any
 from unittest import mock
 
 from absl.testing import absltest
@@ -61,6 +63,85 @@ class WikidataApiTest(parameterized.TestCase):
                 mock.call.get().json(),
             ),
             self._mock_session.mock_calls,
+        )
+
+
+class WikidataUtilsTest(parameterized.TestCase):
+    # pylint: disable=protected-access
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="preferred",
+            item={
+                "claims": {
+                    "P577": [
+                        {"id": "foo", "rank": "preferred"},
+                        {"id": "quux", "rank": "normal"},
+                        {"id": "baz", "rank": "deprecated"},
+                        {"id": "bar", "rank": "preferred"},
+                    ],
+                },
+            },
+            prop=wikidata._Property.PUBLICATION_DATE,
+            statements=(
+                {"id": "foo", "rank": "preferred"},
+                {"id": "bar", "rank": "preferred"},
+            ),
+        ),
+        dict(
+            testcase_name="normal",
+            item={
+                "claims": {
+                    "P577": [
+                        {"id": "foo", "rank": "normal"},
+                        {"id": "quux", "rank": "deprecated"},
+                        {"id": "bar", "rank": "normal"},
+                    ],
+                },
+            },
+            prop=wikidata._Property.PUBLICATION_DATE,
+            statements=(
+                {"id": "foo", "rank": "normal"},
+                {"id": "bar", "rank": "normal"},
+            ),
+        ),
+        dict(
+            testcase_name="deprecated",
+            item={
+                "claims": {
+                    "P577": [
+                        {"id": "quux", "rank": "deprecated"},
+                    ],
+                },
+            },
+            prop=wikidata._Property.PUBLICATION_DATE,
+            statements=(),
+        ),
+        dict(
+            testcase_name="empty",
+            item={
+                "claims": {
+                    "P577": [],
+                },
+            },
+            prop=wikidata._Property.PUBLICATION_DATE,
+            statements=(),
+        ),
+        dict(
+            testcase_name="missing",
+            item={"claims": {}},
+            prop=wikidata._Property.PUBLICATION_DATE,
+            statements=(),
+        ),
+    )
+    def test_truthy_statements(
+        self,
+        *,
+        item: Any,
+        prop: wikidata._Property,
+        statements: Sequence[Any],
+    ) -> None:
+        self.assertSequenceEqual(
+            statements, wikidata._truthy_statements(item, prop)
         )
 
 

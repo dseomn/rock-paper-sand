@@ -13,14 +13,22 @@
 # limitations under the License.
 """Code that uses Wikidata's APIs."""
 
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 import contextlib
+import enum
 from typing import Any
 
 import requests
 import requests_cache
 
 from rock_paper_sand import network
+
+
+class _Property(enum.Enum):
+    PUBLICATION_DATE = "P577"
+    DATE_OF_FIRST_PERFORMANCE = "P1191"
+    START_TIME = "P580"
+    END_TIME = "P582"
 
 
 @contextlib.contextmanager
@@ -31,6 +39,18 @@ def requests_session() -> Generator[requests.Session, None, None]:
     ) as session:
         network.configure_session(session)
         yield session
+
+
+def _truthy_statements(item: Any, prop: _Property) -> Sequence[Any]:
+    # https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Truthy_statements
+    statements = item["claims"].get(prop.value, ())
+    return tuple(
+        statement
+        for statement in statements
+        if statement["rank"] == "preferred"
+    ) or tuple(
+        statement for statement in statements if statement["rank"] == "normal"
+    )
 
 
 class Api:
