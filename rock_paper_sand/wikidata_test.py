@@ -14,15 +14,20 @@
 
 # pylint: disable=missing-module-docstring
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any
 from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
+from google.protobuf import json_format
+import immutabledict
 import requests
 
+from rock_paper_sand import media_filter
+from rock_paper_sand import media_item
 from rock_paper_sand import wikidata
+from rock_paper_sand.proto import config_pb2
 
 _PROLEPTIC_GREGORIAN = "http://www.wikidata.org/entity/Q1985727"
 
@@ -371,6 +376,53 @@ class WikidataUtilsTest(parameterized.TestCase):
                 value.isoformat() for value in wikidata._parse_snak_time(snak)
             ),
         )
+
+
+class WikidataFilterTest(parameterized.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self._mock_api = mock.create_autospec(
+            wikidata.Api, spec_set=True, instance=True
+        )
+
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="no_qid",
+            filter_config={},
+            item={"name": "foo"},
+            expected_result=media_filter.FilterResult(False),
+        ),
+        dict(
+            testcase_name="no_match_conditions",
+            filter_config={},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_data={"Q1": {}},
+            expected_result=media_filter.FilterResult(True),
+        ),
+    )
+    def test_filter(
+        self,
+        *,
+        filter_config: Any,
+        item: Any,
+        api_data: Mapping[str, Any] = immutabledict.immutabledict(),
+        expected_result: media_filter.FilterResult,
+    ) -> None:
+        self._mock_api.item.side_effect = lambda qid: api_data[qid]
+        test_filter = wikidata.Filter(
+            json_format.ParseDict(filter_config, config_pb2.WikidataFilter()),
+            api=self._mock_api,
+        )
+
+        result = test_filter.filter(
+            media_filter.FilterRequest(
+                media_item.MediaItem.from_config(
+                    json_format.ParseDict(item, config_pb2.MediaItem())
+                )
+            )
+        )
+
+        self.assertEqual(expected_result, result)
 
 
 if __name__ == "__main__":

@@ -24,7 +24,10 @@ from dateutil import relativedelta
 import requests
 import requests_cache
 
+from rock_paper_sand import exceptions
+from rock_paper_sand import media_filter
 from rock_paper_sand import network
+from rock_paper_sand.proto import config_pb2
 
 
 class _Item(enum.Enum):
@@ -143,3 +146,31 @@ class Api:
             response.raise_for_status()
             self._item_by_qid[qid] = response.json()["entities"][qid]
         return self._item_by_qid[qid]
+
+
+class Filter(media_filter.CachedFilter):
+    """Filter based on Wikidata APIs."""
+
+    def __init__(
+        self,
+        filter_config: config_pb2.WikidataFilter,
+        *,
+        api: Api,
+    ) -> None:
+        super().__init__()
+        self._config = filter_config
+        self._api = api
+
+    def filter_implementation(
+        self, request: media_filter.FilterRequest
+    ) -> media_filter.FilterResult:
+        """See base class."""
+        with exceptions.add_note(
+            f"While filtering {request.item.debug_description} using Wikidata "
+            f"filter config:\n{self._config}"
+        ):
+            if not request.item.wikidata_qid:
+                return media_filter.FilterResult(False)
+            item = self._api.item(request.item.wikidata_qid)
+            del item  # Unused.
+            return media_filter.FilterResult(True)

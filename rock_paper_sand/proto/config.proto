@@ -46,6 +46,10 @@ message StringFieldMatcher {
   }
 }
 
+// Filters using Wikidata APIs.
+message WikidataFilter {
+}
+
 // Filters using the JustWatch API. In general, all specified/non-default fields
 // must match the same thing for the filter to match the media item. E.g., if
 // providers has "foo" and monetization_types has "bar", the media must be
