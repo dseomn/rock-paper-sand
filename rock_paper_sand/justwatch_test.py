@@ -268,6 +268,7 @@ class JustWatchApiTest(parameterized.TestCase):
 
 class FilterTest(parameterized.TestCase):
     def setUp(self) -> None:
+        super().setUp()
         self._mock_api = mock.create_autospec(
             justwatch.Api, spec_set=True, instance=True
         )
