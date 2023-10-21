@@ -37,6 +37,9 @@ filters:
 reports:
 - name: My Favorite Report
   sections:
+  - name: free
+    filter:
+      ref: todo_availability_free
   - # Shows streaming services that it might make sense to subscribe to in the
     # future.
     name: potential-future-subscriptions
