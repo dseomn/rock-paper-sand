@@ -32,6 +32,8 @@ filtering is one of the main focuses of this program.
     the TV show, you can keep track of all of those in the same place.
 *   Filter that media based on:
     *   Whether it's done, partially done, or to-do.
+    *   Whether it's fully released, ongoing, or unreleased, using data from
+        [Wikidata](https://www.wikidata.org/).
     *   What streaming services it's available on or if it's currently in
         theaters, using [JustWatch](https://www.justwatch.com/)'s unofficial
         API. This filter also adds extra information to the output to show where
