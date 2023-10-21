@@ -37,6 +37,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
+  "types-jmespath",
   "types-protobuf",
   "types-python-dateutil",
   "types-pyyaml",
@@ -78,7 +79,6 @@ warn_unused_ignores = true
 module = [
   "absl.*",
   "google.protobuf.*",
-  "jmespath.*",
 ]
 ignore_missing_imports = true
 
