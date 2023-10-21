@@ -55,6 +55,8 @@ def _filter_media_item(
     result: dict[str, Any] = {"name": item.proto.name}
     if item.proto.comment:
         result["comment"] = item.proto.comment
+    if item.custom_data is not None:
+        result["customData"] = item.custom_data
     if item.proto.done:
         result["done"] = item.proto.done
     if item.proto.custom_availability:

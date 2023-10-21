@@ -17,12 +17,16 @@ import abc
 from collections.abc import Callable, Hashable, Iterable, Set
 import dataclasses
 import datetime
+import functools
 import itertools
 import re
 from typing import Any
 
 import immutabledict
+import jmespath
+import jmespath.parser
 
+from rock_paper_sand import exceptions
 from rock_paper_sand import media_item
 from rock_paper_sand import multi_level_set
 from rock_paper_sand.proto import config_pb2
@@ -215,6 +219,52 @@ class StringFieldMatcher(Filter):
         )
 
 
+def _jmespath_matcher(
+    expression: jmespath.parser.ParsedResult,
+    data: Any,
+) -> bool:
+    match expression.search(data):
+        case False | None:
+            return False
+        case True:
+            return True
+        case return_value:
+            raise ValueError(
+                f"JMESPath expression {expression.expression!r} returned "
+                f"invalid value {return_value!r} for data {data!r}"
+            )
+
+
+class ArbitraryDataMatcher(Filter):
+    """Matches arbitrary JSON data."""
+
+    def __init__(
+        self,
+        field_getter: Callable[[media_item.MediaItem], Any],
+        matcher_config: config_pb2.ArbitraryDataMatcher,
+    ) -> None:
+        self._field_getter = field_getter
+        match matcher_config.WhichOneof("method"):
+            case "jmespath":
+                self._matcher = functools.partial(
+                    _jmespath_matcher, jmespath.compile(matcher_config.jmespath)
+                )
+            case _:
+                raise ValueError(
+                    f"Unknown arbitrary data match type: {matcher_config!r}"
+                )
+
+    def filter(self, request: FilterRequest) -> FilterResult:
+        """See base class."""
+        data = self._field_getter(request.item)
+        if data is None:
+            return FilterResult(False)
+        with exceptions.add_note(
+            f"While filtering {request.item.debug_description}"
+        ):
+            return FilterResult(self._matcher(data))
+
+
 class Registry:
     """Registry of filters."""
 
@@ -272,6 +322,10 @@ class Registry:
             case "name":
                 return StringFieldMatcher(
                     lambda item: item.name, filter_config.name
+                )
+            case "custom_data":
+                return ArbitraryDataMatcher(
+                    lambda item: item.custom_data, filter_config.custom_data
                 )
             case "custom_availability":
                 return StringFieldMatcher(

@@ -16,8 +16,10 @@
 from collections.abc import Iterable, Sequence
 import dataclasses
 import re
-from typing import Self
+from typing import Any, Self
 import uuid
+
+from google.protobuf import json_format
 
 from rock_paper_sand import exceptions
 from rock_paper_sand import multi_level_set
@@ -57,6 +59,7 @@ class MediaItem:
             exceptions.
         proto: Proto from the config file.
         fully_qualified_name: Name, including names of parents.
+        custom_data: Parsed proto.custom_data field, or None.
         done: Parsed proto.done field.
         wikidata_qid: Wikidata QID, or the empty string.
         parts: Parsed proto.parts field.
@@ -69,6 +72,7 @@ class MediaItem:
     debug_description: str
     proto: config_pb2.MediaItem
     fully_qualified_name: str
+    custom_data: Any
     done: multi_level_set.MultiLevelSet
     wikidata_qid: str
     parts: Sequence["MediaItem"]
@@ -121,6 +125,11 @@ class MediaItem:
                 debug_description=debug_description,
                 proto=proto,
                 fully_qualified_name=fully_qualified_name,
+                custom_data=(
+                    json_format.MessageToDict(proto.custom_data)
+                    if proto.HasField("custom_data")
+                    else None
+                ),
                 done=multi_level_set.MultiLevelSet.from_string(proto.done),
                 wikidata_qid=_parse_wikidata(proto.wikidata),
                 parts=parts,

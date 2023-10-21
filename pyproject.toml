@@ -26,6 +26,7 @@ requires-python = ">=3.11"
 dependencies = [
   "absl-py",
   "immutabledict",
+  "jmespath",
   "protobuf",
   "python-dateutil",
   "pyyaml",

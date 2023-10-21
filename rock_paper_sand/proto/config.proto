@@ -26,6 +26,7 @@ syntax = "proto3";
 package rock_paper_sand;
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
 
 // 0 or more filters, mainly for use as config for filters like `and` and `or`.
 message Filters { repeated Filter filters = 1; }
@@ -43,6 +44,17 @@ message StringFieldMatcher {
     // Matches against the regex using python's re.search() function. See
     // https://docs.python.org/3/library/re.html for the syntax.
     string regex = 3;
+  }
+}
+
+// Ways to match arbitrary JSON data.
+message ArbitraryDataMatcher {
+  // Required. How to match the field.
+  oneof method {
+    // Uses JMESPath <https://jmespath.org/> to match the data. If the JMESPath
+    // expression returns true, the item matches; if it returns false or null,
+    // it does not match; if it returns anything else, an error is raised.
+    string jmespath = 1;
   }
 }
 
@@ -148,6 +160,9 @@ message Filter {
     // Matches on the name field.
     StringFieldMatcher name = 10;
 
+    // Matches on the custom_data field.
+    ArbitraryDataMatcher custom_data = 12;
+
     // Matches on the custom_availability field.
     StringFieldMatcher custom_availability = 6;
 
@@ -239,6 +254,9 @@ message MediaItem {
   // Any additional information that might be useful to a human reading the
   // data.
   string comment = 2;
+
+  // Any JSON data you want. The default value if this isn't specified is null.
+  google.protobuf.Value custom_data = 10;
 
   // Whether the item has already been watched/read/etc., and if so, how much.
   // For simple items, this should either be the empty string (not done) or the

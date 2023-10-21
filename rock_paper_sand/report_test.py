@@ -147,6 +147,7 @@ class ReportTest(parameterized.TestCase):
                 {
                     "name": "foo",
                     "comment": "FOO!",
+                    "customData": {"a": "b"},
                     "done": "all",
                     "wikidata": "Q1",
                     "justwatch": "jw",
@@ -158,6 +159,7 @@ class ReportTest(parameterized.TestCase):
                     {
                         "name": "foo",
                         "comment": "FOO!",
+                        "customData": {"a": "b"},
                         "done": "all",
                         "wikidata": "Q1",
                         "justwatch": "jw",

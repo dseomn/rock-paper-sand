@@ -181,6 +181,24 @@ class MediaFilterTest(parameterized.TestCase):
             expected_result=media_filter.FilterResult(True),
         ),
         dict(
+            testcase_name="custom_data_not_present",
+            filter_config={"customData": {"jmespath": "bar == `42`"}},
+            item={"name": "foo"},
+            expected_result=media_filter.FilterResult(False),
+        ),
+        dict(
+            testcase_name="custom_data_matches",
+            filter_config={"customData": {"jmespath": "bar == `42`"}},
+            item={"name": "foo", "customData": {"bar": 42}},
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="custom_data_no_match",
+            filter_config={"customData": {"jmespath": "bar == `7`"}},
+            item={"name": "foo", "customData": {"bar": 42}},
+            expected_result=media_filter.FilterResult(False),
+        ),
+        dict(
             testcase_name="custom_availability_empty_matches",
             filter_config={"customAvailability": {"empty": True}},
             item={"name": "foo"},
@@ -363,6 +381,12 @@ class MediaFilterTest(parameterized.TestCase):
             error_class=re.error,
             error_regex="",
         ),
+        dict(
+            testcase_name="unspecified_data_match",
+            filter_config={"customData": {}},
+            error_class=ValueError,
+            error_regex="Unknown arbitrary data match type",
+        ),
     )
     def test_parse_error(
         self,
@@ -375,6 +399,24 @@ class MediaFilterTest(parameterized.TestCase):
             media_filter.Registry().parse(
                 json_format.ParseDict(filter_config, config_pb2.Filter())
             )
+
+    def test_jmespath_wrong_return_type(self) -> None:
+        test_filter = media_filter.Registry().parse(
+            json_format.ParseDict(
+                {"customData": {"jmespath": "bar"}}, config_pb2.Filter()
+            )
+        )
+        request = media_filter.FilterRequest(
+            media_item.MediaItem.from_config(
+                json_format.ParseDict(
+                    {"name": "foo", "customData": {"bar": 42}},
+                    config_pb2.MediaItem(),
+                )
+            )
+        )
+
+        with self.assertRaisesRegex(ValueError, "JMESPath .* invalid value"):
+            test_filter.filter(request)
 
     def test_registry_unique(self) -> None:
         registry = media_filter.Registry()

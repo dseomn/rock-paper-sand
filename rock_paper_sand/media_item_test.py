@@ -31,6 +31,7 @@ class MediaItemTest(parameterized.TestCase):
         proto = json_format.ParseDict(
             {
                 "name": "some-name",
+                "customData": {"a": "b"},
                 "done": "all",
                 "parts": [
                     {"name": "some-part"},
@@ -47,6 +48,7 @@ class MediaItemTest(parameterized.TestCase):
                 debug_description="unknown media item with name 'some-name'",
                 proto=proto,
                 fully_qualified_name="some-name",
+                custom_data={"a": "b"},
                 done=mock.ANY,
                 wikidata_qid="",
                 parts=(
@@ -57,6 +59,7 @@ class MediaItemTest(parameterized.TestCase):
                         ),
                         proto=config_pb2.MediaItem(name="some-part"),
                         fully_qualified_name="some-name: some-part",
+                        custom_data=None,
                         done=mock.ANY,
                         wikidata_qid="",
                         parts=(),
