@@ -78,6 +78,7 @@ warn_unused_ignores = true
 module = [
   "absl.*",
   "google.protobuf.*",
+  "jmespath.*",
 ]
 ignore_missing_imports = true
 
