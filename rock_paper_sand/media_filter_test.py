@@ -68,7 +68,6 @@ class MediaFilterTest(parameterized.TestCase):
     @parameterized.named_parameters(
         dict(
             testcase_name="all",
-            filter_by_name={},
             filter_config={"all": {}},
             expected_result=media_filter.FilterResult(True),
         ),
@@ -80,7 +79,6 @@ class MediaFilterTest(parameterized.TestCase):
         ),
         dict(
             testcase_name="not_of_true",
-            filter_by_name={},
             filter_config={"not": {"all": {}}},
             expected_result=media_filter.FilterResult(False),
         ),
@@ -142,7 +140,6 @@ class MediaFilterTest(parameterized.TestCase):
         ),
         dict(
             testcase_name="or_false",
-            filter_by_name={},
             filter_config={
                 "or": {
                     "filters": [
@@ -155,7 +152,6 @@ class MediaFilterTest(parameterized.TestCase):
         ),
         dict(
             testcase_name="has_parts_true_matches",
-            filter_by_name={},
             filter_config={"has_parts": True},
             item=config_pb2.MediaItem(
                 name="foo",
@@ -165,77 +161,66 @@ class MediaFilterTest(parameterized.TestCase):
         ),
         dict(
             testcase_name="has_parts_true_no_match",
-            filter_by_name={},
             filter_config={"has_parts": True},
             item=config_pb2.MediaItem(name="foo"),
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
             testcase_name="done_true",
-            filter_by_name={},
             filter_config={"done": "all"},
             item=config_pb2.MediaItem(name="foo", done="1 - 5, all"),
             expected_result=media_filter.FilterResult(True),
         ),
         dict(
             testcase_name="done_false",
-            filter_by_name={},
             filter_config={"done": "5.10"},
             item=config_pb2.MediaItem(name="foo", done="1 - 5.9"),
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
             testcase_name="name_matches",
-            filter_by_name={},
             filter_config={"name": {"equals": "foo"}},
             item=config_pb2.MediaItem(name="foo"),
             expected_result=media_filter.FilterResult(True),
         ),
         dict(
             testcase_name="custom_availability_empty_matches",
-            filter_by_name={},
             filter_config={"customAvailability": {"empty": True}},
             item=config_pb2.MediaItem(name="foo"),
             expected_result=media_filter.FilterResult(True),
         ),
         dict(
             testcase_name="custom_availability_not_empty_matches",
-            filter_by_name={},
             filter_config={"customAvailability": {"empty": False}},
             item=config_pb2.MediaItem(name="foo", custom_availability="bar"),
             expected_result=media_filter.FilterResult(True),
         ),
         dict(
             testcase_name="custom_availability_not_empty_no_match",
-            filter_by_name={},
             filter_config={"customAvailability": {"empty": False}},
             item=config_pb2.MediaItem(name="foo"),
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
             testcase_name="custom_availability_equals_matches",
-            filter_by_name={},
             filter_config={"customAvailability": {"equals": "bar"}},
             item=config_pb2.MediaItem(name="foo", custom_availability="bar"),
             expected_result=media_filter.FilterResult(True),
         ),
         dict(
             testcase_name="custom_availability_equals_no_match",
-            filter_by_name={},
             filter_config={"customAvailability": {"equals": "bar"}},
             item=config_pb2.MediaItem(name="foo"),
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
             testcase_name="custom_availability_regex_matches",
-            filter_by_name={},
             filter_config={"customAvailability": {"regex": r"[Aa]"}},
             item=config_pb2.MediaItem(name="foo", custom_availability="bar"),
             expected_result=media_filter.FilterResult(True),
         ),
         dict(
             testcase_name="custom_availability_regex_no_match",
-            filter_by_name={},
             filter_config={"customAvailability": {"regex": r"[Zz]"}},
             item=config_pb2.MediaItem(name="foo", custom_availability="bar"),
             expected_result=media_filter.FilterResult(False),
@@ -244,7 +229,9 @@ class MediaFilterTest(parameterized.TestCase):
     def test_basic_filter(
         self,
         *,
-        filter_by_name: Mapping[str, media_filter.Filter],
+        filter_by_name: Mapping[str, media_filter.Filter] = (
+            immutabledict.immutabledict()
+        ),
         filter_config: Any,
         item: config_pb2.MediaItem = config_pb2.MediaItem(name="foo"),
         expected_result: media_filter.FilterResult,
