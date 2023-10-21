@@ -13,11 +13,12 @@
 # limitations under the License.
 """Code that uses Wikidata's APIs."""
 
-from collections.abc import Generator, Sequence
+from collections.abc import Generator, Iterable, Sequence
 import contextlib
 import datetime
 import enum
 import re
+import typing
 from typing import Any
 
 from dateutil import relativedelta
@@ -28,6 +29,23 @@ from rock_paper_sand import exceptions
 from rock_paper_sand import media_filter
 from rock_paper_sand import network
 from rock_paper_sand.proto import config_pb2
+
+if typing.TYPE_CHECKING:
+    import _typeshed
+
+
+def _min(
+    iterable: "Iterable[_typeshed.SupportsRichComparisonT | None]",
+    /,
+) -> "_typeshed.SupportsRichComparisonT | None":
+    return min((x for x in iterable if x is not None), default=None)
+
+
+def _max(
+    iterable: "Iterable[_typeshed.SupportsRichComparisonT | None]",
+    /,
+) -> "_typeshed.SupportsRichComparisonT | None":
+    return max((x for x in iterable if x is not None), default=None)
 
 
 class _Item(enum.Enum):
@@ -126,6 +144,41 @@ def _parse_snak_time(snak: Any) -> tuple[datetime.datetime, datetime.datetime]:
     return earliest, latest
 
 
+def _parse_statement_time(
+    statement: Any,
+) -> tuple[datetime.datetime | None, datetime.datetime | None]:
+    """Parses a statement about a time.
+
+    Args:
+        statement: Statement to parse.
+
+    Returns:
+        Tuple of (earliest possible time, latest possible time). Either or both
+        parts may be None if they're unknown or there is no value.
+    """
+    mainsnak = statement["mainsnak"]
+    if mainsnak["datatype"] != "time":
+        raise ValueError(
+            f"Cannot parse non-time statement as a time: {statement}"
+        )
+    match mainsnak["snaktype"]:
+        case "value":
+            return _parse_snak_time(mainsnak)
+        case "somevalue":
+            if statement.get("qualifiers", {}):
+                raise NotImplementedError(
+                    f"Cannot parse somevalue time with qualifiers: {statement}"
+                )
+            else:
+                return (None, None)
+        case "novalue":
+            return (None, None)
+        case _:
+            raise ValueError(
+                f"Unexpected snaktype in time statement: {statement}"
+            )
+
+
 class Api:
     """Wrapper around Wikidata APIs."""
 
@@ -153,19 +206,17 @@ def _release_status(
     *,
     now: datetime.datetime,
 ) -> config_pb2.WikidataFilter.ReleaseStatus.ValueType:
-    start = min(
+    start = _min(
         (
-            min(_parse_snak_time(statement["mainsnak"]))
+            _min(_parse_statement_time(statement))
             for statement in _truthy_statements(item, _Property.START_TIME)
-        ),
-        default=None,
+        )
     )
-    end = max(
+    end = _max(
         (
-            max(_parse_snak_time(statement["mainsnak"]))
+            _max(_parse_statement_time(statement))
             for statement in _truthy_statements(item, _Property.END_TIME)
-        ),
-        default=None,
+        )
     )
     if start is not None and now < start:
         return config_pb2.WikidataFilter.ReleaseStatus.UNRELEASED
@@ -180,12 +231,11 @@ def _release_status(
         _Property.PUBLICATION_DATE,
         _Property.DATE_OF_FIRST_PERFORMANCE,
     ):
-        released = min(
+        released = _min(
             (
-                min(_parse_snak_time(statement["mainsnak"]))
+                _min(_parse_statement_time(statement))
                 for statement in _truthy_statements(item, prop)
-            ),
-            default=None,
+            )
         )
         if released is None:
             continue

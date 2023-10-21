@@ -356,6 +356,74 @@ class WikidataUtilsTest(parameterized.TestCase):
             ),
         )
 
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="datatype_not_time",
+            statement={
+                "mainsnak": {"snaktype": "novalue", "datatype": "string"},
+            },
+            error_class=ValueError,
+            error_regex=r"non-time",
+        ),
+        dict(
+            testcase_name="somevalue_with_qualifiers",
+            statement={
+                "mainsnak": {"snaktype": "somevalue", "datatype": "time"},
+                "qualifiers": {"P1": []},
+            },
+            error_class=NotImplementedError,
+            error_regex=r"somevalue time with qualifiers",
+        ),
+        dict(
+            testcase_name="invalid_snaktype",
+            statement={
+                "mainsnak": {"snaktype": "foo", "datatype": "time"},
+            },
+            error_class=ValueError,
+            error_regex=r"Unexpected snaktype",
+        ),
+    )
+    def test_parse_statement_time_error(
+        self,
+        *,
+        statement: Any,
+        error_class: type[Exception],
+        error_regex: str,
+    ) -> None:
+        with self.assertRaisesRegex(error_class, error_regex):
+            wikidata._parse_statement_time(statement)
+
+    @parameterized.parameters(
+        (
+            {
+                "mainsnak": _snak_time(
+                    "+2000-01-01T00:00:00Z", precision=_PRECISION_DAY
+                )
+            },
+            ("2000-01-01T00:00:00+00:00", "2000-01-01T23:59:59.999999+00:00"),
+        ),
+        (
+            {"mainsnak": {"snaktype": "somevalue", "datatype": "time"}},
+            (None, None),
+        ),
+        (
+            {"mainsnak": {"snaktype": "novalue", "datatype": "time"}},
+            (None, None),
+        ),
+    )
+    def test_parse_statement_time(
+        self,
+        statement: Any,
+        values: tuple[str | None, str | None],
+    ) -> None:
+        self.assertSequenceEqual(
+            values,
+            tuple(
+                (None if value is None else value.isoformat())
+                for value in wikidata._parse_statement_time(statement)
+            ),
+        )
+
 
 class WikidataFilterTest(parameterized.TestCase):
     def setUp(self) -> None:
