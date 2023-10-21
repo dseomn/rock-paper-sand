@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Basic config file to show what rock-paper-sand is all about.
+
 # Filters for media items. These don't do anything by themselves, but they can
 # be referenced by reports, below.
 filters:
