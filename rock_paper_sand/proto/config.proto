@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-// This is the schema for rock-paper-sand's config file. See config.example.yaml
-// in the root directory for an example of what the file looks like. Note that
-// the config file is a YAML-encoded JSON protobuf, so field_name in this file
-// becomes fieldName in the config file. See
+// This is the schema for rock-paper-sand's config file. See the examples
+// directory in the root of this repo for examples of what the file looks like.
+// Note that the config file is a YAML-encoded JSON protobuf, so field_name in
+// this file becomes fieldName in the config file. See
 // https://protobuf.dev/programming-guides/proto3/#json for more details on the
 // mapping between JSON and protobuf.
 

@@ -6,10 +6,11 @@ media is available for free at home (from streaming services, physical copies,
 or whatever else), which is available elsewhere (e.g., at the library), and
 which is unavailable.
 
-For an example of what it can do, see [the example config
-file](config.example.yaml) and the [output from that config
-file](output.example.yaml). For more documentation on the config file format,
-see [the schema definition](rock_paper_sand/proto/config.proto).
+For an example of what it can do, see [an example config
+file](examples/basic.config.yaml), the [output from that config
+file](examples/basic.output.yaml), and other examples in the same directory. For
+more documentation on the config file format, see [the schema
+definition](rock_paper_sand/proto/config.proto).
 
 ## Installation
 

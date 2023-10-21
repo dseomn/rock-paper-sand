@@ -12,14 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# NOTE: When updating this file, also update the example output by running:
-#
-# python3 -m rock_paper_sand.main \
-#   --config_file config.example.yaml \
-#   reports \
-#   print \
-#   > output.example.yaml
-
 # Filters for media items. These don't do anything by themselves, but they can
 # be referenced by reports, below.
 filters:

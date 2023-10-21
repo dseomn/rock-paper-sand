@@ -93,4 +93,4 @@ jobs:
         pipx install .
     - name: Smoke test
       run: |
-        rock-paper-sand --config_file=config.example.yaml config lint
+        rock-paper-sand --config_file=examples/basic.config.yaml config lint

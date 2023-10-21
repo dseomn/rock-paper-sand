@@ -201,15 +201,13 @@ class ConfigTest(parameterized.TestCase):
 
         self.assertEqual(expected_results, results)
 
-    def test_example_config(self) -> None:
-        with flagsaver.flagsaver(
-            (
-                flags_and_constants.CONFIG_FILE,
-                str(
-                    pathlib.Path(__file__).parent.parent / "config.example.yaml"
-                ),
-            )
-        ):
+    @parameterized.parameters(
+        path
+        for path in (pathlib.Path(__file__).parent / "../examples").iterdir()
+        if path.is_file() and path.name.endswith(".config.yaml")
+    )
+    def test_example_configs(self, path: pathlib.Path) -> None:
+        with flagsaver.flagsaver((flags_and_constants.CONFIG_FILE, str(path))):
             config_ = self._config_with_null_session()
             self.assertEmpty(config_.lint())
 
