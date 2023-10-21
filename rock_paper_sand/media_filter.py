@@ -230,8 +230,8 @@ def _jmespath_matcher(
             return True
         case return_value:
             raise ValueError(
-                f"JMESPath expression {expression.expression!r} returned "
-                f"invalid value {return_value!r} for data {data!r}"
+                f"JMESPath expression returned invalid value {return_value!r} "
+                f"for data {data!r}"
             )
 
 
@@ -244,6 +244,7 @@ class ArbitraryDataMatcher(Filter):
         matcher_config: config_pb2.ArbitraryDataMatcher,
     ) -> None:
         self._field_getter = field_getter
+        self._config = matcher_config
         match matcher_config.WhichOneof("method"):
             case "jmespath":
                 self._matcher = functools.partial(
@@ -260,7 +261,8 @@ class ArbitraryDataMatcher(Filter):
         if data is None:
             return FilterResult(False)
         with exceptions.add_note(
-            f"While filtering {request.item.debug_description}"
+            f"While filtering {request.item.debug_description} using "
+            f"ArbitraryDataMatcher filter config:\n{self._config}"
         ):
             return FilterResult(self._matcher(data))
 
