@@ -1,0 +1,61 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+filters:
+- # To-do media that's available to stream at no additional cost.
+  name: todo_availability_free
+  filter:
+    justwatch:
+      country: US
+      providers:
+      - amazonprime
+      - netflix
+      monetizationTypes:
+      - flatrate
+      - free
+- # Matches media items that are available on any streaming service, and
+  # provides a "justwatch.provider" key that can be used to group results.
+  name: todo_availability_any_streaming_service
+  filter:
+    justwatch:
+      country: US
+      monetizationTypes:
+      - flatrate
+      - free
+
+reports:
+- name: My Favorite Report
+  sections:
+  - # Shows streaming services that it might make sense to subscribe to in the
+    # future.
+    name: potential-future-subscriptions
+    filter:
+      and:
+        filters:
+        - ref: todo_availability_any_streaming_service
+        - not:
+            ref: todo_availability_free
+    groupBy:
+      key: justwatch.provider
+
+media:
+- name: "Airplane! (1980)"
+  wikidata: https://www.wikidata.org/wiki/Q497256
+  justwatch: https://www.justwatch.com/us/movie/airplane
+- name: "Everything Everywhere All at Once (2022)"
+  wikidata: https://www.wikidata.org/wiki/Q83808444
+  justwatch: https://www.justwatch.com/us/movie/everything-everywhere-all-at-once
+- name: "Life of Brian (1979)"
+  wikidata: https://www.wikidata.org/wiki/Q24953
+  justwatch: https://www.justwatch.com/us/movie/life-of-brian

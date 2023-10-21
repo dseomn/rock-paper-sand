@@ -104,15 +104,6 @@ filters:
       filters:
       - ref: todo_availability_free_at_home
       - ref: todo_availability_free_not_at_home
-- # Matches media items that are available on any streaming service, and
-  # provides a "justwatch.provider" key that can be used to group results.
-  name: todo_availability_any_streaming_service
-  filter:
-    justwatch:
-      country: US
-      monetizationTypes:
-      - flatrate
-      - free
 - # This filter uses data from Wikidata to match media that's been partially but
   # not completely released, like an ongoing TV show.
   name: ongoing
@@ -151,17 +142,6 @@ reports:
         - ref: todo_availability_free_not_at_home
         - not:
             ref: todo_availability_free_at_home
-  - # Shows streaming services that it might make sense to subscribe to in the
-    # future.
-    name: potential-future-subscriptions
-    filter:
-      and:
-        filters:
-        - ref: todo_availability_any_streaming_service
-        - not:
-            ref: todo_availability_free
-    groupBy:
-      key: justwatch.provider
   - # This just shows all the media defined below. It's probably not very useful
     # when printing to the console, but it could be useful in an email if you
     # check email from devices that don't have access to this config file.
@@ -215,6 +195,3 @@ media:
     # that easier to check, or you could use it for whatever else you want.
     name: "Rock, Paper, Sand! the Sequel"
     comment: "Maybe check if this will screen at the Rick Astley Film Festival?"
-- name: "Everything Everywhere All at Once (2022)"
-  wikidata: https://www.wikidata.org/wiki/Q83808444
-  justwatch: https://www.justwatch.com/us/movie/everything-everywhere-all-at-once
