@@ -27,6 +27,7 @@ dependencies = [
   "absl-py",
   "immutabledict",
   "jmespath",
+  "jsonschema",
   "protobuf",
   "python-dateutil",
   "pyyaml",
@@ -38,6 +39,7 @@ dependencies = [
 [project.optional-dependencies]
 test = [
   "types-jmespath",
+  "types-jsonschema",
   "types-protobuf",
   "types-python-dateutil",
   "types-pyyaml",

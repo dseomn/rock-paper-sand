@@ -22,6 +22,7 @@ import json
 import pathlib
 import textwrap
 from typing import Any
+from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import flagsaver
@@ -177,6 +178,47 @@ class ConfigTest(parameterized.TestCase):
                 "media": [{"name": "a"}],
             },
             expected_results={"issuesReport": {"bar": [{"name": "a"}]}},
+        ),
+        dict(
+            testcase_name="custom_data_jsonschema_valid",
+            config_data={
+                "lint": {
+                    "customDataJsonschema": {
+                        "$schema": (
+                            "https://json-schema.org/draft/2020-12/schema"
+                        ),
+                        "type": "object",
+                        "properties": {
+                            "foo": {"type": "string"},
+                        },
+                    }
+                },
+                "media": [
+                    {"name": "a"},
+                    {"name": "b", "customData": {"foo": "bar"}},
+                ],
+            },
+            expected_results={},
+        ),
+        dict(
+            testcase_name="custom_data_jsonschema_invalid",
+            config_data={
+                "lint": {
+                    "customDataJsonschema": {
+                        "$schema": (
+                            "https://json-schema.org/draft/2020-12/schema"
+                        ),
+                        "type": "object",
+                        "properties": {
+                            "foo": {"type": "string"},
+                        },
+                    }
+                },
+                "media": [
+                    {"name": "some-item", "customData": {"foo": 42}},
+                ],
+            },
+            expected_results={"customDataJsonschema": {"some-item": mock.ANY}},
         ),
     )
     def test_lint(

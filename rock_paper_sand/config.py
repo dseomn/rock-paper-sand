@@ -21,6 +21,7 @@ import typing
 from typing import Any, Self
 
 from google.protobuf import json_format
+import jsonschema.validators
 import requests
 import yaml
 
@@ -153,9 +154,33 @@ class Config:
             return {}
         return {"issuesReport": results}
 
+    def _lint_custom_data(self) -> Mapping[str, Any]:
+        if not self.proto.lint.HasField("custom_data_jsonschema"):
+            return {}
+        schema = json_format.MessageToDict(
+            self.proto.lint.custom_data_jsonschema
+        )
+        validator_class = jsonschema.validators.validator_for(schema)
+        validator_class.check_schema(schema)
+        validator = validator_class(schema)
+        errors = {}
+        for item in media_item.iter_all_items(self.media):
+            if item.custom_data is None:
+                continue
+            if item_errors := tuple(
+                error.message
+                for error in validator.iter_errors(item.custom_data)
+            ):
+                errors[item.fully_qualified_name] = item_errors
+        if errors:
+            return {"customDataJsonschema": errors}
+        else:
+            return {}
+
     def lint(self) -> Mapping[str, Any]:
         """Returns lint issues, if there are any."""
         return {
             **self._lint_sort(),
             **self._lint_issues_report(),
+            **self._lint_custom_data(),
         }

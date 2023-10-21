@@ -240,6 +240,10 @@ message Lint {
   // If present, the name of a report that should be empty if there are no
   // issues.
   string issues_report = 2;
+
+  // If present, a JSON Schema to validate MediaItem.custom_data fields. See
+  // https://json-schema.org/ for details.
+  google.protobuf.Value custom_data_jsonschema = 4;
 }
 
 // A (possibly composite) item of media, e.g., a movie, TV show, or book, or
