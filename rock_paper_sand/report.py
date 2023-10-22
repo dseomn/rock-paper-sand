@@ -15,6 +15,7 @@
 
 import collections
 from collections.abc import Mapping, Sequence
+import copy
 import dataclasses
 import datetime
 import difflib
@@ -56,7 +57,9 @@ def _filter_media_item(
     if item.proto.comment:
         result["comment"] = item.proto.comment
     if item.custom_data is not None:
-        result["customData"] = item.custom_data
+        # Copy to prevent yaml anchors and aliases when the same
+        # item.custom_data appears in multiple places in a yaml document.
+        result["customData"] = copy.deepcopy(item.custom_data)
     if item.proto.done:
         result["done"] = item.proto.done
     if item.proto.custom_availability:

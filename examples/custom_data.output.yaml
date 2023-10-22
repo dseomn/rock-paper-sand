@@ -1,7 +1,7 @@
 My Favorite Report:
   watch-alone:
   - name: Everything Everywhere All at Once (2022)
-    customData: &id001
+    customData:
       maybeWatchWith:
       - Alice
     wikidata: https://www.wikidata.org/wiki/Q83808444
@@ -24,7 +24,9 @@ My Favorite Report:
     - Paramount+ with Showtime (flatrate)
     - Showtime (flatrate)
   - name: Everything Everywhere All at Once (2022)
-    customData: *id001
+    customData:
+      maybeWatchWith:
+      - Alice
     wikidata: https://www.wikidata.org/wiki/Q83808444
     justwatch: https://www.justwatch.com/us/movie/everything-everywhere-all-at-once
     extraInformation:
