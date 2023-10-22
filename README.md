@@ -48,6 +48,10 @@ filtering is one of the main focuses of this program.
         and include that in a filter for content that's available for free. Or
         you can include the release year in the media name, and filter on media
         released in a range of years.
+    *   Custom arbitrary JSON data matching, using
+        [JMESPath](https://jmespath.org/) to select which data matches. The data
+        can also optionally be validated with [JSON
+        Schema](https://json-schema.org/) to catch typos.
     *   Logical combinations of any of the above, including `and`, `or`, and
         `not`.
 *   Group results by keys provided by filters. E.g., it's possible to filter for

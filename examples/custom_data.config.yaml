@@ -1,0 +1,116 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Examples of how the customData field can be used.
+
+filters:
+- # To-do media that's available to stream at no additional cost on the services
+  # I have.
+  name: todo_availability_my_streaming_services
+  filter:
+    justwatch:
+      country: US
+      providers:
+      - netflix
+      - showtime
+      monetizationTypes:
+      - flatrate
+      - free
+- # To-do media that's available to stream at no additional cost on the services
+  # my friend Alice has.
+  name: todo_availability_alices_streaming_services
+  filter:
+    justwatch:
+      country: US
+      providers:
+      - paramountplusshowtime
+      monetizationTypes:
+      - flatrate
+      - free
+- # Media that Alice wants to see too. This uses a JMESPath expression to match
+  # media items that have "Alice" in their "watchWith" fields. See
+  # https://jmespath.org/ for more details.
+  name: watch_with_alice
+  filter:
+    customData:
+      jmespath: |
+        contains(not_null(watchWith, `[]`), 'Alice')
+- # Media that Alice might want to see too.
+  name: maybe_watch_with_alice
+  filter:
+    customData:
+      jmespath: |
+        contains(not_null(maybeWatchWith, `[]`), 'Alice')
+
+reports:
+- name: My Favorite Report
+  sections:
+  - # Media to watch alone, because it's on my streaming services and Alice
+    # doesn't definitively want to watch it.
+    name: watch-alone
+    filter:
+      and:
+        filters:
+        - ref: todo_availability_my_streaming_services
+        - not:
+            ref: watch_with_alice
+  - # Media to watch with Alice, because it's on either of our streaming
+    # services, and Alice either wants to watch it, or at least might want to
+    # watch it.
+    name: watch-with-alice
+    filter:
+      and:
+        filters:
+        - or:
+            filters:
+            - ref: todo_availability_my_streaming_services
+            - ref: todo_availability_alices_streaming_services
+        - or:
+            filters:
+            - ref: watch_with_alice
+            - ref: maybe_watch_with_alice
+
+lint:
+  # This is completely optional, but can catch typos in customData. See
+  # https://json-schema.org/ for more details.
+  customDataJsonschema:
+    $schema: https://json-schema.org/draft/2020-12/schema
+    type: object
+    additionalProperties: false
+    properties:
+      watchWith:
+        type: array
+        items:
+          type: string
+      maybeWatchWith:
+        type: array
+        items:
+          type: string
+
+media:
+- name: "Airplane! (1980)"
+  customData:
+    watchWith:
+    - Alice
+  wikidata: https://www.wikidata.org/wiki/Q497256
+  justwatch: https://www.justwatch.com/us/movie/airplane
+- name: "Everything Everywhere All at Once (2022)"
+  customData:
+    maybeWatchWith:
+    - Alice
+  wikidata: https://www.wikidata.org/wiki/Q83808444
+  justwatch: https://www.justwatch.com/us/movie/everything-everywhere-all-at-once
+- name: "Life of Brian (1979)"
+  wikidata: https://www.wikidata.org/wiki/Q24953
+  justwatch: https://www.justwatch.com/us/movie/life-of-brian

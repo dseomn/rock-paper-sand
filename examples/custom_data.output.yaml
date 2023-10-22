@@ -1,0 +1,32 @@
+My Favorite Report:
+  watch-alone:
+  - name: Everything Everywhere All at Once (2022)
+    customData: &id001
+      maybeWatchWith:
+      - Alice
+    wikidata: https://www.wikidata.org/wiki/Q83808444
+    justwatch: https://www.justwatch.com/us/movie/everything-everywhere-all-at-once
+    extraInformation:
+    - Showtime (flatrate)
+  - name: Life of Brian (1979)
+    wikidata: https://www.wikidata.org/wiki/Q24953
+    justwatch: https://www.justwatch.com/us/movie/life-of-brian
+    extraInformation:
+    - Netflix (flatrate)
+  watch-with-alice:
+  - name: Airplane! (1980)
+    customData:
+      watchWith:
+      - Alice
+    wikidata: https://www.wikidata.org/wiki/Q497256
+    justwatch: https://www.justwatch.com/us/movie/airplane
+    extraInformation:
+    - Paramount+ with Showtime (flatrate)
+    - Showtime (flatrate)
+  - name: Everything Everywhere All at Once (2022)
+    customData: *id001
+    wikidata: https://www.wikidata.org/wiki/Q83808444
+    justwatch: https://www.justwatch.com/us/movie/everything-everywhere-all-at-once
+    extraInformation:
+    - Paramount+ with Showtime (flatrate)
+    - Showtime (flatrate)
