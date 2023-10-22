@@ -63,10 +63,10 @@ class _Item(enum.Enum):
 
 
 class _Property(enum.Enum):
-    PUBLICATION_DATE = "P577"
     DATE_OF_FIRST_PERFORMANCE = "P1191"
-    START_TIME = "P580"
     END_TIME = "P582"
+    PUBLICATION_DATE = "P577"
+    START_TIME = "P580"
 
 
 @contextlib.contextmanager
