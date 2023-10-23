@@ -28,10 +28,10 @@ import requests
 from rock_paper_sand import media_filter
 from rock_paper_sand import media_item
 from rock_paper_sand import wikidata
+from rock_paper_sand import wikidata_value
 from rock_paper_sand.proto import config_pb2
 
 # pylint: disable=protected-access
-_Item = wikidata._Item
 _Property = wikidata._Property
 # pylint: enable=protected-access
 
@@ -54,7 +54,9 @@ def _snak_time(time: str, *, precision: int = _PRECISION_DAY) -> Any:
         "datavalue": {
             "type": "time",
             "value": {
-                "calendarmodel": _Item.PROLEPTIC_GREGORIAN_CALENDAR.uri,
+                "calendarmodel": (
+                    wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
+                ),
                 "timezone": 0,
                 "before": 0,
                 "after": 0,
@@ -87,8 +89,8 @@ class WikidataApiTest(parameterized.TestCase):
             "entities": {"Q1": item}
         }
 
-        first_response = self._api.item("Q1")
-        second_response = self._api.item("Q1")
+        first_response = self._api.item(wikidata_value.Item("Q1"))
+        second_response = self._api.item(wikidata_value.Item("Q1"))
 
         self.assertEqual(item, first_response)
         self.assertEqual(item, second_response)
@@ -251,7 +253,9 @@ class WikidataUtilsTest(parameterized.TestCase):
                 "datavalue": {
                     "type": "time",
                     "value": {
-                        "calendarmodel": _Item.PROLEPTIC_GREGORIAN_CALENDAR.uri,
+                        "calendarmodel": (
+                            wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
+                        ),
                         "timezone": 42,
                     },
                 },
@@ -267,7 +271,9 @@ class WikidataUtilsTest(parameterized.TestCase):
                 "datavalue": {
                     "type": "time",
                     "value": {
-                        "calendarmodel": _Item.PROLEPTIC_GREGORIAN_CALENDAR.uri,
+                        "calendarmodel": (
+                            wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
+                        ),
                         "timezone": 0,
                         "before": 42,
                         "after": 0,
@@ -285,7 +291,9 @@ class WikidataUtilsTest(parameterized.TestCase):
                 "datavalue": {
                     "type": "time",
                     "value": {
-                        "calendarmodel": _Item.PROLEPTIC_GREGORIAN_CALENDAR.uri,
+                        "calendarmodel": (
+                            wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
+                        ),
                         "timezone": 0,
                         "before": 0,
                         "after": 42,
@@ -303,7 +311,9 @@ class WikidataUtilsTest(parameterized.TestCase):
                 "datavalue": {
                     "type": "time",
                     "value": {
-                        "calendarmodel": _Item.PROLEPTIC_GREGORIAN_CALENDAR.uri,
+                        "calendarmodel": (
+                            wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
+                        ),
                         "timezone": 0,
                         "before": 0,
                         "after": 0,
@@ -322,7 +332,9 @@ class WikidataUtilsTest(parameterized.TestCase):
                 "datavalue": {
                     "type": "time",
                     "value": {
-                        "calendarmodel": _Item.PROLEPTIC_GREGORIAN_CALENDAR.uri,
+                        "calendarmodel": (
+                            wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
+                        ),
                         "timezone": 0,
                         "before": 0,
                         "after": 0,
@@ -455,7 +467,7 @@ class WikidataFilterTest(parameterized.TestCase):
 
     @parameterized.named_parameters(
         dict(
-            testcase_name="no_qid",
+            testcase_name="no_item_id",
             filter_config={},
             item={"name": "foo"},
             expected_result=media_filter.FilterResult(False),
@@ -670,7 +682,7 @@ class WikidataFilterTest(parameterized.TestCase):
         api_data: Mapping[str, Any] = immutabledict.immutabledict(),
         expected_result: media_filter.FilterResult,
     ) -> None:
-        self._mock_api.item.side_effect = lambda qid: api_data[qid]
+        self._mock_api.item.side_effect = lambda item_id: api_data[item_id.id]
         test_filter = wikidata.Filter(
             json_format.ParseDict(filter_config, config_pb2.WikidataFilter()),
             api=self._mock_api,

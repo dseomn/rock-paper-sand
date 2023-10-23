@@ -28,6 +28,7 @@ import requests_cache
 from rock_paper_sand import exceptions
 from rock_paper_sand import media_filter
 from rock_paper_sand import network
+from rock_paper_sand import wikidata_value
 from rock_paper_sand.proto import config_pb2
 
 if typing.TYPE_CHECKING:
@@ -46,20 +47,6 @@ def _max(
     /,
 ) -> "_typeshed.SupportsRichComparisonT | None":
     return max((x for x in iterable if x is not None), default=None)
-
-
-class _Item(enum.Enum):
-    GREGORIAN_CALENDAR = "Q12138"
-    PROLEPTIC_GREGORIAN_CALENDAR = "Q1985727"
-
-    @property
-    def uri(self) -> str:
-        """The canonical URI of the item.
-
-        Note that this is not the URL meant for accessing data about the item,
-        but the URI for identifying it.
-        """
-        return f"http://www.wikidata.org/entity/{self.value}"
 
 
 class _Property(enum.Enum):
@@ -102,8 +89,8 @@ def _parse_snak_time(snak: Any) -> tuple[datetime.datetime, datetime.datetime]:
         raise ValueError(f"Cannot parse non-time snak as a time: {snak}")
     value = snak["datavalue"]["value"]
     if value["calendarmodel"] not in (
-        _Item.GREGORIAN_CALENDAR.uri,
-        _Item.PROLEPTIC_GREGORIAN_CALENDAR.uri,
+        wikidata_value.Q_GREGORIAN_CALENDAR.uri,
+        wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri,
     ):
         raise NotImplementedError(f"Cannot parse non-Gregorian time: {snak}")
     if value["timezone"] != 0:
@@ -188,17 +175,17 @@ class Api:
         session: requests.Session,
     ) -> None:
         self._session = session
-        self._item_by_qid: dict[str, Any] = {}
+        self._item_by_id: dict[wikidata_value.Item, Any] = {}
 
-    def item(self, qid: str) -> Any:
+    def item(self, item_id: wikidata_value.Item) -> Any:
         """Returns an item in full JSON format."""
-        if qid not in self._item_by_qid:
+        if item_id not in self._item_by_id:
             response = self._session.get(
-                f"https://www.wikidata.org/wiki/Special:EntityData/{qid}.json"
+                f"https://www.wikidata.org/wiki/Special:EntityData/{item_id.id}.json"  # pylint: disable=line-too-long
             )
             response.raise_for_status()
-            self._item_by_qid[qid] = response.json()["entities"][qid]
-        return self._item_by_qid[qid]
+            self._item_by_id[item_id] = response.json()["entities"][item_id.id]
+        return self._item_by_id[item_id]
 
     def sparql(self, query: str) -> Any:
         """Returns results from a SPARQL query."""
@@ -277,9 +264,9 @@ class Filter(media_filter.CachedFilter):
             f"While filtering {request.item.debug_description} using Wikidata "
             f"filter config:\n{self._config}"
         ):
-            if not request.item.wikidata_qid:
+            if request.item.wikidata_item is None:
                 return media_filter.FilterResult(False)
-            item = self._api.item(request.item.wikidata_qid)
+            item = self._api.item(request.item.wikidata_item)
             if (
                 self._config.release_statuses
                 and _release_status(item, now=request.now)

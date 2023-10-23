@@ -23,6 +23,7 @@ from google.protobuf import json_format
 
 from rock_paper_sand import media_item
 from rock_paper_sand import multi_level_set
+from rock_paper_sand import wikidata_value
 from rock_paper_sand.proto import config_pb2
 
 
@@ -33,6 +34,7 @@ class MediaItemTest(parameterized.TestCase):
                 "name": "some-name",
                 "customData": {"a": "b"},
                 "done": "all",
+                "wikidata": "Q1",
                 "parts": [
                     {"name": "some-part"},
                 ],
@@ -50,7 +52,7 @@ class MediaItemTest(parameterized.TestCase):
                 fully_qualified_name="some-name",
                 custom_data={"a": "b"},
                 done=mock.ANY,
-                wikidata_qid="",
+                wikidata_item=wikidata_value.Item("Q1"),
                 parts=(
                     media_item.MediaItem(
                         id=mock.ANY,
@@ -61,7 +63,7 @@ class MediaItemTest(parameterized.TestCase):
                         fully_qualified_name="some-name: some-part",
                         custom_data=None,
                         done=mock.ANY,
-                        wikidata_qid="",
+                        wikidata_item=None,
                         parts=(),
                     ),
                 ),
@@ -114,42 +116,6 @@ class MediaItemTest(parameterized.TestCase):
                 index=index,
             )
         self.assertSequenceEqual(error_notes, error.exception.__notes__)
-
-    @parameterized.parameters(
-        "foo",
-        "Q",
-        "Q💯",
-        "Q-1",
-        "Q1.2",
-        "Q1foo",
-        "q1",
-        "https://example.com/Q1",
-        "https://www.wikidata.org/wiki/foo",
-        "https://www.wikidata.org/wiki/Q",
-        "https://www.wikidata.org/wiki/Q1foo",
-    )
-    def test_invalid_wikidata_field(self, value: str) -> None:
-        with self.assertRaisesRegex(ValueError, "Wikidata field"):
-            media_item.MediaItem.from_config(
-                json_format.ParseDict(
-                    {"name": "foo", "wikidata": value},
-                    config_pb2.MediaItem(),
-                )
-            )
-
-    @parameterized.parameters(
-        ("", ""),
-        ("Q1", "Q1"),
-        ("https://www.wikidata.org/wiki/Q1", "Q1"),
-    )
-    def test_valid_wikidata_field(self, value: str, expected_qid: str) -> None:
-        item = media_item.MediaItem.from_config(
-            json_format.ParseDict(
-                {"name": "foo", "wikidata": value},
-                config_pb2.MediaItem(),
-            )
-        )
-        self.assertEqual(expected_qid, item.wikidata_qid)
 
     def test_iter_all_items(self) -> None:
         item_1 = media_item.MediaItem.from_config(
