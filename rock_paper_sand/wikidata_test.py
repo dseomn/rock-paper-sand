@@ -105,6 +105,27 @@ class WikidataApiTest(parameterized.TestCase):
             self._mock_session.mock_calls,
         )
 
+    def test_sparql(self) -> None:
+        self._mock_session.get.return_value.json.return_value = {
+            "results": {"bindings": [{"foo": "bar"}]}
+        }
+
+        results = self._api.sparql("SELECT ...")
+
+        self.assertEqual([{"foo": "bar"}], results)
+        self.assertSequenceEqual(
+            (
+                mock.call.get(
+                    "https://query.wikidata.org/sparql",
+                    params=[("query", "SELECT ...")],
+                    headers={"Accept": "application/sparql-results+json"},
+                ),
+                mock.call.get().raise_for_status(),
+                mock.call.get().json(),
+            ),
+            self._mock_session.mock_calls,
+        )
+
 
 class WikidataUtilsTest(parameterized.TestCase):
     # pylint: disable=protected-access

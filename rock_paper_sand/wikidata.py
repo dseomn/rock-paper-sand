@@ -200,6 +200,16 @@ class Api:
             self._item_by_qid[qid] = response.json()["entities"][qid]
         return self._item_by_qid[qid]
 
+    def sparql(self, query: str) -> Any:
+        """Returns results from a SPARQL query."""
+        response = self._session.get(
+            "https://query.wikidata.org/sparql",
+            params=[("query", query)],
+            headers={"Accept": "application/sparql-results+json"},
+        )
+        response.raise_for_status()
+        return response.json()["results"]["bindings"]
+
 
 def _release_status(
     item: Any,
