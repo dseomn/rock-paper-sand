@@ -16,7 +16,6 @@
 from collections.abc import Generator, Iterable, Sequence
 import contextlib
 import datetime
-import enum
 import re
 import typing
 from typing import Any
@@ -49,13 +48,6 @@ def _max(
     return max((x for x in iterable if x is not None), default=None)
 
 
-class _Property(enum.Enum):
-    DATE_OF_FIRST_PERFORMANCE = "P1191"
-    END_TIME = "P582"
-    PUBLICATION_DATE = "P577"
-    START_TIME = "P580"
-
-
 @contextlib.contextmanager
 def requests_session() -> Generator[requests.Session, None, None]:
     """Returns a context manager for a session for Wikidata APIs."""
@@ -66,9 +58,11 @@ def requests_session() -> Generator[requests.Session, None, None]:
         yield session
 
 
-def _truthy_statements(item: Any, prop: _Property) -> Sequence[Any]:
+def _truthy_statements(
+    item: Any, prop: wikidata_value.Property
+) -> Sequence[Any]:
     # https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Truthy_statements
-    statements = item["claims"].get(prop.value, ())
+    statements = item["claims"].get(prop.id, ())
     return tuple(
         statement
         for statement in statements
@@ -206,13 +200,15 @@ def _release_status(
     start = _min(
         (
             _min(_parse_statement_time(statement))
-            for statement in _truthy_statements(item, _Property.START_TIME)
+            for statement in _truthy_statements(
+                item, wikidata_value.P_START_TIME
+            )
         )
     )
     end = _max(
         (
             _max(_parse_statement_time(statement))
-            for statement in _truthy_statements(item, _Property.END_TIME)
+            for statement in _truthy_statements(item, wikidata_value.P_END_TIME)
         )
     )
     if start is not None and now < start:
@@ -225,8 +221,8 @@ def _release_status(
         return config_pb2.WikidataFilter.ReleaseStatus.ONGOING
     assert start is None and end is None
     for prop in (
-        _Property.PUBLICATION_DATE,
-        _Property.DATE_OF_FIRST_PERFORMANCE,
+        wikidata_value.P_PUBLICATION_DATE,
+        wikidata_value.P_DATE_OF_FIRST_PERFORMANCE,
     ):
         released = _min(
             (

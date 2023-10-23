@@ -80,3 +80,20 @@ class Item:
 
 Q_GREGORIAN_CALENDAR = Item("Q12138")
 Q_PROLEPTIC_GREGORIAN_CALENDAR = Item("Q1985727")
+
+
+@dataclasses.dataclass(frozen=True)
+class Property:
+    """Wikidata property.
+
+    Attributes:
+        id: ID of the item, e.g., "P580".
+    """
+
+    id: str
+
+
+P_DATE_OF_FIRST_PERFORMANCE = Property("P1191")
+P_END_TIME = Property("P582")
+P_PUBLICATION_DATE = Property("P577")
+P_START_TIME = Property("P580")

@@ -31,10 +31,6 @@ from rock_paper_sand import wikidata
 from rock_paper_sand import wikidata_value
 from rock_paper_sand.proto import config_pb2
 
-# pylint: disable=protected-access
-_Property = wikidata._Property
-# pylint: enable=protected-access
-
 _PRECISION_YEAR = 9
 _PRECISION_MONTH = 10
 _PRECISION_DAY = 11
@@ -136,7 +132,7 @@ class WikidataUtilsTest(parameterized.TestCase):
             testcase_name="preferred",
             item={
                 "claims": {
-                    _Property.PUBLICATION_DATE.value: [
+                    "P1": [
                         {"id": "foo", "rank": "preferred"},
                         {"id": "quux", "rank": "normal"},
                         {"id": "baz", "rank": "deprecated"},
@@ -144,7 +140,7 @@ class WikidataUtilsTest(parameterized.TestCase):
                     ],
                 },
             },
-            prop=_Property.PUBLICATION_DATE,
+            prop=wikidata_value.Property("P1"),
             statements=(
                 {"id": "foo", "rank": "preferred"},
                 {"id": "bar", "rank": "preferred"},
@@ -154,14 +150,14 @@ class WikidataUtilsTest(parameterized.TestCase):
             testcase_name="normal",
             item={
                 "claims": {
-                    _Property.PUBLICATION_DATE.value: [
+                    "P1": [
                         {"id": "foo", "rank": "normal"},
                         {"id": "quux", "rank": "deprecated"},
                         {"id": "bar", "rank": "normal"},
                     ],
                 },
             },
-            prop=_Property.PUBLICATION_DATE,
+            prop=wikidata_value.Property("P1"),
             statements=(
                 {"id": "foo", "rank": "normal"},
                 {"id": "bar", "rank": "normal"},
@@ -171,28 +167,28 @@ class WikidataUtilsTest(parameterized.TestCase):
             testcase_name="deprecated",
             item={
                 "claims": {
-                    _Property.PUBLICATION_DATE.value: [
+                    "P1": [
                         {"id": "quux", "rank": "deprecated"},
                     ],
                 },
             },
-            prop=_Property.PUBLICATION_DATE,
+            prop=wikidata_value.Property("P1"),
             statements=(),
         ),
         dict(
             testcase_name="empty",
             item={
                 "claims": {
-                    _Property.PUBLICATION_DATE.value: [],
+                    "P1": [],
                 },
             },
-            prop=_Property.PUBLICATION_DATE,
+            prop=wikidata_value.Property("P1"),
             statements=(),
         ),
         dict(
             testcase_name="missing",
             item={"claims": {}},
-            prop=_Property.PUBLICATION_DATE,
+            prop=wikidata_value.Property("P1"),
             statements=(),
         ),
     )
@@ -200,7 +196,7 @@ class WikidataUtilsTest(parameterized.TestCase):
         self,
         *,
         item: Any,
-        prop: _Property,
+        prop: wikidata_value.Property,
         statements: Sequence[Any],
     ) -> None:
         self.assertSequenceEqual(
@@ -500,13 +496,13 @@ class WikidataFilterTest(parameterized.TestCase):
             api_data={
                 "Q1": {
                     "claims": {
-                        _Property.START_TIME.value: [
+                        wikidata_value.P_START_TIME.id: [
                             {
                                 "rank": "normal",
                                 "mainsnak": _snak_time(_TIME_IN_FUTURE_1),
                             },
                         ],
-                        _Property.END_TIME.value: [
+                        wikidata_value.P_END_TIME.id: [
                             {
                                 "rank": "normal",
                                 "mainsnak": _snak_time(_TIME_IN_FUTURE_2),
@@ -524,7 +520,7 @@ class WikidataFilterTest(parameterized.TestCase):
             api_data={
                 "Q1": {
                     "claims": {
-                        _Property.START_TIME.value: [
+                        wikidata_value.P_START_TIME.id: [
                             {
                                 "rank": "normal",
                                 "mainsnak": _snak_time(_TIME_IN_FUTURE_1),
@@ -542,13 +538,13 @@ class WikidataFilterTest(parameterized.TestCase):
             api_data={
                 "Q1": {
                     "claims": {
-                        _Property.START_TIME.value: [
+                        wikidata_value.P_START_TIME.id: [
                             {
                                 "rank": "normal",
                                 "mainsnak": _snak_time(_TIME_IN_PAST_1),
                             },
                         ],
-                        _Property.END_TIME.value: [
+                        wikidata_value.P_END_TIME.id: [
                             {
                                 "rank": "normal",
                                 "mainsnak": _snak_time(_TIME_IN_FUTURE_1),
@@ -566,7 +562,7 @@ class WikidataFilterTest(parameterized.TestCase):
             api_data={
                 "Q1": {
                     "claims": {
-                        _Property.START_TIME.value: [
+                        wikidata_value.P_START_TIME.id: [
                             {
                                 "rank": "normal",
                                 "mainsnak": _snak_time(_TIME_IN_PAST_1),
@@ -584,7 +580,7 @@ class WikidataFilterTest(parameterized.TestCase):
             api_data={
                 "Q1": {
                     "claims": {
-                        _Property.END_TIME.value: [
+                        wikidata_value.P_END_TIME.id: [
                             {
                                 "rank": "normal",
                                 "mainsnak": _snak_time(_TIME_IN_FUTURE_1),
@@ -602,13 +598,13 @@ class WikidataFilterTest(parameterized.TestCase):
             api_data={
                 "Q1": {
                     "claims": {
-                        _Property.START_TIME.value: [
+                        wikidata_value.P_START_TIME.id: [
                             {
                                 "rank": "normal",
                                 "mainsnak": _snak_time(_TIME_IN_PAST_2),
                             },
                         ],
-                        _Property.END_TIME.value: [
+                        wikidata_value.P_END_TIME.id: [
                             {
                                 "rank": "normal",
                                 "mainsnak": _snak_time(_TIME_IN_PAST_1),
@@ -626,7 +622,7 @@ class WikidataFilterTest(parameterized.TestCase):
             api_data={
                 "Q1": {
                     "claims": {
-                        _Property.END_TIME.value: [
+                        wikidata_value.P_END_TIME.id: [
                             {
                                 "rank": "normal",
                                 "mainsnak": _snak_time(_TIME_IN_PAST_1),
@@ -644,7 +640,7 @@ class WikidataFilterTest(parameterized.TestCase):
             api_data={
                 "Q1": {
                     "claims": {
-                        _Property.PUBLICATION_DATE.value: [
+                        wikidata_value.P_PUBLICATION_DATE.id: [
                             {
                                 "rank": "normal",
                                 "mainsnak": _snak_time(_TIME_IN_FUTURE_1),
@@ -662,7 +658,7 @@ class WikidataFilterTest(parameterized.TestCase):
             api_data={
                 "Q1": {
                     "claims": {
-                        _Property.PUBLICATION_DATE.value: [
+                        wikidata_value.P_PUBLICATION_DATE.id: [
                             {
                                 "rank": "normal",
                                 "mainsnak": _snak_time(_TIME_IN_PAST_1),
