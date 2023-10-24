@@ -53,6 +53,7 @@ def requests_session() -> Generator[requests.Session, None, None]:
     """Returns a context manager for a session for Wikidata APIs."""
     with requests_cache.CachedSession(
         **network.requests_cache_defaults(),
+        cache_control=True,
     ) as session:
         network.configure_session(session)
         yield session
