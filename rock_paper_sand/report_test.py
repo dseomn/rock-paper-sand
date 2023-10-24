@@ -363,6 +363,7 @@ class ReportTest(parameterized.TestCase):
             testcase_name="partial_changes",
             previous_results={"unchanged": ["foo"], "changed": ["foo"]},
             current_results={"unchanged": ["foo"], "changed": ["not-foo"]},
+            expected_diff_types="full",
             expected_message_parts=(
                 (
                     "changed.diff",
@@ -384,6 +385,7 @@ class ReportTest(parameterized.TestCase):
             testcase_name="collapse_diff",
             previous_results={"collapse": ["foo"]},
             current_results={"collapse": ["not-foo"]},
+            expected_diff_types="collapsed",
             expected_message_parts=(
                 ("collapse.diff", "Section collapse differs\n"),
                 ("collapse.yaml", "- not-foo\n"),
@@ -393,6 +395,7 @@ class ReportTest(parameterized.TestCase):
             testcase_name="new_section",
             previous_results={},
             current_results={"foo": ["bar"]},
+            expected_diff_types="created",
             expected_message_parts=(
                 ("foo.diff", "Section foo is newly created\n"),
                 ("foo.yaml", "- bar\n"),
@@ -402,6 +405,7 @@ class ReportTest(parameterized.TestCase):
             testcase_name="deleted_section",
             previous_results={"foo": ["bar"]},
             current_results={},
+            expected_diff_types="deleted",
             expected_message_parts=(("foo.diff", "Section foo was deleted\n"),),
         ),
     )
@@ -410,6 +414,7 @@ class ReportTest(parameterized.TestCase):
         *,
         previous_results: Any,
         current_results: Any,
+        expected_diff_types: str,
         expected_message_parts: Any,
     ) -> None:
         report_ = report.Report(
@@ -461,6 +466,9 @@ class ReportTest(parameterized.TestCase):
         self.assertEqual("alice@example.com", message["To"])
         self.assertEqual(
             "some-report-name", message["Rock-Paper-Sand-Report-Name"]
+        )
+        self.assertEqual(
+            expected_diff_types, message["Rock-Paper-Sand-Diff-Types"]
         )
         self.assertEqual("multipart/mixed", message.get_content_type())
         self.assertSequenceEqual(

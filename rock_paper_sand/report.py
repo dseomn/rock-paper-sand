@@ -101,13 +101,16 @@ def _add_diff_attachment(
     old: str | None,
     new: str | None,
     collapse: bool = False,
-) -> None:
+) -> str:
     if old is None:
         content = f"Section {name} is newly created"
+        diff_type = "created"
     elif new is None:
         content = f"Section {name} was deleted"
+        diff_type = "deleted"
     elif collapse:
         content = f"Section {name} differs"
+        diff_type = "collapsed"
     else:
         content = "".join(
             difflib.unified_diff(
@@ -117,11 +120,13 @@ def _add_diff_attachment(
                 tofile=f"{name}.yaml",
             )
         )
+        diff_type = "full"
     message.add_attachment(
         content,
         disposition="inline",
         filename=f"{name}.diff",
     )
+    return diff_type
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -275,6 +280,7 @@ class Report:
         for header, value in self._config.email_headers.items():
             message[header] = value
         message["Rock-Paper-Sand-Report-Name"] = self._config.name
+        diff_types: set[str] = set()
         message.add_attachment(self._config.email_body, disposition="inline")
         for section_name, section_results in results.items():
             if section_name not in previous_results:
@@ -285,20 +291,24 @@ class Report:
                 section_previous_results = _dump_for_email(
                     previous_results[section_name]
                 )
-            _add_diff_attachment(
-                message=message,
-                name=section_name,
-                old=section_previous_results,
-                new=_dump_for_email(section_results),
-                collapse=self._sections[section_name].proto.collapse_diff,
-            )
-        for section_name, section_results in previous_results.items():
-            if section_name not in results:
+            diff_types.add(
                 _add_diff_attachment(
                     message=message,
                     name=section_name,
-                    old=_dump_for_email(section_results),
-                    new=None,
+                    old=section_previous_results,
+                    new=_dump_for_email(section_results),
+                    collapse=self._sections[section_name].proto.collapse_diff,
+                )
+            )
+        for section_name, section_results in previous_results.items():
+            if section_name not in results:
+                diff_types.add(
+                    _add_diff_attachment(
+                        message=message,
+                        name=section_name,
+                        old=_dump_for_email(section_results),
+                        new=None,
+                    )
                 )
         for section_name, section_results in results.items():
             message.add_attachment(
@@ -306,6 +316,7 @@ class Report:
                 disposition="inline",
                 filename=f"{section_name}.yaml",
             )
+        message["Rock-Paper-Sand-Diff-Types"] = ", ".join(sorted(diff_types))
         subprocess_run(
             ("/usr/sbin/sendmail", "-i", "-t"),
             check=True,
