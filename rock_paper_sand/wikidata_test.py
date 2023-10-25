@@ -167,6 +167,32 @@ class WikidataApiTest(parameterized.TestCase):
             "https://www.wikidata.org/wiki/Special:EntityData/Q1.json"
         )
 
+    def test_transitive_subclasses(self) -> None:
+        self._mock_session.get.return_value.json.return_value = {
+            "results": {
+                "bindings": [
+                    {"class": _sparql_item("Q1")},
+                    {"class": _sparql_item("Q2")},
+                ]
+            }
+        }
+
+        first_result = self._api.transitive_subclasses(
+            wikidata_value.Item("Q1")
+        )
+        second_result = self._api.transitive_subclasses(
+            wikidata_value.Item("Q1")
+        )
+
+        expected_subclasses = {
+            wikidata_value.Item("Q1"),
+            wikidata_value.Item("Q2"),
+        }
+        self.assertEqual(expected_subclasses, first_result)
+        self.assertEqual(expected_subclasses, second_result)
+        # Note that this only happens once because the second time is cached.
+        self._mock_session.get.assert_called_once()
+
 
 class WikidataUtilsTest(parameterized.TestCase):
     # pylint: disable=protected-access

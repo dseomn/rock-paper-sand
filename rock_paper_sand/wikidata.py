@@ -193,6 +193,9 @@ class Api:
         self._item_classes: (
             dict[wikidata_value.Item, Set[wikidata_value.Item]]
         ) = {}
+        self._transitive_subclasses: (
+            dict[wikidata_value.Item, Set[wikidata_value.Item]]
+        ) = {}
 
     def item(self, item_id: wikidata_value.Item) -> Any:
         """Returns an item in full JSON format."""
@@ -226,6 +229,22 @@ class Api:
                 )
             )
         return self._item_classes[item_id]
+
+    def transitive_subclasses(
+        self, class_id: wikidata_value.Item
+    ) -> Set[wikidata_value.Item]:
+        """Returns transitive subclasses of the given class."""
+        if class_id not in self._transitive_subclasses:
+            subclass_of = wikidata_value.P_SUBCLASS_OF.id
+            results = self.sparql(
+                "SELECT REDUCED ?class WHERE { "
+                f"?class wdt:{subclass_of}* wd:{class_id.id}. "
+                "}"
+            )
+            self._transitive_subclasses[class_id] = frozenset(
+                _parse_sparql_result_item(result["class"]) for result in results
+            )
+        return self._transitive_subclasses[class_id]
 
 
 def _release_status(
