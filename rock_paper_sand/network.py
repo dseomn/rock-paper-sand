@@ -14,6 +14,7 @@
 """Utilities for accessing network resources."""
 
 from collections.abc import Collection, Mapping
+import datetime
 import importlib.metadata
 import os.path
 from typing import Any
@@ -46,6 +47,8 @@ def requests_cache_defaults() -> Mapping[str, Any]:
             ),
             serializer="json",
         ),
+        expire_after=datetime.timedelta(minutes=5),
+        cache_control=True,
     )
 
 

@@ -47,10 +47,15 @@ def _response_is_ok(response: requests.Response) -> bool:
 def requests_session() -> Generator[requests.Session, None, None]:
     """Returns a context manager for a session for the JustWatch API."""
     with requests_cache.CachedSession(
-        **network.requests_cache_defaults(),
-        expire_after=datetime.timedelta(hours=20),
-        allowable_methods=("GET", "HEAD", "POST"),
-        filter_fn=_response_is_ok,
+        **(
+            network.requests_cache_defaults()
+            | dict[str, Any](
+                expire_after=datetime.timedelta(hours=20),
+                cache_control=False,
+                allowable_methods=("GET", "HEAD", "POST"),
+                filter_fn=_response_is_ok,
+            )
+        ),
     ) as session:
         network.configure_session(session, additional_retry_methods=("POST",))
         yield session
