@@ -43,6 +43,17 @@ _TIME_IN_FUTURE_1 = (_NOW + datetime.timedelta(days=2)).strftime(_TIME_FORMAT)
 _TIME_IN_FUTURE_2 = (_NOW + datetime.timedelta(days=4)).strftime(_TIME_FORMAT)
 
 
+def _snak_item(item_id: str) -> Any:
+    return {
+        "snaktype": "value",
+        "datatype": "wikibase-item",
+        "datavalue": {
+            "type": "wikibase-entityid",
+            "value": {"entity-type": "item", "id": item_id},
+        },
+    }
+
+
 def _snak_time(time: str, *, precision: int = _PRECISION_DAY) -> Any:
     return {
         "snaktype": "value",
@@ -201,6 +212,59 @@ class WikidataUtilsTest(parameterized.TestCase):
     ) -> None:
         self.assertSequenceEqual(
             statements, wikidata._truthy_statements(item, prop)
+        )
+
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="not_value",
+            snak={"snaktype": "somevalue"},
+            error_class=NotImplementedError,
+            error_regex=r"non-value",
+        ),
+        dict(
+            testcase_name="datatype_not_item",
+            snak={"snaktype": "value", "datatype": "string"},
+            error_class=ValueError,
+            error_regex=r"non-item",
+        ),
+        dict(
+            testcase_name="type_not_item",
+            snak={
+                "snaktype": "value",
+                "datatype": "wikibase-item",
+                "datavalue": {"type": "string"},
+            },
+            error_class=ValueError,
+            error_regex=r"non-item",
+        ),
+        dict(
+            testcase_name="entity_type_not_item",
+            snak={
+                "snaktype": "value",
+                "datatype": "wikibase-item",
+                "datavalue": {
+                    "type": "wikibase-entityid",
+                    "value": {"entity-type": "foo"},
+                },
+            },
+            error_class=ValueError,
+            error_regex=r"non-item",
+        ),
+    )
+    def test_parse_snak_item_error(
+        self,
+        *,
+        snak: Any,
+        error_class: type[Exception],
+        error_regex: str,
+    ) -> None:
+        with self.assertRaisesRegex(error_class, error_regex):
+            wikidata._parse_snak_item(snak)
+
+    def test_parse_snak_item(self) -> None:
+        self.assertEqual(
+            wikidata_value.Item("Q1"),
+            wikidata._parse_snak_item(_snak_item("Q1")),
         )
 
     @parameterized.named_parameters(

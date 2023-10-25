@@ -72,6 +72,20 @@ def _truthy_statements(
     )
 
 
+def _parse_snak_item(snak: Any) -> wikidata_value.Item:
+    if snak["snaktype"] != "value":
+        raise NotImplementedError(
+            f"Cannot parse non-value snak as an item: {snak}"
+        )
+    if (
+        snak["datatype"] != "wikibase-item"
+        or snak["datavalue"]["type"] != "wikibase-entityid"
+        or snak["datavalue"]["value"]["entity-type"] != "item"
+    ):
+        raise ValueError(f"Cannot parse non-item snak as a item: {snak}")
+    return wikidata_value.Item(snak["datavalue"]["value"]["id"])
+
+
 def _parse_snak_time(snak: Any) -> tuple[datetime.datetime, datetime.datetime]:
     """Returns (earliest possible time, latest possible time) of a time snak."""
     # https://doc.wikimedia.org/Wikibase/master/php/docs_topics_json.html#json_datavalues_time
