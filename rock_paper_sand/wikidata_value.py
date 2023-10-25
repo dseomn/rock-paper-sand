@@ -22,7 +22,12 @@ import re
 from typing import Self
 
 
-def _parse_id(value: str, *, prefixes: Collection[str], letter: str) -> str:
+def _parse_id(
+    value: str,
+    *,
+    prefixes: Collection[str] = ("",),
+    letter: str,
+) -> str:
     """Returns a parsed Wikidata ID.
 
     Args:
@@ -61,6 +66,9 @@ class Item:
 
     id: str
 
+    def __post_init__(self) -> None:
+        _parse_id(self.id, letter="Q")
+
     @classmethod
     def from_string(cls, value: str) -> Self:
         """Returns the item parsed from a string."""
@@ -91,6 +99,9 @@ class Property:
     """
 
     id: str
+
+    def __post_init__(self) -> None:
+        _parse_id(self.id, letter="P")
 
 
 P_DATE_OF_FIRST_PERFORMANCE = Property("P1191")

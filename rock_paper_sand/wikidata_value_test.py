@@ -21,6 +21,10 @@ from rock_paper_sand import wikidata_value
 
 
 class WikidataValueTest(parameterized.TestCase):
+    def test_invalid_item_id(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Wikidata IRI or ID"):
+            wikidata_value.Item("foo")
+
     @parameterized.parameters(
         "foo",
         "Q",
@@ -34,7 +38,7 @@ class WikidataValueTest(parameterized.TestCase):
         "https://www.wikidata.org/wiki/Q",
         "https://www.wikidata.org/wiki/Q1foo",
     )
-    def test_invalid_item_id(self, value: str) -> None:
+    def test_invalid_item_string(self, value: str) -> None:
         with self.assertRaisesRegex(ValueError, "Wikidata IRI or ID"):
             wikidata_value.Item.from_string(value)
 
@@ -42,7 +46,7 @@ class WikidataValueTest(parameterized.TestCase):
         ("Q1", "Q1"),
         ("https://www.wikidata.org/wiki/Q1", "Q1"),
     )
-    def test_valid_item_id(self, value: str, expected_id: str) -> None:
+    def test_valid_item_string(self, value: str, expected_id: str) -> None:
         self.assertEqual(expected_id, wikidata_value.Item.from_string(value).id)
 
     def test_item_uri(self) -> None:
@@ -50,6 +54,10 @@ class WikidataValueTest(parameterized.TestCase):
             "http://www.wikidata.org/entity/Q1",
             wikidata_value.Item("Q1").uri,
         )
+
+    def test_invalid_property_id(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Wikidata IRI or ID"):
+            wikidata_value.Property("foo")
 
 
 if __name__ == "__main__":
