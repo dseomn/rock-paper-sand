@@ -122,6 +122,7 @@ class Property:
 _p = Property.from_string
 P_DATE_OF_FIRST_PERFORMANCE = _p("https://www.wikidata.org/wiki/Property:P1191")
 P_END_TIME = _p("https://www.wikidata.org/wiki/Property:P582")
+P_INSTANCE_OF = _p("https://www.wikidata.org/wiki/Property:P31")
 P_PUBLICATION_DATE = _p("https://www.wikidata.org/wiki/Property:P577")
 P_START_TIME = _p("https://www.wikidata.org/wiki/Property:P580")
 del _p

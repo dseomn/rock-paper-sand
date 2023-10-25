@@ -135,6 +135,34 @@ class WikidataApiTest(parameterized.TestCase):
             self._mock_session.mock_calls,
         )
 
+    def test_item_classes(self) -> None:
+        self._mock_session.get.return_value.json.return_value = {
+            "entities": {
+                "Q1": {
+                    "claims": {
+                        wikidata_value.P_INSTANCE_OF.id: [
+                            {"rank": "normal", "mainsnak": _snak_item("Q2")},
+                            {"rank": "normal", "mainsnak": _snak_item("Q3")},
+                        ],
+                    }
+                }
+            }
+        }
+
+        first_result = self._api.item_classes(wikidata_value.Item("Q1"))
+        second_result = self._api.item_classes(wikidata_value.Item("Q1"))
+
+        expected_classes = {
+            wikidata_value.Item("Q2"),
+            wikidata_value.Item("Q3"),
+        }
+        self.assertEqual(expected_classes, first_result)
+        self.assertEqual(expected_classes, second_result)
+        # Note that this only happens once because the second time is cached.
+        self._mock_session.get.assert_called_once_with(
+            "https://www.wikidata.org/wiki/Special:EntityData/Q1.json"
+        )
+
 
 class WikidataUtilsTest(parameterized.TestCase):
     # pylint: disable=protected-access

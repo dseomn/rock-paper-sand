@@ -13,7 +13,7 @@
 # limitations under the License.
 """Code that uses Wikidata's APIs."""
 
-from collections.abc import Generator, Iterable, Sequence
+from collections.abc import Generator, Iterable, Sequence, Set
 import contextlib
 import datetime
 import re
@@ -184,6 +184,9 @@ class Api:
     ) -> None:
         self._session = session
         self._item_by_id: dict[wikidata_value.Item, Any] = {}
+        self._item_classes: (
+            dict[wikidata_value.Item, Set[wikidata_value.Item]]
+        ) = {}
 
     def item(self, item_id: wikidata_value.Item) -> Any:
         """Returns an item in full JSON format."""
@@ -204,6 +207,19 @@ class Api:
         )
         response.raise_for_status()
         return response.json()["results"]["bindings"]
+
+    def item_classes(
+        self, item_id: wikidata_value.Item
+    ) -> Set[wikidata_value.Item]:
+        """Returns the classes that the item is an instance of."""
+        if item_id not in self._item_classes:
+            self._item_classes[item_id] = frozenset(
+                _parse_snak_item(statement["mainsnak"])
+                for statement in _truthy_statements(
+                    self.item(item_id), wikidata_value.P_INSTANCE_OF
+                )
+            )
+        return self._item_classes[item_id]
 
 
 def _release_status(
