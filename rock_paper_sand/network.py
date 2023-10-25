@@ -14,6 +14,7 @@
 """Utilities for accessing network resources."""
 
 from collections.abc import Collection, Mapping
+import importlib.metadata
 import os.path
 from typing import Any
 
@@ -23,6 +24,13 @@ import requests_cache
 import urllib3.util
 
 from rock_paper_sand import flags_and_constants
+
+
+def _user_agent() -> str:
+    parts = ["rock-paper-sand/0", "(https://github.com/dseomn/rock-paper-sand)"]
+    for package in ("requests", "requests-cache", "urllib3"):
+        parts.append(f"{package}/{importlib.metadata.version(package)}")
+    return " ".join(parts)
 
 
 def requests_cache_defaults() -> Mapping[str, Any]:
@@ -78,9 +86,7 @@ def configure_session(
     )
     session.mount("http://", http_adapter)
     session.mount("https://", http_adapter)
-    session.headers[
-        "User-Agent"
-    ] = "rock_paper_sand/0 https://github.com/dseomn/rock-paper-sand"
+    session.headers["User-Agent"] = _user_agent()
 
 
 def null_requests_session() -> requests.Session:
