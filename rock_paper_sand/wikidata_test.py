@@ -74,6 +74,10 @@ def _snak_time(time: str, *, precision: int = _PRECISION_DAY) -> Any:
     }
 
 
+def _sparql_item(item_id: str) -> Any:
+    return {"type": "uri", "value": f"http://www.wikidata.org/entity/{item_id}"}
+
+
 class WikidataSessionTest(parameterized.TestCase):
     def test_session(self) -> None:
         # For now this is basicaly just a smoke test, because it's probably not
@@ -552,9 +556,7 @@ class WikidataUtilsTest(parameterized.TestCase):
     def test_parse_sparql_result_item(self) -> None:
         self.assertEqual(
             wikidata_value.Item("Q1"),
-            wikidata._parse_sparql_result_item(
-                {"type": "uri", "value": "http://www.wikidata.org/entity/Q1"}
-            ),
+            wikidata._parse_sparql_result_item(_sparql_item("Q1")),
         )
 
 
