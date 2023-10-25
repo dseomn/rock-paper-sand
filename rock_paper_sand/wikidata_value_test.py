@@ -59,6 +59,15 @@ class WikidataValueTest(parameterized.TestCase):
         with self.assertRaisesRegex(ValueError, "Wikidata IRI or ID"):
             wikidata_value.Property("foo")
 
+    @parameterized.parameters(
+        ("P6", "P6"),
+        ("https://www.wikidata.org/wiki/Property:P6", "P6"),
+    )
+    def test_valid_property_string(self, value: str, expected_id: str) -> None:
+        self.assertEqual(
+            expected_id, wikidata_value.Property.from_string(value).id
+        )
+
 
 if __name__ == "__main__":
     absltest.main()

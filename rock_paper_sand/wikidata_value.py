@@ -89,6 +89,8 @@ class Item:
 Q_GREGORIAN_CALENDAR = Item("Q12138")
 Q_PROLEPTIC_GREGORIAN_CALENDAR = Item("Q1985727")
 
+_PROPERTY_PREFIX_FOR_HUMAN = "https://www.wikidata.org/wiki/Property:"
+
 
 @dataclasses.dataclass(frozen=True)
 class Property:
@@ -102,6 +104,17 @@ class Property:
 
     def __post_init__(self) -> None:
         _parse_id(self.id, letter="P")
+
+    @classmethod
+    def from_string(cls, value: str) -> Self:
+        """Returns the property parsed from a string."""
+        return cls(
+            _parse_id(
+                value,
+                prefixes=("", _PROPERTY_PREFIX_FOR_HUMAN),
+                letter="P",
+            )
+        )
 
 
 P_DATE_OF_FIRST_PERFORMANCE = Property("P1191")
