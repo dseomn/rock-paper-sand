@@ -174,6 +174,12 @@ def _parse_statement_time(
             )
 
 
+def _parse_sparql_result_item(term: Any) -> wikidata_value.Item:
+    if term["type"] != "uri":
+        raise ValueError(f"Cannot parse non-uri term as an item: {term}")
+    return wikidata_value.Item.from_uri(term["value"])
+
+
 class Api:
     """Wrapper around Wikidata APIs."""
 

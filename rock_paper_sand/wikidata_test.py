@@ -545,6 +545,18 @@ class WikidataUtilsTest(parameterized.TestCase):
             ),
         )
 
+    def test_parse_sparql_result_item_error(self) -> None:
+        with self.assertRaisesRegex(ValueError, "non-uri"):
+            wikidata._parse_sparql_result_item({"type": "literal"})
+
+    def test_parse_sparql_result_item(self) -> None:
+        self.assertEqual(
+            wikidata_value.Item("Q1"),
+            wikidata._parse_sparql_result_item(
+                {"type": "uri", "value": "http://www.wikidata.org/entity/Q1"}
+            ),
+        )
+
 
 class WikidataFilterTest(parameterized.TestCase):
     def setUp(self) -> None:
