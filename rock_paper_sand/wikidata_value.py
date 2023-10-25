@@ -85,6 +85,13 @@ class Item:
         """
         return f"{_ITEM_PREFIX_CANONICAL_URI}{self.id}"
 
+    @classmethod
+    def from_uri(cls, value: str) -> Self:
+        """Returns the item parsed from its canonical URI."""
+        return cls(
+            _parse_id(value, prefixes=(_ITEM_PREFIX_CANONICAL_URI,), letter="Q")
+        )
+
 
 _i = Item.from_string
 Q_GREGORIAN_CALENDAR = _i("https://www.wikidata.org/wiki/Q12138")

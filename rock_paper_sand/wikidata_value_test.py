@@ -55,6 +55,18 @@ class WikidataValueTest(parameterized.TestCase):
             wikidata_value.Item("Q1").uri,
         )
 
+    def test_item_from_uri_invalid(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Wikidata IRI or ID"):
+            wikidata_value.Item.from_uri("Q1")
+
+    def test_item_from_uri_valid(self) -> None:
+        self.assertEqual(
+            "Q1",
+            wikidata_value.Item.from_uri(
+                "http://www.wikidata.org/entity/Q1"
+            ).id,
+        )
+
     def test_invalid_property_id(self) -> None:
         with self.assertRaisesRegex(ValueError, "Wikidata IRI or ID"):
             wikidata_value.Property("foo")
