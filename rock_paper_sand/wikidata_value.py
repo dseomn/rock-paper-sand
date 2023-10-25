@@ -86,8 +86,10 @@ class Item:
         return f"{_ITEM_PREFIX_CANONICAL_URI}{self.id}"
 
 
-Q_GREGORIAN_CALENDAR = Item("Q12138")
-Q_PROLEPTIC_GREGORIAN_CALENDAR = Item("Q1985727")
+_i = Item.from_string
+Q_GREGORIAN_CALENDAR = _i("https://www.wikidata.org/wiki/Q12138")
+Q_PROLEPTIC_GREGORIAN_CALENDAR = _i("https://www.wikidata.org/wiki/Q1985727")
+del _i
 
 _PROPERTY_PREFIX_FOR_HUMAN = "https://www.wikidata.org/wiki/Property:"
 
@@ -117,7 +119,9 @@ class Property:
         )
 
 
-P_DATE_OF_FIRST_PERFORMANCE = Property("P1191")
-P_END_TIME = Property("P582")
-P_PUBLICATION_DATE = Property("P577")
-P_START_TIME = Property("P580")
+_p = Property.from_string
+P_DATE_OF_FIRST_PERFORMANCE = _p("https://www.wikidata.org/wiki/Property:P1191")
+P_END_TIME = _p("https://www.wikidata.org/wiki/Property:P582")
+P_PUBLICATION_DATE = _p("https://www.wikidata.org/wiki/Property:P577")
+P_START_TIME = _p("https://www.wikidata.org/wiki/Property:P580")
+del _p
