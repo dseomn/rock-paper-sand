@@ -13,8 +13,10 @@
 # limitations under the License.
 """Code that uses Wikidata's APIs."""
 
+import collections
 from collections.abc import Generator, Iterable, Sequence, Set
 import contextlib
+import dataclasses
 import datetime
 import re
 import typing
@@ -188,6 +190,41 @@ def _parse_sparql_result_string(term: Any) -> str:
     return term["value"]
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class RelatedMedia:
+    """Media or media groups related to a media item.
+
+    Attributes:
+        parents: Parents of the item, e.g., a book series that the item is
+            included in.
+        siblings: Siblings of the item, e.g., sequels and prequels.
+        children: Children of the item, e.g., a book that the book series item
+            includes.
+        loose: More loosely related items, e.g., a work that the item was based
+            on but is not necessarily a sequel to.
+    """
+
+    parents: Set[wikidata_value.Item]
+    siblings: Set[wikidata_value.Item]
+    children: Set[wikidata_value.Item]
+    loose: Set[wikidata_value.Item]
+
+
+_PARENT_PROPERTIES = (
+    wikidata_value.P_PART_OF,
+    wikidata_value.P_PART_OF_THE_SERIES,
+)
+_SIBLING_PROPERTIES = (
+    wikidata_value.P_FOLLOWED_BY,
+    wikidata_value.P_FOLLOWS,
+)
+_CHILD_PROPERTIES = (wikidata_value.P_HAS_PARTS,)
+_LOOSE_PROPERTIES = (
+    wikidata_value.P_BASED_ON,
+    wikidata_value.P_DERIVATIVE_WORK,
+)
+
+
 class Api:
     """Wrapper around Wikidata APIs."""
 
@@ -204,6 +241,7 @@ class Api:
         self._transitive_subclasses: (
             dict[wikidata_value.Item, Set[wikidata_value.Item]]
         ) = {}
+        self._related_media: dict[wikidata_value.Item, RelatedMedia] = {}
 
     def item(self, item_id: wikidata_value.Item) -> Any:
         """Returns an item in full JSON format."""
@@ -253,6 +291,81 @@ class Api:
                 _parse_sparql_result_item(result["class"]) for result in results
             )
         return self._transitive_subclasses[class_id]
+
+    def related_media(self, item_id: wikidata_value.Item) -> RelatedMedia:
+        """Returns related media."""
+        if item_id not in self._related_media:
+            predicate_by_relation = {
+                "parent": "|".join(
+                    (
+                        *(f"wdt:{p.id}" for p in _PARENT_PROPERTIES),
+                        *(f"^wdt:{p.id}" for p in _CHILD_PROPERTIES),
+                    )
+                ),
+                "sibling": "|".join(
+                    f"wdt:{p.id}|^wdt:{p.id}" for p in _SIBLING_PROPERTIES
+                ),
+                "child": "|".join(
+                    (
+                        *(f"wdt:{p.id}" for p in _CHILD_PROPERTIES),
+                        *(f"^wdt:{p.id}" for p in _PARENT_PROPERTIES),
+                    )
+                ),
+                "loose": "|".join(
+                    f"wdt:{p.id}|^wdt:{p.id}" for p in _LOOSE_PROPERTIES
+                ),
+            }
+            instance_of = wikidata_value.P_INSTANCE_OF.id
+            query = " ".join(
+                (
+                    "SELECT REDUCED ?item ?relation ?class WHERE {",
+                    " UNION ".join(
+                        (
+                            "{ "
+                            f"wd:{item_id.id} ({predicate}) ?item. "
+                            f'BIND ("{relation}" AS ?relation) '
+                            "}"
+                        )
+                        for relation, predicate in predicate_by_relation.items()
+                    ),
+                    f"OPTIONAL {{ ?item wdt:{instance_of} ?class. }}",
+                    "}",
+                )
+            )
+            results = self.sparql(query)
+            item_classes: (
+                collections.defaultdict[
+                    wikidata_value.Item, set[wikidata_value.Item]
+                ]
+            ) = collections.defaultdict(set)
+            items_by_relation: (
+                collections.defaultdict[str, set[wikidata_value.Item]]
+            ) = collections.defaultdict(set)
+            for result in results:
+                related_item = _parse_sparql_result_item(result["item"])
+                related_item_classes = item_classes[related_item]
+                if "class" in result:
+                    related_item_classes.add(
+                        _parse_sparql_result_item(result["class"])
+                    )
+                items_by_relation[
+                    _parse_sparql_result_string(result["relation"])
+                ].add(related_item)
+            for related_item, classes in item_classes.items():
+                self._item_classes.setdefault(related_item, frozenset(classes))
+            related_media = RelatedMedia(
+                parents=frozenset(items_by_relation.pop("parent", ())),
+                siblings=frozenset(items_by_relation.pop("sibling", ())),
+                children=frozenset(items_by_relation.pop("child", ())),
+                loose=frozenset(items_by_relation.pop("loose", ())),
+            )
+            if items_by_relation:
+                raise ValueError(
+                    "Unexpected media relation types: "
+                    f"{list(items_by_relation)}"
+                )
+            self._related_media[item_id] = related_media
+        return self._related_media[item_id]
 
 
 def _release_status(

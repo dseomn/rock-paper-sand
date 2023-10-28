@@ -14,7 +14,7 @@
 
 # pylint: disable=missing-module-docstring
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 import datetime
 from typing import Any
 from unittest import mock
@@ -196,6 +196,124 @@ class WikidataApiTest(parameterized.TestCase):
         self.assertEqual(expected_subclasses, second_result)
         # Note that this only happens once because the second time is cached.
         self._mock_session.get.assert_called_once()
+
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="no_results",
+            sparql_results=[],
+            expected_result=dict(
+                parents=(),
+                siblings=(),
+                children=(),
+                loose=(),
+            ),
+            expected_cached_classes={},
+        ),
+        dict(
+            testcase_name="with_results",
+            sparql_results=[
+                {
+                    "item": _sparql_item("Q2"),
+                    "relation": _sparql_string("parent"),
+                },
+                {
+                    "item": _sparql_item("Q3"),
+                    "relation": _sparql_string("sibling"),
+                    "class": _sparql_item("Q31"),
+                },
+                {
+                    "item": _sparql_item("Q3"),
+                    "relation": _sparql_string("sibling"),
+                    "class": _sparql_item("Q31"),
+                },
+                {
+                    "item": _sparql_item("Q3"),
+                    "relation": _sparql_string("sibling"),
+                    "class": _sparql_item("Q32"),
+                },
+                {
+                    "item": _sparql_item("Q4"),
+                    "relation": _sparql_string("child"),
+                },
+                {
+                    "item": _sparql_item("Q5"),
+                    "relation": _sparql_string("child"),
+                },
+                {
+                    "item": _sparql_item("Q4"),
+                    "relation": _sparql_string("loose"),
+                },
+            ],
+            expected_result=dict(
+                parents=("Q2",),
+                siblings=("Q3",),
+                children=("Q4", "Q5"),
+                loose=("Q4",),
+            ),
+            expected_cached_classes={
+                "Q2": (),
+                "Q3": ("Q31", "Q32"),
+                "Q4": (),
+                "Q5": (),
+            },
+        ),
+    )
+    def test_related_media(
+        self,
+        *,
+        sparql_results: list[Any],
+        expected_result: Mapping[str, Collection[str]],
+        expected_cached_classes: Mapping[str, Collection[str]],
+    ) -> None:
+        self._mock_session.get.return_value.json.return_value = {
+            "results": {"bindings": sparql_results}
+        }
+
+        first_result = self._api.related_media(wikidata_value.Item("Q1"))
+        second_result = self._api.related_media(wikidata_value.Item("Q1"))
+        actual_classes = {
+            item: self._api.item_classes(item)
+            for item in {
+                *first_result.parents,
+                *first_result.siblings,
+                *first_result.children,
+                *first_result.loose,
+            }
+        }
+
+        expected_related_media = wikidata.RelatedMedia(
+            **{
+                key: frozenset(map(wikidata_value.Item, values))
+                for key, values in expected_result.items()
+            }
+        )
+        expected_classes = {
+            wikidata_value.Item(item_id): frozenset(
+                map(wikidata_value.Item, classes)
+            )
+            for item_id, classes in expected_cached_classes.items()
+        }
+        self.assertEqual(expected_related_media, first_result)
+        self.assertEqual(expected_related_media, second_result)
+        self.assertEqual(expected_classes, actual_classes)
+        # Note that this only happens once because the second related_media()
+        # call and all the item_classes() calls are cached.
+        self._mock_session.get.assert_called_once()
+
+    def test_related_media_error(self) -> None:
+        self._mock_session.get.return_value.json.return_value = {
+            "results": {
+                "bindings": [
+                    {
+                        "item": _sparql_item("Q2"),
+                        "relation": _sparql_string("kumquat"),
+                    }
+                ]
+            }
+        }
+
+        with self.assertRaisesRegex(ValueError, "kumquat"):
+            self._api.related_media(wikidata_value.Item("Q1"))
 
 
 class WikidataUtilsTest(parameterized.TestCase):

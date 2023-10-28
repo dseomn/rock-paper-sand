@@ -127,9 +127,16 @@ class Property:
 
 
 _p = Property.from_string
+P_BASED_ON = _p("https://www.wikidata.org/wiki/Property:P144")
 P_DATE_OF_FIRST_PERFORMANCE = _p("https://www.wikidata.org/wiki/Property:P1191")
+P_DERIVATIVE_WORK = _p("https://www.wikidata.org/wiki/Property:P4969")
 P_END_TIME = _p("https://www.wikidata.org/wiki/Property:P582")
+P_FOLLOWED_BY = _p("https://www.wikidata.org/wiki/Property:P156")
+P_FOLLOWS = _p("https://www.wikidata.org/wiki/Property:P155")
+P_HAS_PARTS = _p("https://www.wikidata.org/wiki/Property:P527")
 P_INSTANCE_OF = _p("https://www.wikidata.org/wiki/Property:P31")
+P_PART_OF = _p("https://www.wikidata.org/wiki/Property:P361")
+P_PART_OF_THE_SERIES = _p("https://www.wikidata.org/wiki/Property:P179")
 P_PUBLICATION_DATE = _p("https://www.wikidata.org/wiki/Property:P577")
 P_START_TIME = _p("https://www.wikidata.org/wiki/Property:P580")
 P_SUBCLASS_OF = _p("https://www.wikidata.org/wiki/Property:P279")
