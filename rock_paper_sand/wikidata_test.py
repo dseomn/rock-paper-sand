@@ -78,6 +78,10 @@ def _sparql_item(item_id: str) -> Any:
     return {"type": "uri", "value": f"http://www.wikidata.org/entity/{item_id}"}
 
 
+def _sparql_string(value: str) -> Any:
+    return {"type": "literal", "value": value}
+
+
 class WikidataSessionTest(parameterized.TestCase):
     def test_session(self) -> None:
         # For now this is basicaly just a smoke test, because it's probably not
@@ -583,6 +587,37 @@ class WikidataUtilsTest(parameterized.TestCase):
         self.assertEqual(
             wikidata_value.Item("Q1"),
             wikidata._parse_sparql_result_item(_sparql_item("Q1")),
+        )
+
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="not_literal",
+            term={"type": "uri"},
+            error_regex=r"non-literal",
+        ),
+        dict(
+            testcase_name="not_plain",
+            term={
+                "type": "literal",
+                "value": "Alice",
+                "datatype": "https://example.com/person",
+            },
+            error_regex=r"non-plain",
+        ),
+    )
+    def test_parse_sparql_result_string_error(
+        self,
+        *,
+        term: Any,
+        error_regex: str,
+    ) -> None:
+        with self.assertRaisesRegex(ValueError, error_regex):
+            wikidata._parse_sparql_result_string(term)
+
+    def test_parse_sparql_result_string(self) -> None:
+        self.assertEqual(
+            "foo",
+            wikidata._parse_sparql_result_string(_sparql_string("foo")),
         )
 
 

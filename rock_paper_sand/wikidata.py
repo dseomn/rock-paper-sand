@@ -180,6 +180,14 @@ def _parse_sparql_result_item(term: Any) -> wikidata_value.Item:
     return wikidata_value.Item.from_uri(term["value"])
 
 
+def _parse_sparql_result_string(term: Any) -> str:
+    if term["type"] != "literal":
+        raise ValueError(f"Cannot parse non-literal term as a string: {term}")
+    if term.keys() & {"datatype", "xml:lang"}:
+        raise ValueError(f"Cannot parse non-plain literal as a string: {term}")
+    return term["value"]
+
+
 class Api:
     """Wrapper around Wikidata APIs."""
 
