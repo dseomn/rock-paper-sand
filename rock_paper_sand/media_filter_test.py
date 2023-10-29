@@ -67,6 +67,26 @@ class MediaFilterTest(parameterized.TestCase):
 
     @parameterized.named_parameters(
         dict(
+            testcase_name="default",
+            result_extra=media_filter.ResultExtra(foo="bar"),
+            human_readable=None,
+        ),
+        dict(
+            testcase_name="string",
+            result_extra=media_filter.ResultExtraString("some-string"),
+            human_readable="some-string",
+        ),
+    )
+    def test_result_extra_human_readable(
+        self,
+        *,
+        result_extra: media_filter.ResultExtra,
+        human_readable: str | None,
+    ) -> None:
+        self.assertEqual(human_readable, result_extra.human_readable())
+
+    @parameterized.named_parameters(
+        dict(
             testcase_name="all",
             filter_config={"all": {}},
             expected_result=media_filter.FilterResult(True),

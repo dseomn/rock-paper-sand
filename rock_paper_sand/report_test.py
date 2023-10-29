@@ -63,15 +63,6 @@ class _FirstWordIsNotNo(media_filter.Filter):
         )
 
 
-class _ResultExtraStr(media_filter.ResultExtra):
-    def __init__(self, extra_str: str) -> None:
-        super().__init__({"str": extra_str})
-
-    def human_readable(self) -> str | None:
-        """See base class."""
-        return self["str"]
-
-
 class ReportTest(parameterized.TestCase):
     @parameterized.named_parameters(
         dict(
@@ -294,7 +285,9 @@ class ReportTest(parameterized.TestCase):
         )
         filter_registry.register(
             "extra-with-str",
-            _ExtraInfoFilter({_ResultExtraStr("example extra info")}),
+            _ExtraInfoFilter(
+                {media_filter.ResultExtraString("example extra info")}
+            ),
         )
         filter_registry.register("first-word-is-not-no", _FirstWordIsNotNo())
         report_ = report.Report(

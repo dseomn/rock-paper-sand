@@ -71,6 +71,17 @@ class ResultExtra(immutabledict.immutabledict[str, Any]):
         return None
 
 
+class ResultExtraString(ResultExtra):
+    """Simple ResultExtra implementation for strings with no additional data."""
+
+    def __init__(self, human_readable: str, /) -> None:
+        super().__init__({"_result_extra_string": human_readable})
+
+    def human_readable(self) -> str | None:
+        """See base class."""
+        return self["_result_extra_string"]
+
+
 @dataclasses.dataclass(frozen=True)
 class FilterResult:
     """Result from running a filter on an item of media.
