@@ -53,6 +53,7 @@ class MediaItemTest(parameterized.TestCase):
                 custom_data={"a": "b"},
                 done=mock.ANY,
                 wikidata_item=wikidata_value.Item("Q1"),
+                has_parent=False,
                 parts=(
                     media_item.MediaItem(
                         id=mock.ANY,
@@ -64,6 +65,7 @@ class MediaItemTest(parameterized.TestCase):
                         custom_data=None,
                         done=mock.ANY,
                         wikidata_item=None,
+                        has_parent=True,
                         parts=(),
                     ),
                 ),

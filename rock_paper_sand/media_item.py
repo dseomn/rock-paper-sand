@@ -41,6 +41,8 @@ class MediaItem:
         custom_data: Parsed proto.custom_data field, or None.
         done: Parsed proto.done field.
         wikidata_item: Wikidata item, or None.
+        has_parent: Whether or not this item appears in the `parts` field of
+            another item.
         parts: Parsed proto.parts field.
     """
 
@@ -54,6 +56,7 @@ class MediaItem:
     custom_data: Any
     done: multi_level_set.MultiLevelSet
     wikidata_item: wikidata_value.Item | None
+    has_parent: bool
     parts: Sequence["MediaItem"]
 
     @classmethod
@@ -115,6 +118,7 @@ class MediaItem:
                     if proto.wikidata
                     else None
                 ),
+                has_parent=parent_fully_qualified_name is not None,
                 parts=parts,
             )
 
