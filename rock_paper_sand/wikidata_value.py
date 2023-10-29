@@ -69,6 +69,9 @@ class Item:
     def __post_init__(self) -> None:
         _parse_id(self.id, letter="Q")
 
+    def __str__(self) -> str:
+        return f"{_ITEM_PREFIX_FOR_HUMAN}{self.id}"
+
     @classmethod
     def from_string(cls, value: str) -> Self:
         """Returns the item parsed from a string."""

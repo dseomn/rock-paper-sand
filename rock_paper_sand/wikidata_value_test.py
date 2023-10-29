@@ -25,6 +25,12 @@ class WikidataValueTest(parameterized.TestCase):
         with self.assertRaisesRegex(ValueError, "Wikidata IRI or ID"):
             wikidata_value.Item("foo")
 
+    def test_item_string(self) -> None:
+        self.assertEqual(
+            "https://www.wikidata.org/wiki/Q1",
+            str(wikidata_value.Item("Q1")),
+        )
+
     @parameterized.parameters(
         "foo",
         "Q",
