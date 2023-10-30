@@ -438,11 +438,12 @@ class Filter(media_filter.CachedFilter):
         ):
             if request.item.wikidata_item is None:
                 return media_filter.FilterResult(False)
-            item = self._api.item(request.item.wikidata_item)
-            if (
-                self._config.release_statuses
-                and _release_status(item, now=request.now)
-                not in self._config.release_statuses
-            ):
-                return media_filter.FilterResult(False)
-            return media_filter.FilterResult(True)
+            extra_information: set[media_filter.ResultExtra] = set()
+            if self._config.release_statuses:
+                item = self._api.item(request.item.wikidata_item)
+                if (
+                    _release_status(item, now=request.now)
+                    not in self._config.release_statuses
+                ):
+                    return media_filter.FilterResult(False)
+            return media_filter.FilterResult(True, extra=extra_information)
