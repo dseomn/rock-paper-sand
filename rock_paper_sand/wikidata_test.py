@@ -757,28 +757,28 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="no_match_conditions",
             filter_config={},
             item={"name": "foo", "wikidata": "Q1"},
-            api_data={"Q1": {}},
+            api_items={"Q1": {}},
             expected_result=media_filter.FilterResult(True),
         ),
         dict(
             testcase_name="release_statuses_no_match",
             filter_config={"releaseStatuses": ["RELEASED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_data={"Q1": {"claims": {}}},
+            api_items={"Q1": {"claims": {}}},
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
             testcase_name="release_statuses_unknown",
             filter_config={"releaseStatuses": ["RELEASE_STATUS_UNSPECIFIED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_data={"Q1": {"claims": {}}},
+            api_items={"Q1": {"claims": {}}},
             expected_result=media_filter.FilterResult(True),
         ),
         dict(
             testcase_name="release_statuses_before_range",
             filter_config={"releaseStatuses": ["UNRELEASED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_data={
+            api_items={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_START_TIME.id: [
@@ -802,7 +802,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_before_start",
             filter_config={"releaseStatuses": ["UNRELEASED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_data={
+            api_items={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_START_TIME.id: [
@@ -820,7 +820,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_in_range",
             filter_config={"releaseStatuses": ["ONGOING"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_data={
+            api_items={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_START_TIME.id: [
@@ -844,7 +844,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_after_start",
             filter_config={"releaseStatuses": ["ONGOING"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_data={
+            api_items={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_START_TIME.id: [
@@ -862,7 +862,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_before_end",
             filter_config={"releaseStatuses": ["ONGOING"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_data={
+            api_items={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_END_TIME.id: [
@@ -880,7 +880,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_after_range",
             filter_config={"releaseStatuses": ["RELEASED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_data={
+            api_items={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_START_TIME.id: [
@@ -904,7 +904,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_after_end",
             filter_config={"releaseStatuses": ["RELEASED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_data={
+            api_items={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_END_TIME.id: [
@@ -922,7 +922,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_before_release",
             filter_config={"releaseStatuses": ["UNRELEASED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_data={
+            api_items={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_PUBLICATION_DATE.id: [
@@ -940,7 +940,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_after_release",
             filter_config={"releaseStatuses": ["RELEASED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_data={
+            api_items={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_PUBLICATION_DATE.id: [
@@ -960,10 +960,10 @@ class WikidataFilterTest(parameterized.TestCase):
         *,
         filter_config: Any,
         item: Any,
-        api_data: Mapping[str, Any] = immutabledict.immutabledict(),
+        api_items: Mapping[str, Any] = immutabledict.immutabledict(),
         expected_result: media_filter.FilterResult,
     ) -> None:
-        self._mock_api.item.side_effect = lambda item_id: api_data[item_id.id]
+        self._mock_api.item.side_effect = lambda item_id: api_items[item_id.id]
         test_filter = wikidata.Filter(
             json_format.ParseDict(filter_config, config_pb2.WikidataFilter()),
             api=self._mock_api,
