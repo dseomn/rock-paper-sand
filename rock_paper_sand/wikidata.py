@@ -18,6 +18,7 @@ from collections.abc import Generator, Iterable, Sequence, Set
 import contextlib
 import dataclasses
 import datetime
+import pprint
 import re
 import typing
 from typing import Any
@@ -28,6 +29,7 @@ import requests_cache
 
 from rock_paper_sand import exceptions
 from rock_paper_sand import media_filter
+from rock_paper_sand import media_item
 from rock_paper_sand import network
 from rock_paper_sand import wikidata_value
 from rock_paper_sand.proto import config_pb2
@@ -428,6 +430,60 @@ class Filter(media_filter.CachedFilter):
         self._config = filter_config
         self._api = api
 
+    def _related_media(
+        self, request: media_filter.FilterRequest
+    ) -> Set[media_filter.ResultExtra]:
+        if request.item.has_parent:
+            return frozenset()
+        items_from_config = frozenset(
+            item.wikidata_item
+            for item in media_item.iter_all_items((request.item,))
+            if item.wikidata_item is not None
+        )
+        assert request.item.wikidata_item is not None  # Already checked.
+        unprocessed: set[wikidata_value.Item] = {request.item.wikidata_item}
+        processed: set[wikidata_value.Item] = set()
+        loose: set[wikidata_value.Item] = set()
+        while unprocessed:
+            if len(unprocessed) + len(processed) > 1000:
+                processed_str = sorted(map(str, processed))
+                unprocessed_str = sorted(map(str, unprocessed))
+                raise ValueError(
+                    "Too many related media items reached from "
+                    f"{request.item.wikidata_item}:\n"
+                    f"Processed: {pprint.pformat(processed_str)}\n"
+                    f"Unprocessed: {pprint.pformat(unprocessed_str)}"
+                )
+            current = unprocessed.pop()
+            processed.add(current)
+            related = self._api.related_media(current)
+            unprocessed.update(
+                parent for parent in related.parents if parent not in processed
+            )
+            unprocessed.update(related.siblings - processed)
+            unprocessed.update(
+                child for child in related.children if child not in processed
+            )
+            loose.update(related.loose)
+            unprocessed.update((related.loose & items_from_config) - processed)
+        return {
+            *(
+                media_filter.ResultExtraString(f"related item: {item}")
+                for item in processed - items_from_config
+            ),
+            *(
+                media_filter.ResultExtraString(f"loosely-related item: {item}")
+                for item in (loose - processed - items_from_config)
+            ),
+            *(
+                media_filter.ResultExtraString(
+                    "item in config file that's not related to "
+                    f"{request.item.wikidata_item}: {item}"
+                )
+                for item in items_from_config - processed - loose
+            ),
+        }
+
     def filter_implementation(
         self, request: media_filter.FilterRequest
     ) -> media_filter.FilterResult:
@@ -446,4 +502,9 @@ class Filter(media_filter.CachedFilter):
                     not in self._config.release_statuses
                 ):
                     return media_filter.FilterResult(False)
+            if self._config.HasField("related_media"):
+                related_media_extra = self._related_media(request)
+                if not related_media_extra:
+                    return media_filter.FilterResult(False)
+                extra_information.update(related_media_extra)
             return media_filter.FilterResult(True, extra=extra_information)

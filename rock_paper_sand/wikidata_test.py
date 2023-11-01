@@ -954,16 +954,166 @@ class WikidataFilterTest(parameterized.TestCase):
             },
             expected_result=media_filter.FilterResult(True),
         ),
+        dict(
+            testcase_name="related_media_ignores_non_top_level",
+            filter_config={"relatedMedia": {}},
+            item={"name": "foo", "wikidata": "Q1"},
+            parent_fully_qualified_name="foo",
+            expected_result=media_filter.FilterResult(False),
+        ),
+        dict(
+            testcase_name="related_media_none",
+            filter_config={"relatedMedia": {}},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_related_media={
+                "Q1": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
+            },
+            expected_result=media_filter.FilterResult(False),
+        ),
+        dict(
+            testcase_name="related_media_not_loose",
+            filter_config={"relatedMedia": {}},
+            item={
+                "name": "foo",
+                "wikidata": "Q1",
+                "parts": [{"name": "bar", "wikidata": "Q4"}],
+            },
+            api_related_media={
+                "Q1": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children={
+                        wikidata_value.Item("Q2"),
+                        wikidata_value.Item("Q3"),
+                    },
+                    loose=set(),
+                ),
+                "Q2": wikidata.RelatedMedia(
+                    parents={wikidata_value.Item("Q1")},
+                    siblings={wikidata_value.Item("Q3")},
+                    children=set(),
+                    loose=set(),
+                ),
+                "Q3": wikidata.RelatedMedia(
+                    parents={wikidata_value.Item("Q1")},
+                    siblings={
+                        wikidata_value.Item("Q2"),
+                        wikidata_value.Item("Q4"),
+                    },
+                    children=set(),
+                    loose=set(),
+                ),
+                "Q4": wikidata.RelatedMedia(
+                    parents={wikidata_value.Item("Q5")},
+                    siblings={wikidata_value.Item("Q3")},
+                    children=set(),
+                    loose=set(),
+                ),
+                "Q5": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children={wikidata_value.Item("Q4")},
+                    loose=set(),
+                ),
+            },
+            expected_result=media_filter.FilterResult(
+                True,
+                extra={
+                    media_filter.ResultExtraString(
+                        "related item: https://www.wikidata.org/wiki/Q2"
+                    ),
+                    media_filter.ResultExtraString(
+                        "related item: https://www.wikidata.org/wiki/Q3"
+                    ),
+                    # Q4 is in the config, so not shown here.
+                    media_filter.ResultExtraString(
+                        "related item: https://www.wikidata.org/wiki/Q5"
+                    ),
+                },
+            ),
+        ),
+        dict(
+            testcase_name="related_media_loose",
+            filter_config={"relatedMedia": {}},
+            item={
+                "name": "foo",
+                "wikidata": "Q1",
+                "parts": [{"name": "bar", "wikidata": "Q2"}],
+            },
+            api_related_media={
+                "Q1": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    # Q2 is upgraded to non-loose, because it's also in the
+                    # config.
+                    loose={wikidata_value.Item("Q2")},
+                ),
+                "Q2": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose={wikidata_value.Item("Q3")},
+                ),
+            },
+            expected_result=media_filter.FilterResult(
+                True,
+                extra={
+                    media_filter.ResultExtraString(
+                        "loosely-related item: https://www.wikidata.org/wiki/Q3"
+                    ),
+                },
+            ),
+        ),
+        dict(
+            testcase_name="related_media_config_has_unrelated",
+            filter_config={"relatedMedia": {}},
+            item={
+                "name": "foo",
+                "wikidata": "Q1",
+                "parts": [{"name": "bar", "wikidata": "Q2"}],
+            },
+            api_related_media={
+                "Q1": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
+            },
+            expected_result=media_filter.FilterResult(
+                True,
+                extra={
+                    media_filter.ResultExtraString(
+                        "item in config file that's not related to "
+                        "https://www.wikidata.org/wiki/Q1: "
+                        "https://www.wikidata.org/wiki/Q2"
+                    ),
+                },
+            ),
+        ),
     )
     def test_filter(
         self,
         *,
         filter_config: Any,
         item: Any,
+        parent_fully_qualified_name: str | None = None,
         api_items: Mapping[str, Any] = immutabledict.immutabledict(),
+        api_related_media: Mapping[str, wikidata.RelatedMedia] = (
+            immutabledict.immutabledict()
+        ),
         expected_result: media_filter.FilterResult,
     ) -> None:
         self._mock_api.item.side_effect = lambda item_id: api_items[item_id.id]
+        self._mock_api.related_media.side_effect = (
+            lambda item_id: api_related_media[item_id.id]
+        )
         test_filter = wikidata.Filter(
             json_format.ParseDict(filter_config, config_pb2.WikidataFilter()),
             api=self._mock_api,
@@ -972,12 +1122,38 @@ class WikidataFilterTest(parameterized.TestCase):
         result = test_filter.filter(
             media_filter.FilterRequest(
                 media_item.MediaItem.from_config(
-                    json_format.ParseDict(item, config_pb2.MediaItem())
+                    json_format.ParseDict(item, config_pb2.MediaItem()),
+                    parent_fully_qualified_name=parent_fully_qualified_name,
                 )
             )
         )
 
         self.assertEqual(expected_result, result)
+
+    def test_too_many_related_items(self) -> None:
+        self._mock_api.related_media.return_value = wikidata.RelatedMedia(
+            parents=set(),
+            siblings={wikidata_value.Item(f"Q{n}") for n in range(1001)},
+            children=set(),
+            loose=set(),
+        )
+        test_filter = wikidata.Filter(
+            json_format.ParseDict(
+                {"relatedMedia": {}}, config_pb2.WikidataFilter()
+            ),
+            api=self._mock_api,
+        )
+        request = media_filter.FilterRequest(
+            media_item.MediaItem.from_config(
+                json_format.ParseDict(
+                    {"name": "foo", "wikidata": "Q99999"},
+                    config_pb2.MediaItem(),
+                )
+            )
+        )
+
+        with self.assertRaisesRegex(ValueError, "Too many related media items"):
+            test_filter.filter(request)
 
 
 if __name__ == "__main__":

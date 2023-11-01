@@ -78,6 +78,15 @@ message WikidataFilter {
 
   // If specified, only items with one of these release statuses will match.
   repeated ReleaseStatus release_statuses = 1;
+
+  // Placeholder for future options for related_media.
+  message RelatedMedia {}
+
+  // Filters for top-level media to find potential additional parts that aren't
+  // present in the config file, and existing parts that aren't related to the
+  // top-level Wikidata item. E.g., this can be used to find sequels to an item,
+  // or to find all items in a franchise.
+  RelatedMedia related_media = 2;
 }
 
 // Filters using the JustWatch API. In general, all specified/non-default fields
