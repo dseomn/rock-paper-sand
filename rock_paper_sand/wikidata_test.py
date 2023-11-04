@@ -14,7 +14,7 @@
 
 # pylint: disable=missing-module-docstring
 
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence, Set
 import datetime
 from typing import Any
 from unittest import mock
@@ -745,6 +745,9 @@ class WikidataFilterTest(parameterized.TestCase):
         self._mock_api = mock.create_autospec(
             wikidata.Api, spec_set=True, instance=True
         )
+        self._mock_api.transitive_subclasses.side_effect = lambda class_id: {
+            class_id
+        }
 
     @parameterized.named_parameters(
         dict(
@@ -983,6 +986,13 @@ class WikidataFilterTest(parameterized.TestCase):
                 "wikidata": "Q1",
                 "parts": [{"name": "bar", "wikidata": "Q4"}],
             },
+            api_item_classes={
+                "Q1": set(),
+                "Q2": set(),
+                "Q3": set(),
+                "Q4": set(),
+                "Q5": set(),
+            },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
                     parents=set(),
@@ -1097,6 +1107,115 @@ class WikidataFilterTest(parameterized.TestCase):
                 },
             ),
         ),
+        dict(
+            testcase_name="related_media_ignores_integral_children",
+            filter_config={"relatedMedia": {}},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_item_classes={
+                "Q1": set(),
+                "Q2": {wikidata_value.Q_TELEVISION_SERIES},
+                "Q21": {wikidata_value.Q_TELEVISION_SERIES_EPISODE},
+                "Q22": {
+                    wikidata_value.Q_TELEVISION_SERIES_EPISODE,
+                    wikidata_value.Q_TELEVISION_SPECIAL,
+                },
+                "Q31": {wikidata_value.Q_LITERARY_WORK},
+                "Q3": {wikidata_value.Q_LITERARY_WORK},
+            },
+            api_related_media={
+                "Q1": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children={
+                        wikidata_value.Item("Q2"),
+                        wikidata_value.Item("Q31"),
+                    },
+                    loose=set(),
+                ),
+                "Q2": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children={
+                        wikidata_value.Item("Q21"),
+                        wikidata_value.Item("Q22"),
+                    },
+                    loose=set(),
+                ),
+                "Q21": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
+                "Q22": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
+                "Q31": wikidata.RelatedMedia(
+                    parents={wikidata_value.Item("Q3")},
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
+                "Q3": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
+            },
+            expected_result=media_filter.FilterResult(
+                True,
+                extra={
+                    media_filter.ResultExtraString(
+                        "related item: https://www.wikidata.org/wiki/Q2"
+                    ),
+                    # Q21 is an integral child of Q2.
+                    media_filter.ResultExtraString(
+                        "related item: https://www.wikidata.org/wiki/Q22"
+                    ),
+                    # Q31 is an integral child of Q3.
+                    media_filter.ResultExtraString(
+                        "related item: https://www.wikidata.org/wiki/Q3"
+                    ),
+                },
+            ),
+        ),
+        dict(
+            testcase_name="related_media_does_not_traverse_collections",
+            filter_config={"relatedMedia": {}},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_item_classes={
+                "Q1": set(),
+                "Q2": {wikidata_value.Q_LIST},
+                "Q3": {wikidata_value.Q_ANTHOLOGY},
+                "Q4": set(),
+            },
+            api_related_media={
+                "Q1": wikidata.RelatedMedia(
+                    parents={wikidata_value.Item("Q2")},
+                    siblings=set(),
+                    children={wikidata_value.Item("Q3")},
+                    loose=set(),
+                ),
+                "Q3": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children={wikidata_value.Item("Q4")},
+                    loose=set(),
+                ),
+            },
+            expected_result=media_filter.FilterResult(
+                True,
+                extra={
+                    media_filter.ResultExtraString(
+                        "related item: https://www.wikidata.org/wiki/Q3"
+                    ),
+                },
+            ),
+        ),
     )
     def test_filter(
         self,
@@ -1105,12 +1224,18 @@ class WikidataFilterTest(parameterized.TestCase):
         item: Any,
         parent_fully_qualified_name: str | None = None,
         api_items: Mapping[str, Any] = immutabledict.immutabledict(),
+        api_item_classes: Mapping[str, Set[wikidata_value.Item]] = (
+            immutabledict.immutabledict()
+        ),
         api_related_media: Mapping[str, wikidata.RelatedMedia] = (
             immutabledict.immutabledict()
         ),
         expected_result: media_filter.FilterResult,
     ) -> None:
         self._mock_api.item.side_effect = lambda item_id: api_items[item_id.id]
+        self._mock_api.item_classes.side_effect = (
+            lambda item_id: api_item_classes[item_id.id]
+        )
         self._mock_api.related_media.side_effect = (
             lambda item_id: api_related_media[item_id.id]
         )
@@ -1131,6 +1256,7 @@ class WikidataFilterTest(parameterized.TestCase):
         self.assertEqual(expected_result, result)
 
     def test_too_many_related_items(self) -> None:
+        self._mock_api.item_classes.return_value = set()
         self._mock_api.related_media.return_value = wikidata.RelatedMedia(
             parents=set(),
             siblings={wikidata_value.Item(f"Q{n}") for n in range(1001)},

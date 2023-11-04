@@ -417,6 +417,20 @@ def _release_status(
     return config_pb2.WikidataFilter.ReleaseStatus.RELEASE_STATUS_UNSPECIFIED
 
 
+_POSSIBLE_TV_SPECIAL = frozenset(
+    (
+        wikidata_value.Q_TELEVISION_FILM,
+        wikidata_value.Q_TELEVISION_SPECIAL,
+    )
+)
+_TV_EPISODE_PARENTS = frozenset(
+    (
+        wikidata_value.Q_TELEVISION_SERIES,
+        wikidata_value.Q_TELEVISION_SERIES_SEASON,
+    )
+)
+
+
 class Filter(media_filter.CachedFilter):
     """Filter based on Wikidata APIs."""
 
@@ -429,6 +443,37 @@ class Filter(media_filter.CachedFilter):
         super().__init__()
         self._config = filter_config
         self._api = api
+
+    def _is_integral_child(
+        self, parent: wikidata_value.Item, child: wikidata_value.Item
+    ) -> bool:
+        parent_classes = self._api.item_classes(parent)
+        child_classes = self._api.item_classes(child)
+        if (
+            wikidata_value.Q_TELEVISION_SERIES_EPISODE in child_classes
+            and not child_classes & _POSSIBLE_TV_SPECIAL
+            and parent_classes & _TV_EPISODE_PARENTS
+        ):
+            return True
+        if (
+            wikidata_value.Q_LITERARY_WORK in child_classes
+            and wikidata_value.Q_LITERARY_WORK in parent_classes
+        ):
+            return True
+        return False
+
+    def _should_cross_parent_child_border(
+        self, parent: wikidata_value.Item, child: wikidata_value.Item
+    ) -> bool:
+        del child  # Unused.
+        parent_classes = self._api.item_classes(parent)
+        for collection in (
+            wikidata_value.Q_ANTHOLOGY,
+            wikidata_value.Q_LIST,
+        ):
+            if parent_classes & self._api.transitive_subclasses(collection):
+                return False
+        return True
 
     def _related_media(
         self, request: media_filter.FilterRequest
@@ -444,6 +489,7 @@ class Filter(media_filter.CachedFilter):
         unprocessed: set[wikidata_value.Item] = {request.item.wikidata_item}
         processed: set[wikidata_value.Item] = set()
         loose: set[wikidata_value.Item] = set()
+        integral_children: set[wikidata_value.Item] = set()
         while unprocessed:
             if len(unprocessed) + len(processed) > 1000:
                 processed_str = sorted(map(str, processed))
@@ -457,23 +503,47 @@ class Filter(media_filter.CachedFilter):
             current = unprocessed.pop()
             processed.add(current)
             related = self._api.related_media(current)
-            unprocessed.update(
-                parent for parent in related.parents if parent not in processed
+            integral_children.update(
+                current
+                for parent in related.parents
+                if self._is_integral_child(parent, current)
             )
-            unprocessed.update(related.siblings - processed)
+            integral_children.update(
+                child
+                for child in related.children
+                if self._is_integral_child(current, child)
+            )
             unprocessed.update(
-                child for child in related.children if child not in processed
+                parent
+                for parent in related.parents
+                if parent not in processed
+                and parent not in integral_children
+                and self._should_cross_parent_child_border(parent, current)
+            )
+            unprocessed.update(related.siblings - processed - integral_children)
+            unprocessed.update(
+                child
+                for child in related.children
+                if child not in processed
+                and child not in integral_children
+                and self._should_cross_parent_child_border(current, child)
             )
             loose.update(related.loose)
-            unprocessed.update((related.loose & items_from_config) - processed)
+            unprocessed.update(
+                (related.loose & items_from_config)
+                - processed
+                - integral_children
+            )
         return {
             *(
                 media_filter.ResultExtraString(f"related item: {item}")
-                for item in processed - items_from_config
+                for item in processed - items_from_config - integral_children
             ),
             *(
                 media_filter.ResultExtraString(f"loosely-related item: {item}")
-                for item in (loose - processed - items_from_config)
+                for item in (
+                    loose - processed - items_from_config - integral_children
+                )
             ),
             *(
                 media_filter.ResultExtraString(
