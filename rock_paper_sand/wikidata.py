@@ -459,6 +459,11 @@ class Filter(media_filter.CachedFilter):
         ):
             return True
         if (
+            wikidata_value.Q_TELEVISION_SERIES_SEASON in child_classes
+            and wikidata_value.Q_TELEVISION_SERIES in parent_classes
+        ):
+            return True
+        if (
             wikidata_value.Q_LITERARY_WORK in child_classes
             and wikidata_value.Q_LITERARY_WORK in parent_classes
         ):

@@ -1119,6 +1119,7 @@ class WikidataFilterTest(parameterized.TestCase):
                     wikidata_value.Q_TELEVISION_SERIES_EPISODE,
                     wikidata_value.Q_TELEVISION_SPECIAL,
                 },
+                "Q23": {wikidata_value.Q_TELEVISION_SERIES_SEASON},
                 "Q31": {wikidata_value.Q_LITERARY_WORK},
                 "Q3": {wikidata_value.Q_LITERARY_WORK},
             },
@@ -1138,6 +1139,7 @@ class WikidataFilterTest(parameterized.TestCase):
                     children={
                         wikidata_value.Item("Q21"),
                         wikidata_value.Item("Q22"),
+                        wikidata_value.Item("Q23"),
                     },
                     loose=set(),
                 ),
@@ -1148,6 +1150,12 @@ class WikidataFilterTest(parameterized.TestCase):
                     loose=set(),
                 ),
                 "Q22": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
+                "Q23": wikidata.RelatedMedia(
                     parents=set(),
                     siblings=set(),
                     children=set(),
@@ -1176,6 +1184,7 @@ class WikidataFilterTest(parameterized.TestCase):
                     media_filter.ResultExtraString(
                         "related item: https://www.wikidata.org/wiki/Q22"
                     ),
+                    # Q23 is an integral child of Q2.
                     # Q31 is an integral child of Q3.
                     media_filter.ResultExtraString(
                         "related item: https://www.wikidata.org/wiki/Q3"
