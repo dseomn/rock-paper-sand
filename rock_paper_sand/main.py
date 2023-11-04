@@ -16,6 +16,7 @@
 import argparse
 
 from absl import flags
+from absl import logging
 from absl.flags import argparse_flags
 
 from rock_paper_sand import config_subcommand
@@ -55,6 +56,8 @@ class MainCommand(subcommand.ContainerSubcommand):
 
 
 def main() -> None:
+    flags.FLAGS.set_default("logtostderr", True)
+    logging.use_absl_handler()
     parser = argparse_flags.ArgumentParser()
     main_command = MainCommand(parser)
     args = parser.parse_args()

@@ -18,6 +18,7 @@ from collections.abc import Generator, Iterable, Sequence, Set
 import contextlib
 import dataclasses
 import datetime
+import logging
 import pprint
 import re
 import typing
@@ -257,6 +258,7 @@ class Api:
 
     def sparql(self, query: str) -> Any:
         """Returns results from a SPARQL query."""
+        logging.debug("SPARQL query:\n%s", query)
         response = self._session.get(
             "https://query.wikidata.org/sparql",
             params=[("query", query)],
