@@ -332,6 +332,7 @@ class Api:
                         )
                         for relation, predicate in predicate_by_relation.items()
                     ),
+                    "FILTER (!wikibase:isSomeValue(?item))",
                     f"OPTIONAL {{ ?item wdt:{instance_of} ?class. }}",
                     "}",
                 )
