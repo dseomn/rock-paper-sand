@@ -35,7 +35,7 @@ from rock_paper_sand import network
 
 class ConfigTest(parameterized.TestCase):
     def _config_with_null_session(self) -> config.Config:
-        session = self.enter_context(network.null_requests_session())
+        session = self.enterContext(network.null_requests_session())
         return config.Config.from_config_file(
             wikidata_session=session,
             justwatch_session=session,
@@ -77,7 +77,7 @@ class ConfigTest(parameterized.TestCase):
         error_regex: str,
         error_notes: Sequence[str],
     ) -> None:
-        self.enter_context(
+        self.enterContext(
             flagsaver.flagsaver(
                 (
                     flags_and_constants.CONFIG_FILE,
@@ -227,7 +227,7 @@ class ConfigTest(parameterized.TestCase):
         config_data: Any,
         expected_results: Any,
     ) -> None:
-        self.enter_context(
+        self.enterContext(
             flagsaver.flagsaver(
                 (
                     flags_and_constants.CONFIG_FILE,

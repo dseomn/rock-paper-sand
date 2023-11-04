@@ -56,7 +56,7 @@ class SubcommandTest(parameterized.TestCase):
 
     def test_container_prints_help(self) -> None:
         parser = argparse.ArgumentParser()
-        mock_print_help = self.enter_context(
+        mock_print_help = self.enterContext(
             mock.patch.object(
                 parser, "print_help", autospec=True, spec_set=True
             )

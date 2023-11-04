@@ -33,7 +33,7 @@ class StateTest(parameterized.TestCase):
             / "new-dir"
             / "new-file.binpb"
         )
-        self.enter_context(
+        self.enterContext(
             flagsaver.flagsaver(
                 (flags_and_constants.STATE_FILE, str(self._state_path))
             )
