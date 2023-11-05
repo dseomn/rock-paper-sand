@@ -550,23 +550,18 @@ class Filter(media_filter.CachedFilter):
                 parent
                 for parent in related.parents
                 if parent not in processed
-                and parent not in integral_children
                 and self._should_cross_parent_child_border(parent, current)
             )
-            unprocessed.update(related.siblings - processed - integral_children)
+            unprocessed.update(related.siblings - processed)
             unprocessed.update(
                 child
                 for child in related.children
                 if child not in processed
-                and child not in integral_children
                 and self._should_cross_parent_child_border(current, child)
             )
             loose.update(related.loose)
-            unprocessed.update(
-                (related.loose & items_from_config)
-                - processed
-                - integral_children
-            )
+            unprocessed.update((related.loose & items_from_config) - processed)
+            unprocessed -= integral_children
         return {
             *(
                 media_filter.ResultExtraString(f"related item: {item}")
