@@ -448,6 +448,14 @@ class Filter(media_filter.CachedFilter):
         return self._api.transitive_subclasses(wikidata_value.Q_PARATEXT)
 
     @functools.cached_property
+    def _ignored_classes(self) -> Set[wikidata_value.Item]:
+        # Fictional entities can be part of fictional universes, but they're not
+        # media items.
+        return self._api.transitive_subclasses(
+            wikidata_value.Q_FICTIONAL_ENTITY
+        )
+
+    @functools.cached_property
     def _music_classes(self) -> Set[wikidata_value.Item]:
         return self._api.transitive_subclasses(wikidata_value.Q_RELEASE_GROUP)
 
@@ -500,7 +508,10 @@ class Filter(media_filter.CachedFilter):
         }
 
     def _is_ignored(self, item: wikidata_value.Item) -> bool:
-        return item in self._ignored_items
+        return bool(
+            item in self._ignored_items
+            or self._api.item_classes(item) & self._ignored_classes
+        )
 
     def _is_integral_child(
         self, parent: wikidata_value.Item, child: wikidata_value.Item
