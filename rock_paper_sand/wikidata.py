@@ -229,6 +229,7 @@ _CHILD_PROPERTIES = (
 _LOOSE_PROPERTIES = (
     wikidata_value.P_BASED_ON,
     wikidata_value.P_DERIVATIVE_WORK,
+    wikidata_value.P_HAS_SPIN_OFF,
 )
 
 

@@ -153,6 +153,7 @@ P_FICTIONAL_UNIVERSE_DESCRIBED_IN = _p(
 P_FOLLOWED_BY = _p("https://www.wikidata.org/wiki/Property:P156")
 P_FOLLOWS = _p("https://www.wikidata.org/wiki/Property:P155")
 P_HAS_PARTS = _p("https://www.wikidata.org/wiki/Property:P527")
+P_HAS_SPIN_OFF = _p("https://www.wikidata.org/wiki/Property:P2512")
 P_INSTANCE_OF = _p("https://www.wikidata.org/wiki/Property:P31")
 P_MEDIA_FRANCHISE = _p("https://www.wikidata.org/wiki/Property:P8345")
 P_PART_OF = _p("https://www.wikidata.org/wiki/Property:P361")
