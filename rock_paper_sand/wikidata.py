@@ -24,6 +24,7 @@ import re
 import typing
 from typing import Any
 
+from absl import flags
 from dateutil import relativedelta
 import requests
 import requests_cache
@@ -36,6 +37,12 @@ from rock_paper_sand.proto import config_pb2
 
 if typing.TYPE_CHECKING:
     import _typeshed
+
+_WIKIDATA_REFRESH = flags.DEFINE_bool(
+    "wikidata_refresh",
+    default=False,
+    help="Use fresh data from wikidata, instead of cached.",
+)
 
 
 def _min(
@@ -56,7 +63,17 @@ def _max(
 def requests_session() -> Generator[requests.Session, None, None]:
     """Returns a context manager for a session for Wikidata APIs."""
     with requests_cache.CachedSession(
-        **network.requests_cache_defaults(),
+        **(
+            network.requests_cache_defaults()
+            | dict[str, Any](
+                expire_after=(
+                    datetime.timedelta(seconds=0)
+                    if _WIKIDATA_REFRESH.value
+                    else datetime.timedelta(hours=20)
+                ),
+                cache_control=False,
+            )
+        ),
     ) as session:
         network.configure_session(session)
         yield session
