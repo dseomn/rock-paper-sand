@@ -20,7 +20,6 @@ import dataclasses
 import datetime
 import functools
 import logging
-import pprint
 import re
 import typing
 from typing import Any
@@ -520,10 +519,13 @@ class Filter(media_filter.CachedFilter):
         iterable: Iterable[wikidata_value.Item],
         /,
         *,
+        current: wikidata_value.Item,
+        reached_from: dict[wikidata_value.Item, wikidata_value.Item],
         unprocessed: set[wikidata_value.Item],
         unprocessed_unlikely: set[wikidata_value.Item],
     ) -> None:
         for item in iterable:
+            reached_from.setdefault(item, current)
             if (
                 self._api.item_classes(item)
                 & self._unlikely_to_be_processed_classes
@@ -543,30 +545,21 @@ class Filter(media_filter.CachedFilter):
             if item.wikidata_item is not None
         )
         assert request.item.wikidata_item is not None  # Already checked.
+        reached_from: dict[wikidata_value.Item, wikidata_value.Item] = {}
         unprocessed: set[wikidata_value.Item] = {request.item.wikidata_item}
         unprocessed_unlikely: set[wikidata_value.Item] = set()
-        update_unprocessed = functools.partial(
-            self._update_unprocessed,
-            unprocessed=unprocessed,
-            unprocessed_unlikely=unprocessed_unlikely,
-        )
         processed: set[wikidata_value.Item] = set()
         loose: set[wikidata_value.Item] = set()
         integral_children: set[wikidata_value.Item] = set()
         while unprocessed or unprocessed_unlikely:
             if len(unprocessed) + len(processed) > 1000:
-                processed_str = sorted(map(str, processed))
-                unprocessed_str = sorted(map(str, unprocessed))
-                unprocessed_unlikely_str = sorted(
-                    map(str, unprocessed_unlikely)
-                )
                 raise ValueError(
                     "Too many related media items reached from "
                     f"{request.item.wikidata_item}:\n"
-                    f"Processed: {pprint.pformat(processed_str)}\n"
-                    f"Unprocessed: {pprint.pformat(unprocessed_str)}\n"
-                    "Unprocessed (but unlikely to be processed): "
-                    f"{pprint.pformat(unprocessed_unlikely_str)}"
+                    + "\n".join(
+                        f"  {key} reached from {value}"
+                        for key, value in reached_from.items()
+                    )
                 )
             current = (
                 unprocessed.pop() if unprocessed else unprocessed_unlikely.pop()
@@ -582,6 +575,13 @@ class Filter(media_filter.CachedFilter):
                 child
                 for child in related.children
                 if self._is_integral_child(current, child)
+            )
+            update_unprocessed = functools.partial(
+                self._update_unprocessed,
+                current=current,
+                reached_from=reached_from,
+                unprocessed=unprocessed,
+                unprocessed_unlikely=unprocessed_unlikely,
             )
             update_unprocessed(
                 parent
