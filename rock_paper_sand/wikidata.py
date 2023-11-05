@@ -472,6 +472,19 @@ class Filter(media_filter.CachedFilter):
         )
 
     @functools.cached_property
+    def _tv_season_part_classes(self) -> Set[wikidata_value.Item]:
+        return self._api.transitive_subclasses(
+            wikidata_value.Q_PART_OF_TELEVISION_SEASON
+        )
+
+    @functools.cached_property
+    def _tv_season_part_parent_classes(self) -> Set[wikidata_value.Item]:
+        return {
+            *self._tv_show_classes,
+            *self._tv_season_classes,
+        }
+
+    @functools.cached_property
     def _tv_episode_classes(self) -> Set[wikidata_value.Item]:
         return self._api.transitive_subclasses(
             wikidata_value.Q_TELEVISION_SERIES_EPISODE
@@ -480,8 +493,8 @@ class Filter(media_filter.CachedFilter):
     @functools.cached_property
     def _tv_episode_parent_classes(self) -> Set[wikidata_value.Item]:
         return {
-            *self._tv_show_classes,
-            *self._tv_season_classes,
+            *self._tv_season_part_parent_classes,
+            *self._tv_season_part_classes,
         }
 
     @functools.cached_property
@@ -518,6 +531,10 @@ class Filter(media_filter.CachedFilter):
     ) -> Iterable[tuple[Set[wikidata_value.Item], Set[wikidata_value.Item]]]:
         """Yields (parent, child) classes that indicate an integral child."""
         yield (self._tv_show_classes, self._tv_season_classes)
+        yield (
+            self._tv_season_part_parent_classes,
+            self._tv_season_part_classes,
+        )
         yield (self._video_classes, self._music_classes)
         yield (
             {wikidata_value.Q_LITERARY_WORK},
