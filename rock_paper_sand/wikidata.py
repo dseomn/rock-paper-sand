@@ -438,6 +438,10 @@ class Filter(media_filter.CachedFilter):
         self._api = api
 
     @functools.cached_property
+    def _music_classes(self) -> Set[wikidata_value.Item]:
+        return self._api.transitive_subclasses(wikidata_value.Q_RELEASE_GROUP)
+
+    @functools.cached_property
     def _tv_show_classes(self) -> Set[wikidata_value.Item]:
         return self._api.transitive_subclasses(
             wikidata_value.Q_TELEVISION_SERIES
@@ -472,6 +476,13 @@ class Filter(media_filter.CachedFilter):
         }
 
     @functools.cached_property
+    def _video_classes(self) -> Set[wikidata_value.Item]:
+        return {
+            *self._api.transitive_subclasses(wikidata_value.Q_FILM),
+            *self._tv_episode_classes,
+        }
+
+    @functools.cached_property
     def _unlikely_to_be_processed_classes(self) -> Set[wikidata_value.Item]:
         return {
             *self._tv_season_classes,
@@ -492,6 +503,11 @@ class Filter(media_filter.CachedFilter):
         if (
             child_classes & self._tv_season_classes
             and parent_classes & self._tv_show_classes
+        ):
+            return True
+        if (
+            child_classes & self._music_classes
+            and parent_classes & self._video_classes
         ):
             return True
         if (

@@ -98,10 +98,12 @@ class Item:
 
 _i = Item.from_string
 Q_ANTHOLOGY = _i("https://www.wikidata.org/wiki/Q105420")
+Q_FILM = _i("https://www.wikidata.org/wiki/Q11424")
 Q_GREGORIAN_CALENDAR = _i("https://www.wikidata.org/wiki/Q12138")
 Q_LIST = _i("https://www.wikidata.org/wiki/Q12139612")
 Q_LITERARY_WORK = _i("https://www.wikidata.org/wiki/Q7725634")
 Q_PROLEPTIC_GREGORIAN_CALENDAR = _i("https://www.wikidata.org/wiki/Q1985727")
+Q_RELEASE_GROUP = _i("https://www.wikidata.org/wiki/Q108346082")
 Q_TELEVISION_FILM = _i("https://www.wikidata.org/wiki/Q506240")
 Q_TELEVISION_SERIES = _i("https://www.wikidata.org/wiki/Q5398426")
 Q_TELEVISION_SERIES_EPISODE = _i("https://www.wikidata.org/wiki/Q21191270")

@@ -1126,6 +1126,8 @@ class WikidataFilterTest(parameterized.TestCase):
                 "Q23": {wikidata_value.Q_TELEVISION_SERIES_SEASON},
                 "Q31": {wikidata_value.Q_LITERARY_WORK},
                 "Q3": {wikidata_value.Q_LITERARY_WORK},
+                "Q4": {wikidata_value.Q_FILM},
+                "Q41": {wikidata_value.Q_RELEASE_GROUP},
             },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
@@ -1134,6 +1136,7 @@ class WikidataFilterTest(parameterized.TestCase):
                     children={
                         wikidata_value.Item("Q2"),
                         wikidata_value.Item("Q31"),
+                        wikidata_value.Item("Q4"),
                     },
                     loose=set(),
                 ),
@@ -1177,6 +1180,18 @@ class WikidataFilterTest(parameterized.TestCase):
                     children=set(),
                     loose=set(),
                 ),
+                "Q4": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children={wikidata_value.Item("Q41")},
+                    loose=set(),
+                ),
+                "Q41": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
             },
             expected_result=media_filter.FilterResult(
                 True,
@@ -1193,6 +1208,10 @@ class WikidataFilterTest(parameterized.TestCase):
                     media_filter.ResultExtraString(
                         "related item: https://www.wikidata.org/wiki/Q3"
                     ),
+                    media_filter.ResultExtraString(
+                        "related item: https://www.wikidata.org/wiki/Q4"
+                    ),
+                    # Q41 is an integral child of Q4.
                 },
             ),
         ),
