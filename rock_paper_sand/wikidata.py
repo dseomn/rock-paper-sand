@@ -513,30 +513,35 @@ class Filter(media_filter.CachedFilter):
             or self._api.item_classes(item) & self._ignored_classes
         )
 
+    def _integral_child_classes(
+        self,
+    ) -> Iterable[tuple[Set[wikidata_value.Item], Set[wikidata_value.Item]]]:
+        """Yields (parent, child) classes that indicate an integral child."""
+        yield (self._tv_show_classes, self._tv_season_classes)
+        yield (self._video_classes, self._music_classes)
+        yield (
+            {wikidata_value.Q_LITERARY_WORK},
+            {wikidata_value.Q_LITERARY_WORK},
+        )
+
     def _is_integral_child(
         self, parent: wikidata_value.Item, child: wikidata_value.Item
     ) -> bool:
         parent_classes = self._api.item_classes(parent)
         child_classes = self._api.item_classes(child)
+        for (
+            parent_classes_to_check,
+            child_classes_to_check,
+        ) in self._integral_child_classes():
+            if (
+                parent_classes & parent_classes_to_check
+                and child_classes & child_classes_to_check
+            ):
+                return True
         if (
             child_classes & self._tv_episode_classes
             and not child_classes & self._possible_tv_special_classes
             and parent_classes & self._tv_episode_parent_classes
-        ):
-            return True
-        if (
-            child_classes & self._tv_season_classes
-            and parent_classes & self._tv_show_classes
-        ):
-            return True
-        if (
-            child_classes & self._music_classes
-            and parent_classes & self._video_classes
-        ):
-            return True
-        if (
-            wikidata_value.Q_LITERARY_WORK in child_classes
-            and wikidata_value.Q_LITERARY_WORK in parent_classes
         ):
             return True
         return False
