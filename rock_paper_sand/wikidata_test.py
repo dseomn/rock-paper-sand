@@ -1055,6 +1055,10 @@ class WikidataFilterTest(parameterized.TestCase):
                 "wikidata": "Q1",
                 "parts": [{"name": "bar", "wikidata": "Q2"}],
             },
+            api_item_classes={
+                "Q2": set(),
+                "Q3": set(),
+            },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
                     parents=set(),

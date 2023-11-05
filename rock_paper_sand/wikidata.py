@@ -472,6 +472,13 @@ class Filter(media_filter.CachedFilter):
             ),
         }
 
+    @functools.cached_property
+    def _unlikely_to_be_processed_classes(self) -> Set[wikidata_value.Item]:
+        return {
+            *self._tv_season_classes,
+            *self._tv_episode_classes,
+        }
+
     def _is_integral_child(
         self, parent: wikidata_value.Item, child: wikidata_value.Item
     ) -> bool:
@@ -508,6 +515,23 @@ class Filter(media_filter.CachedFilter):
                 return False
         return True
 
+    def _update_unprocessed(
+        self,
+        iterable: Iterable[wikidata_value.Item],
+        /,
+        *,
+        unprocessed: set[wikidata_value.Item],
+        unprocessed_unlikely: set[wikidata_value.Item],
+    ) -> None:
+        for item in iterable:
+            if (
+                self._api.item_classes(item)
+                & self._unlikely_to_be_processed_classes
+            ):
+                unprocessed_unlikely.add(item)
+            else:
+                unprocessed.add(item)
+
     def _related_media(
         self, request: media_filter.FilterRequest
     ) -> Set[media_filter.ResultExtra]:
@@ -520,20 +544,33 @@ class Filter(media_filter.CachedFilter):
         )
         assert request.item.wikidata_item is not None  # Already checked.
         unprocessed: set[wikidata_value.Item] = {request.item.wikidata_item}
+        unprocessed_unlikely: set[wikidata_value.Item] = set()
+        update_unprocessed = functools.partial(
+            self._update_unprocessed,
+            unprocessed=unprocessed,
+            unprocessed_unlikely=unprocessed_unlikely,
+        )
         processed: set[wikidata_value.Item] = set()
         loose: set[wikidata_value.Item] = set()
         integral_children: set[wikidata_value.Item] = set()
-        while unprocessed:
+        while unprocessed or unprocessed_unlikely:
             if len(unprocessed) + len(processed) > 1000:
                 processed_str = sorted(map(str, processed))
                 unprocessed_str = sorted(map(str, unprocessed))
+                unprocessed_unlikely_str = sorted(
+                    map(str, unprocessed_unlikely)
+                )
                 raise ValueError(
                     "Too many related media items reached from "
                     f"{request.item.wikidata_item}:\n"
                     f"Processed: {pprint.pformat(processed_str)}\n"
-                    f"Unprocessed: {pprint.pformat(unprocessed_str)}"
+                    f"Unprocessed: {pprint.pformat(unprocessed_str)}\n"
+                    "Unprocessed (but unlikely to be processed): "
+                    f"{pprint.pformat(unprocessed_unlikely_str)}"
                 )
-            current = unprocessed.pop()
+            current = (
+                unprocessed.pop() if unprocessed else unprocessed_unlikely.pop()
+            )
             processed.add(current)
             related = self._api.related_media(current)
             integral_children.update(
@@ -546,22 +583,23 @@ class Filter(media_filter.CachedFilter):
                 for child in related.children
                 if self._is_integral_child(current, child)
             )
-            unprocessed.update(
+            update_unprocessed(
                 parent
                 for parent in related.parents
                 if parent not in processed
                 and self._should_cross_parent_child_border(parent, current)
             )
-            unprocessed.update(related.siblings - processed)
-            unprocessed.update(
+            update_unprocessed(related.siblings - processed)
+            update_unprocessed(
                 child
                 for child in related.children
                 if child not in processed
                 and self._should_cross_parent_child_border(current, child)
             )
             loose.update(related.loose)
-            unprocessed.update((related.loose & items_from_config) - processed)
+            update_unprocessed((related.loose & items_from_config) - processed)
             unprocessed -= integral_children
+            unprocessed_unlikely -= integral_children
         return {
             *(
                 media_filter.ResultExtraString(f"related item: {item}")
