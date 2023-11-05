@@ -13,8 +13,9 @@
 # limitations under the License.
 """Media items."""
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Sequence, Set
 import dataclasses
+import itertools
 from typing import Any, Self
 import uuid
 
@@ -41,6 +42,7 @@ class MediaItem:
         custom_data: Parsed proto.custom_data field, or None.
         done: Parsed proto.done field.
         wikidata_item: Wikidata item, or None.
+        all_wikidata_items_recursive: Wikidata items from this and all parts.
         has_parent: Whether or not this item appears in the `parts` field of
             another item.
         parts: Parsed proto.parts field.
@@ -56,6 +58,7 @@ class MediaItem:
     custom_data: Any
     done: multi_level_set.MultiLevelSet
     wikidata_item: wikidata_value.Item | None
+    all_wikidata_items_recursive: Set[wikidata_value.Item]
     has_parent: bool
     parts: Sequence["MediaItem"]
 
@@ -103,6 +106,11 @@ class MediaItem:
         with exceptions.add_note(f"In {debug_description}."):
             if not proto.name:
                 raise ValueError("The name field is required.")
+            wikidata_item = (
+                wikidata_value.Item.from_string(proto.wikidata)
+                if proto.wikidata
+                else None
+            )
             return cls(
                 debug_description=debug_description,
                 proto=proto,
@@ -113,10 +121,12 @@ class MediaItem:
                     else None
                 ),
                 done=multi_level_set.MultiLevelSet.from_string(proto.done),
-                wikidata_item=(
-                    wikidata_value.Item.from_string(proto.wikidata)
-                    if proto.wikidata
-                    else None
+                wikidata_item=wikidata_item,
+                all_wikidata_items_recursive=frozenset(
+                    itertools.chain(
+                        () if wikidata_item is None else (wikidata_item,),
+                        *(part.all_wikidata_items_recursive for part in parts),
+                    )
                 ),
                 has_parent=parent_fully_qualified_name is not None,
                 parts=parts,

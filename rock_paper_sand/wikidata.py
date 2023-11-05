@@ -30,7 +30,6 @@ import requests_cache
 
 from rock_paper_sand import exceptions
 from rock_paper_sand import media_filter
-from rock_paper_sand import media_item
 from rock_paper_sand import network
 from rock_paper_sand import wikidata_value
 from rock_paper_sand.proto import config_pb2
@@ -617,11 +616,7 @@ class Filter(media_filter.CachedFilter):
     ) -> Set[media_filter.ResultExtra]:
         if request.item.has_parent:
             return frozenset()
-        items_from_config = frozenset(
-            item.wikidata_item
-            for item in media_item.iter_all_items((request.item,))
-            if item.wikidata_item is not None
-        )
+        items_from_config = request.item.all_wikidata_items_recursive
         assert request.item.wikidata_item is not None  # Already checked.
         reached_from: dict[wikidata_value.Item, wikidata_value.Item] = {}
         unprocessed: set[wikidata_value.Item] = {request.item.wikidata_item}

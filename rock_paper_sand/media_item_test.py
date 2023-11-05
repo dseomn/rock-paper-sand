@@ -37,6 +37,7 @@ class MediaItemTest(parameterized.TestCase):
                 "wikidata": "Q1",
                 "parts": [
                     {"name": "some-part"},
+                    {"name": "other-part", "wikidata": "Q2"},
                 ],
             },
             config_pb2.MediaItem(),
@@ -53,6 +54,10 @@ class MediaItemTest(parameterized.TestCase):
                 custom_data={"a": "b"},
                 done=mock.ANY,
                 wikidata_item=wikidata_value.Item("Q1"),
+                all_wikidata_items_recursive={
+                    wikidata_value.Item("Q1"),
+                    wikidata_value.Item("Q2"),
+                },
                 has_parent=False,
                 parts=(
                     media_item.MediaItem(
@@ -65,6 +70,26 @@ class MediaItemTest(parameterized.TestCase):
                         custom_data=None,
                         done=mock.ANY,
                         wikidata_item=None,
+                        all_wikidata_items_recursive=frozenset(),
+                        has_parent=True,
+                        parts=(),
+                    ),
+                    media_item.MediaItem(
+                        id=mock.ANY,
+                        debug_description=(
+                            "unknown media item with name 'other-part'"
+                        ),
+                        proto=config_pb2.MediaItem(
+                            name="other-part",
+                            wikidata="Q2",
+                        ),
+                        fully_qualified_name="some-name: other-part",
+                        custom_data=None,
+                        done=mock.ANY,
+                        wikidata_item=wikidata_value.Item("Q2"),
+                        all_wikidata_items_recursive={
+                            wikidata_value.Item("Q2"),
+                        },
                         has_parent=True,
                         parts=(),
                     ),
