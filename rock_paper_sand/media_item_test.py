@@ -29,15 +29,24 @@ from rock_paper_sand.proto import config_pb2
 
 class MediaItemTest(parameterized.TestCase):
     def test_from_config(self) -> None:
+        other_part = {
+            "name": "other-part",
+            "wikidata": "Q2",
+            "wikidataIgnore": ["Q21", "Q22"],
+        }
+        other_part_proto = json_format.ParseDict(
+            other_part, config_pb2.MediaItem()
+        )
         proto = json_format.ParseDict(
             {
                 "name": "some-name",
                 "customData": {"a": "b"},
                 "done": "all",
                 "wikidata": "Q1",
+                "wikidataIgnore": ["Q11"],
                 "parts": [
                     {"name": "some-part"},
-                    {"name": "other-part", "wikidata": "Q2"},
+                    other_part,
                 ],
             },
             config_pb2.MediaItem(),
@@ -58,6 +67,11 @@ class MediaItemTest(parameterized.TestCase):
                     wikidata_value.Item("Q1"),
                     wikidata_value.Item("Q2"),
                 },
+                wikidata_ignore_items_recursive={
+                    wikidata_value.Item("Q11"),
+                    wikidata_value.Item("Q21"),
+                    wikidata_value.Item("Q22"),
+                },
                 has_parent=False,
                 parts=(
                     media_item.MediaItem(
@@ -71,6 +85,7 @@ class MediaItemTest(parameterized.TestCase):
                         done=mock.ANY,
                         wikidata_item=None,
                         all_wikidata_items_recursive=frozenset(),
+                        wikidata_ignore_items_recursive=frozenset(),
                         has_parent=True,
                         parts=(),
                     ),
@@ -79,16 +94,17 @@ class MediaItemTest(parameterized.TestCase):
                         debug_description=(
                             "unknown media item with name 'other-part'"
                         ),
-                        proto=config_pb2.MediaItem(
-                            name="other-part",
-                            wikidata="Q2",
-                        ),
+                        proto=other_part_proto,
                         fully_qualified_name="some-name: other-part",
                         custom_data=None,
                         done=mock.ANY,
                         wikidata_item=wikidata_value.Item("Q2"),
                         all_wikidata_items_recursive={
                             wikidata_value.Item("Q2"),
+                        },
+                        wikidata_ignore_items_recursive={
+                            wikidata_value.Item("Q21"),
+                            wikidata_value.Item("Q22"),
                         },
                         has_parent=True,
                         parts=(),
@@ -143,6 +159,19 @@ class MediaItemTest(parameterized.TestCase):
                 index=index,
             )
         self.assertSequenceEqual(error_notes, error.exception.__notes__)
+
+    def test_wikidata_included_and_ignored(self) -> None:
+        with self.assertRaisesRegex(ValueError, "included and ignored"):
+            media_item.MediaItem.from_config(
+                json_format.ParseDict(
+                    {
+                        "name": "foo",
+                        "wikidataIgnore": ["Q1"],
+                        "parts": [{"name": "foo", "wikidata": "Q1"}],
+                    },
+                    config_pb2.MediaItem(),
+                )
+            )
 
     def test_iter_all_items(self) -> None:
         item_1 = media_item.MediaItem.from_config(
