@@ -438,6 +438,16 @@ class Filter(media_filter.CachedFilter):
         self._api = api
 
     @functools.cached_property
+    def _ignored_items(self) -> Set[wikidata_value.Item]:
+        # Subclases of paratext, like preface or introduction, are sometimes
+        # used in "has parts" relationships for a book. Since these items are
+        # generic (e.g., "introduction") rather than specific to the work (e.g.,
+        # "introduction to Some Book"), there's not much use in including them.
+        # And following them would almost definitely lead to completely
+        # unrelated media that just happens to also have an, e.g., introduction.
+        return self._api.transitive_subclasses(wikidata_value.Q_PARATEXT)
+
+    @functools.cached_property
     def _music_classes(self) -> Set[wikidata_value.Item]:
         return self._api.transitive_subclasses(wikidata_value.Q_RELEASE_GROUP)
 
@@ -541,6 +551,8 @@ class Filter(media_filter.CachedFilter):
         unprocessed_unlikely: set[wikidata_value.Item],
     ) -> None:
         for item in iterable:
+            if item in self._ignored_items:
+                continue
             reached_from.setdefault(item, current)
             if (
                 self._api.item_classes(item)

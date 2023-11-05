@@ -1112,6 +1112,20 @@ class WikidataFilterTest(parameterized.TestCase):
             ),
         ),
         dict(
+            testcase_name="related_media_ignores_generic_items",
+            filter_config={"relatedMedia": {}},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_related_media={
+                "Q1": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings={wikidata_value.Q_PARATEXT},
+                    children=set(),
+                    loose=set(),
+                ),
+            },
+            expected_result=media_filter.FilterResult(False),
+        ),
+        dict(
             testcase_name="related_media_ignores_integral_children",
             filter_config={"relatedMedia": {}},
             item={"name": "foo", "wikidata": "Q1"},
