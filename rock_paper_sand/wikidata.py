@@ -214,6 +214,7 @@ class RelatedMedia:
 
 
 _PARENT_PROPERTIES = (
+    wikidata_value.P_MEDIA_FRANCHISE,
     wikidata_value.P_PART_OF,
     wikidata_value.P_PART_OF_THE_SERIES,
     wikidata_value.P_TAKES_PLACE_IN_FICTIONAL_UNIVERSE,
