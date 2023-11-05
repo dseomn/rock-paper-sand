@@ -564,6 +564,19 @@ class Filter(media_filter.CachedFilter):
             return True
         return False
 
+    def _integral_children(
+        self, item: wikidata_value.Item, related: RelatedMedia
+    ) -> Iterable[wikidata_value.Item]:
+        if any(
+            self._is_integral_child(parent, item) for parent in related.parents
+        ):
+            yield item
+        yield from (
+            child
+            for child in related.children
+            if self._is_integral_child(item, child)
+        )
+
     def _should_cross_parent_child_border(
         self, parent: wikidata_value.Item, child: wikidata_value.Item
     ) -> bool:
@@ -631,16 +644,7 @@ class Filter(media_filter.CachedFilter):
             )
             processed.add(current)
             related = self._api.related_media(current)
-            integral_children.update(
-                current
-                for parent in related.parents
-                if self._is_integral_child(parent, current)
-            )
-            integral_children.update(
-                child
-                for child in related.children
-                if self._is_integral_child(current, child)
-            )
+            integral_children.update(self._integral_children(current, related))
             update_unprocessed = functools.partial(
                 self._update_unprocessed,
                 current=current,
