@@ -499,6 +499,9 @@ class Filter(media_filter.CachedFilter):
             *self._tv_episode_classes,
         }
 
+    def _is_ignored(self, item: wikidata_value.Item) -> bool:
+        return item in self._ignored_items
+
     def _is_integral_child(
         self, parent: wikidata_value.Item, child: wikidata_value.Item
     ) -> bool:
@@ -551,7 +554,7 @@ class Filter(media_filter.CachedFilter):
         unprocessed_unlikely: set[wikidata_value.Item],
     ) -> None:
         for item in iterable:
-            if item in self._ignored_items:
+            if self._is_ignored(item):
                 continue
             reached_from.setdefault(item, current)
             if (
@@ -624,7 +627,11 @@ class Filter(media_filter.CachedFilter):
                 if child not in processed
                 and self._should_cross_parent_child_border(current, child)
             )
-            loose.update(related.loose)
+            loose.update(
+                loose_item
+                for loose_item in related.loose
+                if not self._is_ignored(loose_item)
+            )
             update_unprocessed((related.loose & items_from_config) - processed)
             unprocessed -= integral_children
             unprocessed_unlikely -= integral_children

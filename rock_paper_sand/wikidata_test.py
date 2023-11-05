@@ -1120,7 +1120,7 @@ class WikidataFilterTest(parameterized.TestCase):
                     parents=set(),
                     siblings={wikidata_value.Q_PARATEXT},
                     children=set(),
-                    loose=set(),
+                    loose={wikidata_value.Q_PARATEXT},
                 ),
             },
             expected_result=media_filter.FilterResult(False),
