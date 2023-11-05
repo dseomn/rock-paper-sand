@@ -424,6 +424,18 @@ def _release_status(
     return config_pb2.WikidataFilter.ReleaseStatus.RELEASE_STATUS_UNSPECIFIED
 
 
+def _handle_item_config_ignore(
+    *,
+    request: media_filter.FilterRequest,
+    related: set[wikidata_value.Item],
+    ignored_from_config: set[wikidata_value.Item],
+) -> None:
+    ignored_from_config.update(
+        related & request.item.wikidata_ignore_items_recursive
+    )
+    related -= request.item.wikidata_ignore_items_recursive
+
+
 class Filter(media_filter.CachedFilter):
     """Filter based on Wikidata APIs."""
 
@@ -619,11 +631,17 @@ class Filter(media_filter.CachedFilter):
         items_from_config = request.item.all_wikidata_items_recursive
         assert request.item.wikidata_item is not None  # Already checked.
         reached_from: dict[wikidata_value.Item, wikidata_value.Item] = {}
+        ignored_from_config: set[wikidata_value.Item] = set()
         unprocessed: set[wikidata_value.Item] = {request.item.wikidata_item}
         unprocessed_unlikely: set[wikidata_value.Item] = set()
         processed: set[wikidata_value.Item] = set()
         loose: set[wikidata_value.Item] = set()
         integral_children: set[wikidata_value.Item] = set()
+        handle_item_config_ignore = functools.partial(
+            _handle_item_config_ignore,
+            request=request,
+            ignored_from_config=ignored_from_config,
+        )
         while unprocessed or unprocessed_unlikely:
             if len(unprocessed) + len(processed) > 1000:
                 raise ValueError(
@@ -668,6 +686,9 @@ class Filter(media_filter.CachedFilter):
             update_unprocessed((related.loose & items_from_config) - processed)
             unprocessed -= integral_children
             unprocessed_unlikely -= integral_children
+            handle_item_config_ignore(related=unprocessed)
+            handle_item_config_ignore(related=unprocessed_unlikely)
+            handle_item_config_ignore(related=loose)
         return {
             *(
                 media_filter.ResultExtraString(f"related item: {item}")
@@ -685,6 +706,15 @@ class Filter(media_filter.CachedFilter):
                     f"{request.item.wikidata_item}: {item}"
                 )
                 for item in items_from_config - processed - loose
+            ),
+            *(
+                media_filter.ResultExtraString(
+                    f"item configured to be ignored, but not found: {item}"
+                )
+                for item in (
+                    request.item.wikidata_ignore_items_recursive
+                    - ignored_from_config
+                )
             ),
         }
 

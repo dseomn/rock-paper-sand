@@ -1114,19 +1114,37 @@ class WikidataFilterTest(parameterized.TestCase):
         dict(
             testcase_name="related_media_excludes_ignored_items",
             filter_config={"relatedMedia": {}},
-            item={"name": "foo", "wikidata": "Q1"},
+            item={
+                "name": "foo",
+                "wikidata": "Q1",
+                "wikidataIgnore": ["Q3", "Q4", "Q5"],
+            },
             api_item_classes={
+                "Q1": set(),
                 "Q2": {wikidata_value.Q_FICTIONAL_ENTITY},
+                "Q3": set(),
+                "Q4": set(),
             },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
-                    parents=set(),
+                    parents={wikidata_value.Item("Q4")},
                     siblings={wikidata_value.Q_PARATEXT},
                     children=set(),
-                    loose={wikidata_value.Item("Q2")},
+                    loose={
+                        wikidata_value.Item("Q2"),
+                        wikidata_value.Item("Q3"),
+                    },
                 ),
             },
-            expected_result=media_filter.FilterResult(False),
+            expected_result=media_filter.FilterResult(
+                True,
+                extra={
+                    media_filter.ResultExtraString(
+                        "item configured to be ignored, but not found: "
+                        "https://www.wikidata.org/wiki/Q5"
+                    ),
+                },
+            ),
         ),
         dict(
             testcase_name="related_media_ignores_integral_children",
