@@ -18,6 +18,7 @@ from collections.abc import Generator, Iterable, Sequence, Set
 import contextlib
 import dataclasses
 import datetime
+import functools
 import logging
 import pprint
 import re
@@ -420,20 +421,6 @@ def _release_status(
     return config_pb2.WikidataFilter.ReleaseStatus.RELEASE_STATUS_UNSPECIFIED
 
 
-_POSSIBLE_TV_SPECIAL = frozenset(
-    (
-        wikidata_value.Q_TELEVISION_FILM,
-        wikidata_value.Q_TELEVISION_SPECIAL,
-    )
-)
-_TV_EPISODE_PARENTS = frozenset(
-    (
-        wikidata_value.Q_TELEVISION_SERIES,
-        wikidata_value.Q_TELEVISION_SERIES_SEASON,
-    )
-)
-
-
 class Filter(media_filter.CachedFilter):
     """Filter based on Wikidata APIs."""
 
@@ -447,20 +434,54 @@ class Filter(media_filter.CachedFilter):
         self._config = filter_config
         self._api = api
 
+    @functools.cached_property
+    def _tv_show_classes(self) -> Set[wikidata_value.Item]:
+        return self._api.transitive_subclasses(
+            wikidata_value.Q_TELEVISION_SERIES
+        )
+
+    @functools.cached_property
+    def _tv_season_classes(self) -> Set[wikidata_value.Item]:
+        return self._api.transitive_subclasses(
+            wikidata_value.Q_TELEVISION_SERIES_SEASON
+        )
+
+    @functools.cached_property
+    def _tv_episode_classes(self) -> Set[wikidata_value.Item]:
+        return self._api.transitive_subclasses(
+            wikidata_value.Q_TELEVISION_SERIES_EPISODE
+        )
+
+    @functools.cached_property
+    def _tv_episode_parent_classes(self) -> Set[wikidata_value.Item]:
+        return {
+            *self._tv_show_classes,
+            *self._tv_season_classes,
+        }
+
+    @functools.cached_property
+    def _possible_tv_special_classes(self) -> Set[wikidata_value.Item]:
+        return {
+            *self._api.transitive_subclasses(wikidata_value.Q_TELEVISION_FILM),
+            *self._api.transitive_subclasses(
+                wikidata_value.Q_TELEVISION_SPECIAL
+            ),
+        }
+
     def _is_integral_child(
         self, parent: wikidata_value.Item, child: wikidata_value.Item
     ) -> bool:
         parent_classes = self._api.item_classes(parent)
         child_classes = self._api.item_classes(child)
         if (
-            wikidata_value.Q_TELEVISION_SERIES_EPISODE in child_classes
-            and not child_classes & _POSSIBLE_TV_SPECIAL
-            and parent_classes & _TV_EPISODE_PARENTS
+            child_classes & self._tv_episode_classes
+            and not child_classes & self._possible_tv_special_classes
+            and parent_classes & self._tv_episode_parent_classes
         ):
             return True
         if (
-            wikidata_value.Q_TELEVISION_SERIES_SEASON in child_classes
-            and wikidata_value.Q_TELEVISION_SERIES in parent_classes
+            child_classes & self._tv_season_classes
+            and parent_classes & self._tv_show_classes
         ):
             return True
         if (
