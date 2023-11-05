@@ -217,12 +217,16 @@ class RelatedMedia:
 _PARENT_PROPERTIES = (
     wikidata_value.P_PART_OF,
     wikidata_value.P_PART_OF_THE_SERIES,
+    wikidata_value.P_TAKES_PLACE_IN_FICTIONAL_UNIVERSE,
 )
 _SIBLING_PROPERTIES = (
     wikidata_value.P_FOLLOWED_BY,
     wikidata_value.P_FOLLOWS,
 )
-_CHILD_PROPERTIES = (wikidata_value.P_HAS_PARTS,)
+_CHILD_PROPERTIES = (
+    wikidata_value.P_FICTIONAL_UNIVERSE_DESCRIBED_IN,
+    wikidata_value.P_HAS_PARTS,
+)
 _LOOSE_PROPERTIES = (
     wikidata_value.P_BASED_ON,
     wikidata_value.P_DERIVATIVE_WORK,

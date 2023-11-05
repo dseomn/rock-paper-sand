@@ -142,6 +142,9 @@ P_BASED_ON = _p("https://www.wikidata.org/wiki/Property:P144")
 P_DATE_OF_FIRST_PERFORMANCE = _p("https://www.wikidata.org/wiki/Property:P1191")
 P_DERIVATIVE_WORK = _p("https://www.wikidata.org/wiki/Property:P4969")
 P_END_TIME = _p("https://www.wikidata.org/wiki/Property:P582")
+P_FICTIONAL_UNIVERSE_DESCRIBED_IN = _p(
+    "https://www.wikidata.org/wiki/Property:P1445"
+)
 P_FOLLOWED_BY = _p("https://www.wikidata.org/wiki/Property:P156")
 P_FOLLOWS = _p("https://www.wikidata.org/wiki/Property:P155")
 P_HAS_PARTS = _p("https://www.wikidata.org/wiki/Property:P527")
@@ -151,4 +154,7 @@ P_PART_OF_THE_SERIES = _p("https://www.wikidata.org/wiki/Property:P179")
 P_PUBLICATION_DATE = _p("https://www.wikidata.org/wiki/Property:P577")
 P_START_TIME = _p("https://www.wikidata.org/wiki/Property:P580")
 P_SUBCLASS_OF = _p("https://www.wikidata.org/wiki/Property:P279")
+P_TAKES_PLACE_IN_FICTIONAL_UNIVERSE = _p(
+    "https://www.wikidata.org/wiki/Property:P1434"
+)
 del _p
