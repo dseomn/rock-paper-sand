@@ -437,18 +437,6 @@ def _release_status(
     return config_pb2.WikidataFilter.ReleaseStatus.RELEASE_STATUS_UNSPECIFIED
 
 
-def _handle_item_config_ignore(
-    *,
-    request: media_filter.FilterRequest,
-    related: set[wikidata_value.Item],
-    ignored_from_config: set[wikidata_value.Item],
-) -> None:
-    ignored_from_config.update(
-        related & request.item.wikidata_ignore_items_recursive
-    )
-    related -= request.item.wikidata_ignore_items_recursive
-
-
 class Filter(media_filter.CachedFilter):
     """Filter based on Wikidata APIs."""
 
@@ -545,11 +533,23 @@ class Filter(media_filter.CachedFilter):
             *self._tv_episode_classes,
         }
 
-    def _is_ignored(self, item: wikidata_value.Item) -> bool:
-        return bool(
+    def _is_ignored(
+        self,
+        item: wikidata_value.Item,
+        *,
+        request: media_filter.FilterRequest,
+        ignored_from_config: set[wikidata_value.Item],
+    ) -> bool:
+        if item in request.item.wikidata_ignore_items_recursive:
+            ignored_from_config.add(item)
+            return True
+        elif (
             item in self._ignored_items
             or self._api.item_classes(item) & self._ignored_classes
-        )
+        ):
+            return True
+        else:
+            return False
 
     def _integral_child_classes(
         self,
@@ -625,8 +625,6 @@ class Filter(media_filter.CachedFilter):
         unprocessed_unlikely: set[wikidata_value.Item],
     ) -> None:
         for item in iterable:
-            if self._is_ignored(item):
-                continue
             reached_from.setdefault(item, current)
             if (
                 self._api.item_classes(item)
@@ -650,8 +648,8 @@ class Filter(media_filter.CachedFilter):
         processed: set[wikidata_value.Item] = set()
         loose: set[wikidata_value.Item] = set()
         integral_children: set[wikidata_value.Item] = set()
-        handle_item_config_ignore = functools.partial(
-            _handle_item_config_ignore,
+        is_ignored = functools.partial(
+            self._is_ignored,
             request=request,
             ignored_from_config=ignored_from_config,
         )
@@ -683,25 +681,34 @@ class Filter(media_filter.CachedFilter):
                 for parent in related.parents
                 if parent not in processed
                 and self._should_cross_parent_child_border(parent, current)
+                and not is_ignored(parent)
             )
-            update_unprocessed(related.siblings - processed)
+            update_unprocessed(
+                sibling
+                for sibling in related.siblings
+                if sibling not in processed and not is_ignored(sibling)
+            )
             update_unprocessed(
                 child
                 for child in related.children
                 if child not in processed
                 and self._should_cross_parent_child_border(current, child)
+                and not is_ignored(child)
             )
             loose.update(
                 loose_item
                 for loose_item in related.loose
-                if not self._is_ignored(loose_item)
+                if not is_ignored(loose_item)
             )
-            update_unprocessed((related.loose & items_from_config) - processed)
+            update_unprocessed(
+                loose_item
+                for loose_item in related.loose
+                if loose_item in items_from_config
+                and loose_item not in processed
+                and not is_ignored(loose_item)
+            )
             unprocessed -= integral_children
             unprocessed_unlikely -= integral_children
-            handle_item_config_ignore(related=unprocessed)
-            handle_item_config_ignore(related=unprocessed_unlikely)
-            handle_item_config_ignore(related=loose)
         return {
             *(
                 media_filter.ResultExtraString(f"related item: {item}")
