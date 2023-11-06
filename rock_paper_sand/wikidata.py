@@ -452,13 +452,20 @@ class Filter(media_filter.CachedFilter):
 
     @functools.cached_property
     def _ignored_items(self) -> Set[wikidata_value.Item]:
-        # Subclases of paratext, like preface or introduction, are sometimes
-        # used in "has parts" relationships for a book. Since these items are
-        # generic (e.g., "introduction") rather than specific to the work (e.g.,
-        # "introduction to Some Book"), there's not much use in including them.
-        # And following them would almost definitely lead to completely
-        # unrelated media that just happens to also have an, e.g., introduction.
-        return self._api.transitive_subclasses(wikidata_value.Q_PARATEXT)
+        return {
+            # Subclases of paratext, like preface or introduction, are sometimes
+            # used in "has parts" relationships for a book. Since these items
+            # are generic (e.g., "introduction") rather than specific to the
+            # work (e.g., "introduction to Some Book"), there's not much use in
+            # including them. And following them would almost definitely lead to
+            # completely unrelated media that just happens to also have an,
+            # e.g., introduction.
+            *self._api.transitive_subclasses(wikidata_value.Q_PARATEXT),
+            # This "fictional universe" seems to contain a lot of other media
+            # that doesn't have much in common. See
+            # https://en.wikipedia.org/wiki/Tommy_Westphall#Tommy_Westphall_Universe_Hypothesis
+            wikidata_value.Q_TOMMY_WESTPHALL_UNIVERSE,
+        }
 
     @functools.cached_property
     def _ignored_classes(self) -> Set[wikidata_value.Item]:
