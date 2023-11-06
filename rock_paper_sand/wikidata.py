@@ -462,11 +462,11 @@ class Filter(media_filter.CachedFilter):
 
     @functools.cached_property
     def _ignored_classes(self) -> Set[wikidata_value.Item]:
-        # Fictional entities can be part of fictional universes, but they're not
-        # media items.
+        # Fictional entities (other than fictional universes) can be part of
+        # fictional universes, but they're not media items.
         return self._api.transitive_subclasses(
             wikidata_value.Q_FICTIONAL_ENTITY
-        )
+        ) - self._api.transitive_subclasses(wikidata_value.Q_FICTIONAL_UNIVERSE)
 
     @functools.cached_property
     def _music_classes(self) -> Set[wikidata_value.Item]:

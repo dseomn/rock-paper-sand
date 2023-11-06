@@ -99,6 +99,7 @@ class Item:
 _i = Item.from_string
 Q_ANTHOLOGY = _i("https://www.wikidata.org/wiki/Q105420")
 Q_FICTIONAL_ENTITY = _i("https://www.wikidata.org/wiki/Q14897293")
+Q_FICTIONAL_UNIVERSE = _i("https://www.wikidata.org/wiki/Q559618")
 Q_FILM = _i("https://www.wikidata.org/wiki/Q11424")
 Q_GREGORIAN_CALENDAR = _i("https://www.wikidata.org/wiki/Q12138")
 Q_LIST = _i("https://www.wikidata.org/wiki/Q12139612")
