@@ -42,7 +42,10 @@ class MediaItem:
         custom_data: Parsed proto.custom_data field, or None.
         done: Parsed proto.done field.
         wikidata_item: Wikidata item, or None.
-        all_wikidata_items_recursive: Wikidata items from this and all parts.
+        all_wikidata_items: wikidata_item and also any items in the
+            proto.wikidata_additional field.
+        all_wikidata_items_recursive: Wikidata items from this and all parts,
+            including ones from wikidata_additional.
         wikidata_ignore_items_recursive: Wikidata items to ignore from this and
             all parts.
         wikidata_classes_ignore_recursive: Wikidata classes to ignore from this
@@ -62,6 +65,7 @@ class MediaItem:
     custom_data: Any
     done: multi_level_set.MultiLevelSet
     wikidata_item: wikidata_value.Item | None
+    all_wikidata_items: Set[wikidata_value.Item]
     all_wikidata_items_recursive: Set[wikidata_value.Item]
     wikidata_ignore_items_recursive: Set[wikidata_value.Item]
     wikidata_classes_ignore_recursive: Set[wikidata_value.Item]
@@ -117,9 +121,18 @@ class MediaItem:
                 if proto.wikidata
                 else None
             )
-            all_wikidata_items_recursive = frozenset(
+            all_wikidata_items = frozenset(
                 itertools.chain(
                     () if wikidata_item is None else (wikidata_item,),
+                    map(
+                        wikidata_value.Item.from_string,
+                        proto.wikidata_additional,
+                    ),
+                )
+            )
+            all_wikidata_items_recursive = frozenset(
+                itertools.chain(
+                    all_wikidata_items,
                     *(part.all_wikidata_items_recursive for part in parts),
                 )
             )
@@ -160,6 +173,7 @@ class MediaItem:
                 ),
                 done=multi_level_set.MultiLevelSet.from_string(proto.done),
                 wikidata_item=wikidata_item,
+                all_wikidata_items=all_wikidata_items,
                 all_wikidata_items_recursive=all_wikidata_items_recursive,
                 wikidata_ignore_items_recursive=wikidata_ignore_items_recursive,
                 wikidata_classes_ignore_recursive=(

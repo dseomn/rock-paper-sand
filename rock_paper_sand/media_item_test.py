@@ -32,6 +32,7 @@ class MediaItemTest(parameterized.TestCase):
         other_part = {
             "name": "other-part",
             "wikidata": "Q2",
+            "wikidataAdditional": ["Q20"],
             "wikidataIgnore": ["Q21", "Q22"],
             "wikidataClassesIgnore": ["Q23", "Q24"],
         }
@@ -65,9 +66,11 @@ class MediaItemTest(parameterized.TestCase):
                 custom_data={"a": "b"},
                 done=mock.ANY,
                 wikidata_item=wikidata_value.Item("Q1"),
+                all_wikidata_items={wikidata_value.Item("Q1")},
                 all_wikidata_items_recursive={
                     wikidata_value.Item("Q1"),
                     wikidata_value.Item("Q2"),
+                    wikidata_value.Item("Q20"),
                 },
                 wikidata_ignore_items_recursive={
                     wikidata_value.Item("Q11"),
@@ -91,6 +94,7 @@ class MediaItemTest(parameterized.TestCase):
                         custom_data=None,
                         done=mock.ANY,
                         wikidata_item=None,
+                        all_wikidata_items=frozenset(),
                         all_wikidata_items_recursive=frozenset(),
                         wikidata_ignore_items_recursive=frozenset(),
                         wikidata_classes_ignore_recursive=frozenset(),
@@ -107,8 +111,13 @@ class MediaItemTest(parameterized.TestCase):
                         custom_data=None,
                         done=mock.ANY,
                         wikidata_item=wikidata_value.Item("Q2"),
+                        all_wikidata_items={
+                            wikidata_value.Item("Q2"),
+                            wikidata_value.Item("Q20"),
+                        },
                         all_wikidata_items_recursive={
                             wikidata_value.Item("Q2"),
+                            wikidata_value.Item("Q20"),
                         },
                         wikidata_ignore_items_recursive={
                             wikidata_value.Item("Q21"),

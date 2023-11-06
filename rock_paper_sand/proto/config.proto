@@ -300,9 +300,14 @@ message MediaItem {
   // URL.
   string custom_availability = 4;
 
-  // Wikidata item URL or QID, e.g., "https://www.wikidata.org/wiki/Q3107329" or
-  // "Q3107329".
+  // Primary Wikidata item URL or QID, e.g.,
+  // "https://www.wikidata.org/wiki/Q3107329" or "Q3107329".
   string wikidata = 9;
+
+  // Additional Wikidata items. E.g., a media item with parts might have both a
+  // Wikidata item for a fictional universe and a Wikidata item for a media
+  // franchise.
+  repeated string wikidata_additional = 13;
 
   // Wikidata items to ignore when checking for related media.
   repeated string wikidata_ignore = 11;
