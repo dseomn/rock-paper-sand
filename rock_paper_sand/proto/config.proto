@@ -307,6 +307,9 @@ message MediaItem {
   // Wikidata items to ignore when checking for related media.
   repeated string wikidata_ignore = 11;
 
+  // Wikidata classes to ignore instances of when checking for related media.
+  repeated string wikidata_classes_ignore = 12;
+
   // JustWatch URL or ID, e.g.,
   // "https://www.justwatch.com/us/tv-show/monty-pythons-flying-circus" or
   // "ts22164". The `rock-paper-sand justwatch node` command can be used to find

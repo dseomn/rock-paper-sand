@@ -33,6 +33,7 @@ class MediaItemTest(parameterized.TestCase):
             "name": "other-part",
             "wikidata": "Q2",
             "wikidataIgnore": ["Q21", "Q22"],
+            "wikidataClassesIgnore": ["Q23", "Q24"],
         }
         other_part_proto = json_format.ParseDict(
             other_part, config_pb2.MediaItem()
@@ -44,6 +45,7 @@ class MediaItemTest(parameterized.TestCase):
                 "done": "all",
                 "wikidata": "Q1",
                 "wikidataIgnore": ["Q11"],
+                "wikidataClassesIgnore": ["Q12"],
                 "parts": [
                     {"name": "some-part"},
                     other_part,
@@ -72,6 +74,11 @@ class MediaItemTest(parameterized.TestCase):
                     wikidata_value.Item("Q21"),
                     wikidata_value.Item("Q22"),
                 },
+                wikidata_classes_ignore_recursive={
+                    wikidata_value.Item("Q12"),
+                    wikidata_value.Item("Q23"),
+                    wikidata_value.Item("Q24"),
+                },
                 has_parent=False,
                 parts=(
                     media_item.MediaItem(
@@ -86,6 +93,7 @@ class MediaItemTest(parameterized.TestCase):
                         wikidata_item=None,
                         all_wikidata_items_recursive=frozenset(),
                         wikidata_ignore_items_recursive=frozenset(),
+                        wikidata_classes_ignore_recursive=frozenset(),
                         has_parent=True,
                         parts=(),
                     ),
@@ -105,6 +113,10 @@ class MediaItemTest(parameterized.TestCase):
                         wikidata_ignore_items_recursive={
                             wikidata_value.Item("Q21"),
                             wikidata_value.Item("Q22"),
+                        },
+                        wikidata_classes_ignore_recursive={
+                            wikidata_value.Item("Q23"),
+                            wikidata_value.Item("Q24"),
                         },
                         has_parent=True,
                         parts=(),

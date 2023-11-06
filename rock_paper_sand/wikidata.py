@@ -540,12 +540,18 @@ class Filter(media_filter.CachedFilter):
         request: media_filter.FilterRequest,
         ignored_from_config: set[wikidata_value.Item],
     ) -> bool:
+        config_classes_ignore = request.item.wikidata_classes_ignore_recursive
         if item in request.item.wikidata_ignore_items_recursive:
             ignored_from_config.add(item)
             return True
         elif (
             item in self._ignored_items
             or self._api.item_classes(item) & self._ignored_classes
+            or any(
+                self._api.item_classes(item)
+                & self._api.transitive_subclasses(ignored_class)
+                for ignored_class in config_classes_ignore
+            )
         ):
             return True
         else:

@@ -45,6 +45,8 @@ class MediaItem:
         all_wikidata_items_recursive: Wikidata items from this and all parts.
         wikidata_ignore_items_recursive: Wikidata items to ignore from this and
             all parts.
+        wikidata_classes_ignore_recursive: Wikidata classes to ignore from this
+            and all parts.
         has_parent: Whether or not this item appears in the `parts` field of
             another item.
         parts: Parsed proto.parts field.
@@ -62,6 +64,7 @@ class MediaItem:
     wikidata_item: wikidata_value.Item | None
     all_wikidata_items_recursive: Set[wikidata_value.Item]
     wikidata_ignore_items_recursive: Set[wikidata_value.Item]
+    wikidata_classes_ignore_recursive: Set[wikidata_value.Item]
     has_parent: bool
     parts: Sequence["MediaItem"]
 
@@ -129,6 +132,15 @@ class MediaItem:
                     *(part.wikidata_ignore_items_recursive for part in parts),
                 )
             )
+            wikidata_classes_ignore_recursive = frozenset(
+                itertools.chain(
+                    map(
+                        wikidata_value.Item.from_string,
+                        proto.wikidata_classes_ignore,
+                    ),
+                    *(part.wikidata_classes_ignore_recursive for part in parts),
+                )
+            )
             wikidata_included_and_ignored = (
                 all_wikidata_items_recursive & wikidata_ignore_items_recursive
             )
@@ -150,6 +162,9 @@ class MediaItem:
                 wikidata_item=wikidata_item,
                 all_wikidata_items_recursive=all_wikidata_items_recursive,
                 wikidata_ignore_items_recursive=wikidata_ignore_items_recursive,
+                wikidata_classes_ignore_recursive=(
+                    wikidata_classes_ignore_recursive
+                ),
                 has_parent=parent_fully_qualified_name is not None,
                 parts=parts,
             )

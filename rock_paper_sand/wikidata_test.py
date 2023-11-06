@@ -1118,18 +1118,20 @@ class WikidataFilterTest(parameterized.TestCase):
                 "name": "foo",
                 "wikidata": "Q1",
                 "wikidataIgnore": ["Q3", "Q4", "Q5"],
+                "wikidataClassesIgnore": ["Q61"],
             },
             api_item_classes={
                 "Q1": set(),
                 "Q2": {wikidata_value.Q_FICTIONAL_ENTITY},
                 "Q3": set(),
                 "Q4": set(),
+                "Q6": {wikidata_value.Item("Q61")},
             },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
                     parents={wikidata_value.Item("Q4")},
                     siblings={wikidata_value.Q_PARATEXT},
-                    children=set(),
+                    children={wikidata_value.Item("Q6")},
                     loose={
                         wikidata_value.Item("Q2"),
                         wikidata_value.Item("Q3"),
