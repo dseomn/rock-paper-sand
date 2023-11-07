@@ -118,6 +118,7 @@ def _add_diff_attachment(
                 new.splitlines(keepends=True),
                 fromfile=f"{name}.yaml.old",
                 tofile=f"{name}.yaml",
+                n=5,
             )
         )
         diff_type = "full"
