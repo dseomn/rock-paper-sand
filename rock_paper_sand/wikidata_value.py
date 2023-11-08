@@ -16,6 +16,7 @@
 See https://www.mediawiki.org/wiki/Wikibase/DataModel
 """
 
+import abc
 from collections.abc import Collection
 import dataclasses
 import re
@@ -52,48 +53,82 @@ def _parse_id(
     return match.group("id")
 
 
-_ITEM_PREFIX_FOR_HUMAN = "https://www.wikidata.org/wiki/"
-_ITEM_PREFIX_CANONICAL_URI = "http://www.wikidata.org/entity/"
+_ENTITY_PREFIX_CANONICAL_URI = "http://www.wikidata.org/entity/"
 
 
 @dataclasses.dataclass(frozen=True)
-class ItemRef:
-    """Reference (ID/URI) to a Wikidata item.
+class EntityRef:
+    """Reference (ID/URI) to a Wikidata entity.
 
     Attributes:
-        id: QID of the item, e.g., "Q3107329".
+        id: ID of the entity, e.g., "Q3107329" for an item or "P580" for a
+            property.
     """
 
     id: str
 
+    @classmethod
+    @abc.abstractmethod
+    def letter(cls) -> str:
+        """Returns which letter the ID starts with, e.g., "Q" for an item."""
+        raise NotImplementedError()
+
+    @classmethod
+    @abc.abstractmethod
+    def human_readable_url_prefix(cls) -> str:
+        """Returns the prefix before the ID for a human-readable URL."""
+        raise NotImplementedError()
+
     def __post_init__(self) -> None:
-        _parse_id(self.id, letter="Q")
+        _parse_id(self.id, letter=self.letter())  # Validate the ID.
 
     def __str__(self) -> str:
-        return f"{_ITEM_PREFIX_FOR_HUMAN}{self.id}"
+        return f"{self.human_readable_url_prefix()}{self.id}"
 
     @classmethod
     def from_string(cls, value: str) -> Self:
-        """Returns the item parsed from a string."""
+        """Returns the entity ref parsed from a string."""
         return cls(
-            _parse_id(value, prefixes=("", _ITEM_PREFIX_FOR_HUMAN), letter="Q")
+            _parse_id(
+                value,
+                prefixes=("", cls.human_readable_url_prefix()),
+                letter=cls.letter(),
+            )
         )
 
     @property
     def uri(self) -> str:
-        """The canonical URI of the item.
+        """The canonical URI of the entity.
 
-        Note that this is not the URL meant for accessing data about the item,
+        Note that this is not the URL meant for accessing data about the entity,
         but the URI for identifying it.
         """
-        return f"{_ITEM_PREFIX_CANONICAL_URI}{self.id}"
+        return f"{_ENTITY_PREFIX_CANONICAL_URI}{self.id}"
 
     @classmethod
     def from_uri(cls, value: str) -> Self:
-        """Returns the item parsed from its canonical URI."""
+        """Returns the entity ref parsed from its canonical URI."""
         return cls(
-            _parse_id(value, prefixes=(_ITEM_PREFIX_CANONICAL_URI,), letter="Q")
+            _parse_id(
+                value,
+                prefixes=(_ENTITY_PREFIX_CANONICAL_URI,),
+                letter=cls.letter(),
+            )
         )
+
+
+class ItemRef(EntityRef):
+    """Reference (ID/URI) to a Wikidata item."""
+
+    @classmethod
+    def letter(cls) -> str:
+        """See base class."""
+        return "Q"
+
+    @classmethod
+    def human_readable_url_prefix(cls) -> str:
+        """See base class."""
+        return "https://www.wikidata.org/wiki/"
 
 
 _i = ItemRef.from_string
@@ -116,32 +151,19 @@ Q_TELEVISION_SPECIAL = _i("https://www.wikidata.org/wiki/Q1261214")
 Q_TOMMY_WESTPHALL_UNIVERSE = _i("https://www.wikidata.org/wiki/Q95410310")
 del _i
 
-_PROPERTY_PREFIX_FOR_HUMAN = "https://www.wikidata.org/wiki/Property:"
 
-
-@dataclasses.dataclass(frozen=True)
-class PropertyRef:
-    """Reference (ID/URI) to a Wikidata property.
-
-    Attributes:
-        id: ID of the item, e.g., "P580".
-    """
-
-    id: str
-
-    def __post_init__(self) -> None:
-        _parse_id(self.id, letter="P")
+class PropertyRef(EntityRef):
+    """Reference (ID/URI) to a Wikidata property."""
 
     @classmethod
-    def from_string(cls, value: str) -> Self:
-        """Returns the property parsed from a string."""
-        return cls(
-            _parse_id(
-                value,
-                prefixes=("", _PROPERTY_PREFIX_FOR_HUMAN),
-                letter="P",
-            )
-        )
+    def letter(cls) -> str:
+        """See base class."""
+        return "P"
+
+    @classmethod
+    def human_readable_url_prefix(cls) -> str:
+        """See base class."""
+        return "https://www.wikidata.org/wiki/Property:"
 
 
 _p = PropertyRef.from_string
