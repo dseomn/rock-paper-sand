@@ -60,6 +60,12 @@ message ArbitraryDataMatcher {
 
 // Filters using Wikidata APIs.
 message WikidataFilter {
+  // Languages to use for labels and descriptions, in order from highest
+  // preference to lowest. See
+  // https://www.wikidata.org/wiki/Help:Wikimedia_language_codes/lists/all for
+  // list.
+  repeated string languages = 3;
+
   // Status of a media item's release/publication.
   enum ReleaseStatus {
     // Unknown or no data.

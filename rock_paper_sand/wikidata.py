@@ -670,6 +670,24 @@ class Filter(media_filter.CachedFilter):
             else:
                 unprocessed.add(item)
 
+    def _related_item_result_extra(
+        self,
+        category: str,
+        item: wikidata_value.Item,
+    ) -> media_filter.ResultExtra:
+        item_data = self._api.item(item)
+        item_description_parts = []
+        if (label := _label(item_data, self._config.languages)) is not None:
+            item_description_parts.append(label)
+        if (
+            description := _description(item_data, self._config.languages)
+        ) is not None:
+            item_description_parts.append(f"({description})")
+        item_description_parts.append(f"<{item}>")
+        return media_filter.ResultExtraString(
+            f"{category}: {' '.join(item_description_parts)}"
+        )
+
     def _related_media(
         self, request: media_filter.FilterRequest
     ) -> Set[media_filter.ResultExtra]:
@@ -747,11 +765,11 @@ class Filter(media_filter.CachedFilter):
             unprocessed_unlikely -= integral_children
         return {
             *(
-                media_filter.ResultExtraString(f"related item: {item}")
+                self._related_item_result_extra("related item", item)
                 for item in processed - items_from_config - integral_children
             ),
             *(
-                media_filter.ResultExtraString(f"loosely-related item: {item}")
+                self._related_item_result_extra("loosely-related item", item)
                 for item in (
                     loose - processed - items_from_config - integral_children
                 )

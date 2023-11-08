@@ -1031,6 +1031,11 @@ class WikidataFilterTest(parameterized.TestCase):
                 "wikidata": "Q1",
                 "parts": [{"name": "bar", "wikidata": "Q4"}],
             },
+            api_items={
+                "Q2": {"labels": {}, "descriptions": {}},
+                "Q3": {"labels": {}, "descriptions": {}},
+                "Q5": {"labels": {}, "descriptions": {}},
+            },
             api_item_classes={
                 "Q1": set(),
                 "Q2": set(),
@@ -1080,14 +1085,14 @@ class WikidataFilterTest(parameterized.TestCase):
                 True,
                 extra={
                     media_filter.ResultExtraString(
-                        "related item: https://www.wikidata.org/wiki/Q2"
+                        "related item: <https://www.wikidata.org/wiki/Q2>"
                     ),
                     media_filter.ResultExtraString(
-                        "related item: https://www.wikidata.org/wiki/Q3"
+                        "related item: <https://www.wikidata.org/wiki/Q3>"
                     ),
                     # Q4 is in the config, so not shown here.
                     media_filter.ResultExtraString(
-                        "related item: https://www.wikidata.org/wiki/Q5"
+                        "related item: <https://www.wikidata.org/wiki/Q5>"
                     ),
                 },
             ),
@@ -1099,6 +1104,9 @@ class WikidataFilterTest(parameterized.TestCase):
                 "name": "foo",
                 "wikidata": "Q1",
                 "parts": [{"name": "bar", "wikidata": "Q2"}],
+            },
+            api_items={
+                "Q3": {"labels": {}, "descriptions": {}},
             },
             api_item_classes={
                 "Q2": set(),
@@ -1124,7 +1132,8 @@ class WikidataFilterTest(parameterized.TestCase):
                 True,
                 extra={
                     media_filter.ResultExtraString(
-                        "loosely-related item: https://www.wikidata.org/wiki/Q3"
+                        "loosely-related item: "
+                        "<https://www.wikidata.org/wiki/Q3>"
                     ),
                 },
             ),
@@ -1197,6 +1206,12 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="related_media_ignores_integral_children",
             filter_config={"relatedMedia": {}},
             item={"name": "foo", "wikidata": "Q1"},
+            api_items={
+                "Q2": {"labels": {}, "descriptions": {}},
+                "Q22": {"labels": {}, "descriptions": {}},
+                "Q3": {"labels": {}, "descriptions": {}},
+                "Q4": {"labels": {}, "descriptions": {}},
+            },
             api_item_classes={
                 "Q1": set(),
                 "Q2": {wikidata_value.Q_TELEVISION_SERIES},
@@ -1279,19 +1294,19 @@ class WikidataFilterTest(parameterized.TestCase):
                 True,
                 extra={
                     media_filter.ResultExtraString(
-                        "related item: https://www.wikidata.org/wiki/Q2"
+                        "related item: <https://www.wikidata.org/wiki/Q2>"
                     ),
                     # Q21 is an integral child of Q2.
                     media_filter.ResultExtraString(
-                        "related item: https://www.wikidata.org/wiki/Q22"
+                        "related item: <https://www.wikidata.org/wiki/Q22>"
                     ),
                     # Q23 is an integral child of Q2.
                     # Q31 is an integral child of Q3.
                     media_filter.ResultExtraString(
-                        "related item: https://www.wikidata.org/wiki/Q3"
+                        "related item: <https://www.wikidata.org/wiki/Q3>"
                     ),
                     media_filter.ResultExtraString(
-                        "related item: https://www.wikidata.org/wiki/Q4"
+                        "related item: <https://www.wikidata.org/wiki/Q4>"
                     ),
                     # Q41 is an integral child of Q4.
                 },
@@ -1301,6 +1316,9 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="related_media_does_not_traverse_collections",
             filter_config={"relatedMedia": {}},
             item={"name": "foo", "wikidata": "Q1"},
+            api_items={
+                "Q3": {"labels": {}, "descriptions": {}},
+            },
             api_item_classes={
                 "Q1": set(),
                 "Q2": {wikidata_value.Q_LIST},
@@ -1325,7 +1343,53 @@ class WikidataFilterTest(parameterized.TestCase):
                 True,
                 extra={
                     media_filter.ResultExtraString(
-                        "related item: https://www.wikidata.org/wiki/Q3"
+                        "related item: <https://www.wikidata.org/wiki/Q3>"
+                    ),
+                },
+            ),
+        ),
+        dict(
+            testcase_name="related_media_includes_label_and_description",
+            filter_config={"languages": ["en"], "relatedMedia": {}},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_items={
+                "Q2": {
+                    "labels": {"en": {"value": "film 2"}},
+                    "descriptions": {"en": {"value": "2002 film"}},
+                },
+                "Q3": {
+                    "labels": {"en": {"value": "film 3"}},
+                    "descriptions": {"en": {"value": "2003 film"}},
+                },
+            },
+            api_item_classes={
+                "Q2": set(),
+                "Q3": set(),
+            },
+            api_related_media={
+                "Q1": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings={wikidata_value.Item("Q2")},
+                    children=set(),
+                    loose={wikidata_value.Item("Q3")},
+                ),
+                "Q2": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
+            },
+            expected_result=media_filter.FilterResult(
+                True,
+                extra={
+                    media_filter.ResultExtraString(
+                        "related item: film 2 (2002 film) "
+                        "<https://www.wikidata.org/wiki/Q2>"
+                    ),
+                    media_filter.ResultExtraString(
+                        "loosely-related item: film 3 (2003 film) "
+                        "<https://www.wikidata.org/wiki/Q3>"
                     ),
                 },
             ),
