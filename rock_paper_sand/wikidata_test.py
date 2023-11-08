@@ -104,8 +104,8 @@ class WikidataApiTest(parameterized.TestCase):
             "entities": {"Q1": item}
         }
 
-        first_response = self._api.item(wikidata_value.Item("Q1"))
-        second_response = self._api.item(wikidata_value.Item("Q1"))
+        first_response = self._api.item(wikidata_value.ItemRef("Q1"))
+        second_response = self._api.item(wikidata_value.ItemRef("Q1"))
 
         self.assertEqual(item, first_response)
         self.assertEqual(item, second_response)
@@ -157,12 +157,12 @@ class WikidataApiTest(parameterized.TestCase):
             }
         }
 
-        first_result = self._api.item_classes(wikidata_value.Item("Q1"))
-        second_result = self._api.item_classes(wikidata_value.Item("Q1"))
+        first_result = self._api.item_classes(wikidata_value.ItemRef("Q1"))
+        second_result = self._api.item_classes(wikidata_value.ItemRef("Q1"))
 
         expected_classes = {
-            wikidata_value.Item("Q2"),
-            wikidata_value.Item("Q3"),
+            wikidata_value.ItemRef("Q2"),
+            wikidata_value.ItemRef("Q3"),
         }
         self.assertEqual(expected_classes, first_result)
         self.assertEqual(expected_classes, second_result)
@@ -182,15 +182,15 @@ class WikidataApiTest(parameterized.TestCase):
         }
 
         first_result = self._api.transitive_subclasses(
-            wikidata_value.Item("Q1")
+            wikidata_value.ItemRef("Q1")
         )
         second_result = self._api.transitive_subclasses(
-            wikidata_value.Item("Q1")
+            wikidata_value.ItemRef("Q1")
         )
 
         expected_subclasses = {
-            wikidata_value.Item("Q1"),
-            wikidata_value.Item("Q2"),
+            wikidata_value.ItemRef("Q1"),
+            wikidata_value.ItemRef("Q2"),
         }
         self.assertEqual(expected_subclasses, first_result)
         self.assertEqual(expected_subclasses, second_result)
@@ -269,8 +269,8 @@ class WikidataApiTest(parameterized.TestCase):
             "results": {"bindings": sparql_results}
         }
 
-        first_result = self._api.related_media(wikidata_value.Item("Q1"))
-        second_result = self._api.related_media(wikidata_value.Item("Q1"))
+        first_result = self._api.related_media(wikidata_value.ItemRef("Q1"))
+        second_result = self._api.related_media(wikidata_value.ItemRef("Q1"))
         actual_classes = {
             item: self._api.item_classes(item)
             for item in {
@@ -283,13 +283,13 @@ class WikidataApiTest(parameterized.TestCase):
 
         expected_related_media = wikidata.RelatedMedia(
             **{
-                key: frozenset(map(wikidata_value.Item, values))
+                key: frozenset(map(wikidata_value.ItemRef, values))
                 for key, values in expected_result.items()
             }
         )
         expected_classes = {
-            wikidata_value.Item(item_id): frozenset(
-                map(wikidata_value.Item, classes)
+            wikidata_value.ItemRef(item_id): frozenset(
+                map(wikidata_value.ItemRef, classes)
             )
             for item_id, classes in expected_cached_classes.items()
         }
@@ -313,7 +313,7 @@ class WikidataApiTest(parameterized.TestCase):
         }
 
         with self.assertRaisesRegex(ValueError, "kumquat"):
-            self._api.related_media(wikidata_value.Item("Q1"))
+            self._api.related_media(wikidata_value.ItemRef("Q1"))
 
 
 class WikidataUtilsTest(parameterized.TestCase):
@@ -376,7 +376,7 @@ class WikidataUtilsTest(parameterized.TestCase):
                     ],
                 },
             },
-            prop=wikidata_value.Property("P1"),
+            prop=wikidata_value.PropertyRef("P1"),
             statements=(
                 {"id": "foo", "rank": "preferred"},
                 {"id": "bar", "rank": "preferred"},
@@ -393,7 +393,7 @@ class WikidataUtilsTest(parameterized.TestCase):
                     ],
                 },
             },
-            prop=wikidata_value.Property("P1"),
+            prop=wikidata_value.PropertyRef("P1"),
             statements=(
                 {"id": "foo", "rank": "normal"},
                 {"id": "bar", "rank": "normal"},
@@ -408,7 +408,7 @@ class WikidataUtilsTest(parameterized.TestCase):
                     ],
                 },
             },
-            prop=wikidata_value.Property("P1"),
+            prop=wikidata_value.PropertyRef("P1"),
             statements=(),
         ),
         dict(
@@ -418,13 +418,13 @@ class WikidataUtilsTest(parameterized.TestCase):
                     "P1": [],
                 },
             },
-            prop=wikidata_value.Property("P1"),
+            prop=wikidata_value.PropertyRef("P1"),
             statements=(),
         ),
         dict(
             testcase_name="missing",
             item={"claims": {}},
-            prop=wikidata_value.Property("P1"),
+            prop=wikidata_value.PropertyRef("P1"),
             statements=(),
         ),
     )
@@ -432,7 +432,7 @@ class WikidataUtilsTest(parameterized.TestCase):
         self,
         *,
         item: Any,
-        prop: wikidata_value.Property,
+        prop: wikidata_value.PropertyRef,
         statements: Sequence[Any],
     ) -> None:
         self.assertSequenceEqual(
@@ -488,7 +488,7 @@ class WikidataUtilsTest(parameterized.TestCase):
 
     def test_parse_snak_item(self) -> None:
         self.assertEqual(
-            wikidata_value.Item("Q1"),
+            wikidata_value.ItemRef("Q1"),
             wikidata._parse_snak_item(_snak_item("Q1")),
         )
 
@@ -748,7 +748,7 @@ class WikidataUtilsTest(parameterized.TestCase):
 
     def test_parse_sparql_result_item(self) -> None:
         self.assertEqual(
-            wikidata_value.Item("Q1"),
+            wikidata_value.ItemRef("Q1"),
             wikidata._parse_sparql_result_item(_sparql_item("Q1")),
         )
 
@@ -1048,36 +1048,36 @@ class WikidataFilterTest(parameterized.TestCase):
                     parents=set(),
                     siblings=set(),
                     children={
-                        wikidata_value.Item("Q2"),
-                        wikidata_value.Item("Q3"),
+                        wikidata_value.ItemRef("Q2"),
+                        wikidata_value.ItemRef("Q3"),
                     },
                     loose=set(),
                 ),
                 "Q2": wikidata.RelatedMedia(
-                    parents={wikidata_value.Item("Q1")},
-                    siblings={wikidata_value.Item("Q3")},
+                    parents={wikidata_value.ItemRef("Q1")},
+                    siblings={wikidata_value.ItemRef("Q3")},
                     children=set(),
                     loose=set(),
                 ),
                 "Q3": wikidata.RelatedMedia(
-                    parents={wikidata_value.Item("Q1")},
+                    parents={wikidata_value.ItemRef("Q1")},
                     siblings={
-                        wikidata_value.Item("Q2"),
-                        wikidata_value.Item("Q4"),
+                        wikidata_value.ItemRef("Q2"),
+                        wikidata_value.ItemRef("Q4"),
                     },
                     children=set(),
                     loose=set(),
                 ),
                 "Q4": wikidata.RelatedMedia(
-                    parents={wikidata_value.Item("Q5")},
-                    siblings={wikidata_value.Item("Q3")},
+                    parents={wikidata_value.ItemRef("Q5")},
+                    siblings={wikidata_value.ItemRef("Q3")},
                     children=set(),
                     loose=set(),
                 ),
                 "Q5": wikidata.RelatedMedia(
                     parents=set(),
                     siblings=set(),
-                    children={wikidata_value.Item("Q4")},
+                    children={wikidata_value.ItemRef("Q4")},
                     loose=set(),
                 ),
             },
@@ -1119,13 +1119,13 @@ class WikidataFilterTest(parameterized.TestCase):
                     children=set(),
                     # Q2 is upgraded to non-loose, because it's also in the
                     # config.
-                    loose={wikidata_value.Item("Q2")},
+                    loose={wikidata_value.ItemRef("Q2")},
                 ),
                 "Q2": wikidata.RelatedMedia(
                     parents=set(),
                     siblings=set(),
                     children=set(),
-                    loose={wikidata_value.Item("Q3")},
+                    loose={wikidata_value.ItemRef("Q3")},
                 ),
             },
             expected_result=media_filter.FilterResult(
@@ -1179,16 +1179,16 @@ class WikidataFilterTest(parameterized.TestCase):
                 "Q2": {wikidata_value.Q_FICTIONAL_ENTITY},
                 "Q3": set(),
                 "Q4": set(),
-                "Q6": {wikidata_value.Item("Q61")},
+                "Q6": {wikidata_value.ItemRef("Q61")},
             },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
-                    parents={wikidata_value.Item("Q4")},
+                    parents={wikidata_value.ItemRef("Q4")},
                     siblings={wikidata_value.Q_PARATEXT},
-                    children={wikidata_value.Item("Q6")},
+                    children={wikidata_value.ItemRef("Q6")},
                     loose={
-                        wikidata_value.Item("Q2"),
-                        wikidata_value.Item("Q3"),
+                        wikidata_value.ItemRef("Q2"),
+                        wikidata_value.ItemRef("Q3"),
                     },
                 ),
             },
@@ -1231,9 +1231,9 @@ class WikidataFilterTest(parameterized.TestCase):
                     parents=set(),
                     siblings=set(),
                     children={
-                        wikidata_value.Item("Q2"),
-                        wikidata_value.Item("Q31"),
-                        wikidata_value.Item("Q4"),
+                        wikidata_value.ItemRef("Q2"),
+                        wikidata_value.ItemRef("Q31"),
+                        wikidata_value.ItemRef("Q4"),
                     },
                     loose=set(),
                 ),
@@ -1241,9 +1241,9 @@ class WikidataFilterTest(parameterized.TestCase):
                     parents=set(),
                     siblings=set(),
                     children={
-                        wikidata_value.Item("Q21"),
-                        wikidata_value.Item("Q22"),
-                        wikidata_value.Item("Q23"),
+                        wikidata_value.ItemRef("Q21"),
+                        wikidata_value.ItemRef("Q22"),
+                        wikidata_value.ItemRef("Q23"),
                     },
                     loose=set(),
                 ),
@@ -1266,7 +1266,7 @@ class WikidataFilterTest(parameterized.TestCase):
                     loose=set(),
                 ),
                 "Q31": wikidata.RelatedMedia(
-                    parents={wikidata_value.Item("Q3")},
+                    parents={wikidata_value.ItemRef("Q3")},
                     siblings=set(),
                     children=set(),
                     loose=set(),
@@ -1280,7 +1280,7 @@ class WikidataFilterTest(parameterized.TestCase):
                 "Q4": wikidata.RelatedMedia(
                     parents=set(),
                     siblings=set(),
-                    children={wikidata_value.Item("Q41")},
+                    children={wikidata_value.ItemRef("Q41")},
                     loose=set(),
                 ),
                 "Q41": wikidata.RelatedMedia(
@@ -1327,15 +1327,15 @@ class WikidataFilterTest(parameterized.TestCase):
             },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
-                    parents={wikidata_value.Item("Q2")},
+                    parents={wikidata_value.ItemRef("Q2")},
                     siblings=set(),
-                    children={wikidata_value.Item("Q3")},
+                    children={wikidata_value.ItemRef("Q3")},
                     loose=set(),
                 ),
                 "Q3": wikidata.RelatedMedia(
                     parents=set(),
                     siblings=set(),
-                    children={wikidata_value.Item("Q4")},
+                    children={wikidata_value.ItemRef("Q4")},
                     loose=set(),
                 ),
             },
@@ -1369,9 +1369,9 @@ class WikidataFilterTest(parameterized.TestCase):
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
                     parents=set(),
-                    siblings={wikidata_value.Item("Q2")},
+                    siblings={wikidata_value.ItemRef("Q2")},
                     children=set(),
-                    loose={wikidata_value.Item("Q3")},
+                    loose={wikidata_value.ItemRef("Q3")},
                 ),
                 "Q2": wikidata.RelatedMedia(
                     parents=set(),
@@ -1402,7 +1402,7 @@ class WikidataFilterTest(parameterized.TestCase):
         item: Any,
         parent_fully_qualified_name: str | None = None,
         api_items: Mapping[str, Any] = immutabledict.immutabledict(),
-        api_item_classes: Mapping[str, Set[wikidata_value.Item]] = (
+        api_item_classes: Mapping[str, Set[wikidata_value.ItemRef]] = (
             immutabledict.immutabledict()
         ),
         api_related_media: Mapping[str, wikidata.RelatedMedia] = (
@@ -1437,7 +1437,7 @@ class WikidataFilterTest(parameterized.TestCase):
         self._mock_api.item_classes.return_value = set()
         self._mock_api.related_media.return_value = wikidata.RelatedMedia(
             parents=set(),
-            siblings={wikidata_value.Item(f"Q{n}") for n in range(1001)},
+            siblings={wikidata_value.ItemRef(f"Q{n}") for n in range(1001)},
             children=set(),
             loose=set(),
         )

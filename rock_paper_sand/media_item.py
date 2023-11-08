@@ -64,11 +64,11 @@ class MediaItem:
     fully_qualified_name: str
     custom_data: Any
     done: multi_level_set.MultiLevelSet
-    wikidata_item: wikidata_value.Item | None
-    all_wikidata_items: Set[wikidata_value.Item]
-    all_wikidata_items_recursive: Set[wikidata_value.Item]
-    wikidata_ignore_items_recursive: Set[wikidata_value.Item]
-    wikidata_classes_ignore_recursive: Set[wikidata_value.Item]
+    wikidata_item: wikidata_value.ItemRef | None
+    all_wikidata_items: Set[wikidata_value.ItemRef]
+    all_wikidata_items_recursive: Set[wikidata_value.ItemRef]
+    wikidata_ignore_items_recursive: Set[wikidata_value.ItemRef]
+    wikidata_classes_ignore_recursive: Set[wikidata_value.ItemRef]
     has_parent: bool
     parts: Sequence["MediaItem"]
 
@@ -117,7 +117,7 @@ class MediaItem:
             if not proto.name:
                 raise ValueError("The name field is required.")
             wikidata_item = (
-                wikidata_value.Item.from_string(proto.wikidata)
+                wikidata_value.ItemRef.from_string(proto.wikidata)
                 if proto.wikidata
                 else None
             )
@@ -125,7 +125,7 @@ class MediaItem:
                 itertools.chain(
                     () if wikidata_item is None else (wikidata_item,),
                     map(
-                        wikidata_value.Item.from_string,
+                        wikidata_value.ItemRef.from_string,
                         proto.wikidata_additional,
                     ),
                 )
@@ -139,7 +139,7 @@ class MediaItem:
             wikidata_ignore_items_recursive = frozenset(
                 itertools.chain(
                     map(
-                        wikidata_value.Item.from_string,
+                        wikidata_value.ItemRef.from_string,
                         proto.wikidata_ignore,
                     ),
                     *(part.wikidata_ignore_items_recursive for part in parts),
@@ -148,7 +148,7 @@ class MediaItem:
             wikidata_classes_ignore_recursive = frozenset(
                 itertools.chain(
                     map(
-                        wikidata_value.Item.from_string,
+                        wikidata_value.ItemRef.from_string,
                         proto.wikidata_classes_ignore,
                     ),
                     *(part.wikidata_classes_ignore_recursive for part in parts),

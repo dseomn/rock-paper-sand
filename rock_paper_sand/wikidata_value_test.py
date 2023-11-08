@@ -23,12 +23,12 @@ from rock_paper_sand import wikidata_value
 class WikidataValueTest(parameterized.TestCase):
     def test_invalid_item_id(self) -> None:
         with self.assertRaisesRegex(ValueError, "Wikidata IRI or ID"):
-            wikidata_value.Item("foo")
+            wikidata_value.ItemRef("foo")
 
-    def test_item_string(self) -> None:
+    def test_item_ref_string(self) -> None:
         self.assertEqual(
             "https://www.wikidata.org/wiki/Q1",
-            str(wikidata_value.Item("Q1")),
+            str(wikidata_value.ItemRef("Q1")),
         )
 
     @parameterized.parameters(
@@ -44,46 +44,50 @@ class WikidataValueTest(parameterized.TestCase):
         "https://www.wikidata.org/wiki/Q",
         "https://www.wikidata.org/wiki/Q1foo",
     )
-    def test_invalid_item_string(self, value: str) -> None:
+    def test_invalid_item_ref_string(self, value: str) -> None:
         with self.assertRaisesRegex(ValueError, "Wikidata IRI or ID"):
-            wikidata_value.Item.from_string(value)
+            wikidata_value.ItemRef.from_string(value)
 
     @parameterized.parameters(
         ("Q1", "Q1"),
         ("https://www.wikidata.org/wiki/Q1", "Q1"),
     )
-    def test_valid_item_string(self, value: str, expected_id: str) -> None:
-        self.assertEqual(expected_id, wikidata_value.Item.from_string(value).id)
-
-    def test_item_uri(self) -> None:
+    def test_valid_item_ref_string(self, value: str, expected_id: str) -> None:
         self.assertEqual(
-            "http://www.wikidata.org/entity/Q1",
-            wikidata_value.Item("Q1").uri,
+            expected_id, wikidata_value.ItemRef.from_string(value).id
         )
 
-    def test_item_from_uri_invalid(self) -> None:
-        with self.assertRaisesRegex(ValueError, "Wikidata IRI or ID"):
-            wikidata_value.Item.from_uri("Q1")
+    def test_item_ref_uri(self) -> None:
+        self.assertEqual(
+            "http://www.wikidata.org/entity/Q1",
+            wikidata_value.ItemRef("Q1").uri,
+        )
 
-    def test_item_from_uri_valid(self) -> None:
+    def test_item_ref_from_uri_invalid(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Wikidata IRI or ID"):
+            wikidata_value.ItemRef.from_uri("Q1")
+
+    def test_item_ref_from_uri_valid(self) -> None:
         self.assertEqual(
             "Q1",
-            wikidata_value.Item.from_uri(
+            wikidata_value.ItemRef.from_uri(
                 "http://www.wikidata.org/entity/Q1"
             ).id,
         )
 
     def test_invalid_property_id(self) -> None:
         with self.assertRaisesRegex(ValueError, "Wikidata IRI or ID"):
-            wikidata_value.Property("foo")
+            wikidata_value.PropertyRef("foo")
 
     @parameterized.parameters(
         ("P6", "P6"),
         ("https://www.wikidata.org/wiki/Property:P6", "P6"),
     )
-    def test_valid_property_string(self, value: str, expected_id: str) -> None:
+    def test_valid_property_ref_string(
+        self, value: str, expected_id: str
+    ) -> None:
         self.assertEqual(
-            expected_id, wikidata_value.Property.from_string(value).id
+            expected_id, wikidata_value.PropertyRef.from_string(value).id
         )
 
 

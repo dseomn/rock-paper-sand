@@ -57,8 +57,8 @@ _ITEM_PREFIX_CANONICAL_URI = "http://www.wikidata.org/entity/"
 
 
 @dataclasses.dataclass(frozen=True)
-class Item:
-    """Wikidata item.
+class ItemRef:
+    """Reference (ID/URI) to a Wikidata item.
 
     Attributes:
         id: QID of the item, e.g., "Q3107329".
@@ -96,7 +96,7 @@ class Item:
         )
 
 
-_i = Item.from_string
+_i = ItemRef.from_string
 Q_ANTHOLOGY = _i("https://www.wikidata.org/wiki/Q105420")
 Q_FICTIONAL_ENTITY = _i("https://www.wikidata.org/wiki/Q14897293")
 Q_FICTIONAL_UNIVERSE = _i("https://www.wikidata.org/wiki/Q559618")
@@ -120,8 +120,8 @@ _PROPERTY_PREFIX_FOR_HUMAN = "https://www.wikidata.org/wiki/Property:"
 
 
 @dataclasses.dataclass(frozen=True)
-class Property:
-    """Wikidata property.
+class PropertyRef:
+    """Reference (ID/URI) to a Wikidata property.
 
     Attributes:
         id: ID of the item, e.g., "P580".
@@ -144,7 +144,7 @@ class Property:
         )
 
 
-_p = Property.from_string
+_p = PropertyRef.from_string
 P_BASED_ON = _p("https://www.wikidata.org/wiki/Property:P144")
 P_DATE_OF_FIRST_PERFORMANCE = _p("https://www.wikidata.org/wiki/Property:P1191")
 P_DERIVATIVE_WORK = _p("https://www.wikidata.org/wiki/Property:P4969")

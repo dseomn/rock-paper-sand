@@ -94,7 +94,7 @@ def _description(item: Any, languages: Sequence[str]) -> str | None:
 
 
 def _truthy_statements(
-    item: Any, prop: wikidata_value.Property
+    item: Any, prop: wikidata_value.PropertyRef
 ) -> Sequence[Any]:
     # https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Truthy_statements
     statements = item["claims"].get(prop.id, ())
@@ -107,7 +107,7 @@ def _truthy_statements(
     )
 
 
-def _parse_snak_item(snak: Any) -> wikidata_value.Item:
+def _parse_snak_item(snak: Any) -> wikidata_value.ItemRef:
     if snak["snaktype"] != "value":
         raise NotImplementedError(
             f"Cannot parse non-value snak as an item: {snak}"
@@ -118,7 +118,7 @@ def _parse_snak_item(snak: Any) -> wikidata_value.Item:
         or snak["datavalue"]["value"]["entity-type"] != "item"
     ):
         raise ValueError(f"Cannot parse non-item snak as a item: {snak}")
-    return wikidata_value.Item(snak["datavalue"]["value"]["id"])
+    return wikidata_value.ItemRef(snak["datavalue"]["value"]["id"])
 
 
 def _parse_snak_time(snak: Any) -> tuple[datetime.datetime, datetime.datetime]:
@@ -209,10 +209,10 @@ def _parse_statement_time(
             )
 
 
-def _parse_sparql_result_item(term: Any) -> wikidata_value.Item:
+def _parse_sparql_result_item(term: Any) -> wikidata_value.ItemRef:
     if term["type"] != "uri":
         raise ValueError(f"Cannot parse non-uri term as an item: {term}")
-    return wikidata_value.Item.from_uri(term["value"])
+    return wikidata_value.ItemRef.from_uri(term["value"])
 
 
 def _parse_sparql_result_string(term: Any) -> str:
@@ -237,10 +237,10 @@ class RelatedMedia:
             on but is not necessarily a sequel to.
     """
 
-    parents: Set[wikidata_value.Item]
-    siblings: Set[wikidata_value.Item]
-    children: Set[wikidata_value.Item]
-    loose: Set[wikidata_value.Item]
+    parents: Set[wikidata_value.ItemRef]
+    siblings: Set[wikidata_value.ItemRef]
+    children: Set[wikidata_value.ItemRef]
+    loose: Set[wikidata_value.ItemRef]
 
 
 _PARENT_PROPERTIES = (
@@ -277,16 +277,16 @@ class Api:
         session: requests.Session,
     ) -> None:
         self._session = session
-        self._item_by_id: dict[wikidata_value.Item, Any] = {}
+        self._item_by_id: dict[wikidata_value.ItemRef, Any] = {}
         self._item_classes: (
-            dict[wikidata_value.Item, Set[wikidata_value.Item]]
+            dict[wikidata_value.ItemRef, Set[wikidata_value.ItemRef]]
         ) = {}
         self._transitive_subclasses: (
-            dict[wikidata_value.Item, Set[wikidata_value.Item]]
+            dict[wikidata_value.ItemRef, Set[wikidata_value.ItemRef]]
         ) = {}
-        self._related_media: dict[wikidata_value.Item, RelatedMedia] = {}
+        self._related_media: dict[wikidata_value.ItemRef, RelatedMedia] = {}
 
-    def item(self, item_id: wikidata_value.Item) -> Any:
+    def item(self, item_id: wikidata_value.ItemRef) -> Any:
         """Returns an item in full JSON format."""
         if item_id not in self._item_by_id:
             response = self._session.get(
@@ -308,8 +308,8 @@ class Api:
         return response.json()["results"]["bindings"]
 
     def item_classes(
-        self, item_id: wikidata_value.Item
-    ) -> Set[wikidata_value.Item]:
+        self, item_id: wikidata_value.ItemRef
+    ) -> Set[wikidata_value.ItemRef]:
         """Returns the classes that the item is an instance of."""
         if item_id not in self._item_classes:
             self._item_classes[item_id] = frozenset(
@@ -321,8 +321,8 @@ class Api:
         return self._item_classes[item_id]
 
     def transitive_subclasses(
-        self, class_id: wikidata_value.Item
-    ) -> Set[wikidata_value.Item]:
+        self, class_id: wikidata_value.ItemRef
+    ) -> Set[wikidata_value.ItemRef]:
         """Returns transitive subclasses of the given class."""
         if class_id not in self._transitive_subclasses:
             subclass_of = wikidata_value.P_SUBCLASS_OF.id
@@ -336,7 +336,7 @@ class Api:
             )
         return self._transitive_subclasses[class_id]
 
-    def related_media(self, item_id: wikidata_value.Item) -> RelatedMedia:
+    def related_media(self, item_id: wikidata_value.ItemRef) -> RelatedMedia:
         """Returns related media."""
         if item_id not in self._related_media:
             predicate_by_relation = {
@@ -380,11 +380,11 @@ class Api:
             results = self.sparql(query)
             item_classes: (
                 collections.defaultdict[
-                    wikidata_value.Item, set[wikidata_value.Item]
+                    wikidata_value.ItemRef, set[wikidata_value.ItemRef]
                 ]
             ) = collections.defaultdict(set)
             items_by_relation: (
-                collections.defaultdict[str, set[wikidata_value.Item]]
+                collections.defaultdict[str, set[wikidata_value.ItemRef]]
             ) = collections.defaultdict(set)
             for result in results:
                 related_item = _parse_sparql_result_item(result["item"])
@@ -474,7 +474,7 @@ class Filter(media_filter.CachedFilter):
         self._api = api
 
     @functools.cached_property
-    def _ignored_items(self) -> Set[wikidata_value.Item]:
+    def _ignored_items(self) -> Set[wikidata_value.ItemRef]:
         return {
             # Subclases of paratext, like preface or introduction, are sometimes
             # used in "has parts" relationships for a book. Since these items
@@ -491,7 +491,7 @@ class Filter(media_filter.CachedFilter):
         }
 
     @functools.cached_property
-    def _ignored_classes(self) -> Set[wikidata_value.Item]:
+    def _ignored_classes(self) -> Set[wikidata_value.ItemRef]:
         # Fictional entities (other than fictional universes) can be part of
         # fictional universes, but they're not media items.
         return self._api.transitive_subclasses(
@@ -499,49 +499,49 @@ class Filter(media_filter.CachedFilter):
         ) - self._api.transitive_subclasses(wikidata_value.Q_FICTIONAL_UNIVERSE)
 
     @functools.cached_property
-    def _music_classes(self) -> Set[wikidata_value.Item]:
+    def _music_classes(self) -> Set[wikidata_value.ItemRef]:
         return self._api.transitive_subclasses(wikidata_value.Q_RELEASE_GROUP)
 
     @functools.cached_property
-    def _tv_show_classes(self) -> Set[wikidata_value.Item]:
+    def _tv_show_classes(self) -> Set[wikidata_value.ItemRef]:
         return self._api.transitive_subclasses(
             wikidata_value.Q_TELEVISION_SERIES
         )
 
     @functools.cached_property
-    def _tv_season_classes(self) -> Set[wikidata_value.Item]:
+    def _tv_season_classes(self) -> Set[wikidata_value.ItemRef]:
         return self._api.transitive_subclasses(
             wikidata_value.Q_TELEVISION_SERIES_SEASON
         )
 
     @functools.cached_property
-    def _tv_season_part_classes(self) -> Set[wikidata_value.Item]:
+    def _tv_season_part_classes(self) -> Set[wikidata_value.ItemRef]:
         return self._api.transitive_subclasses(
             wikidata_value.Q_PART_OF_TELEVISION_SEASON
         )
 
     @functools.cached_property
-    def _tv_season_part_parent_classes(self) -> Set[wikidata_value.Item]:
+    def _tv_season_part_parent_classes(self) -> Set[wikidata_value.ItemRef]:
         return {
             *self._tv_show_classes,
             *self._tv_season_classes,
         }
 
     @functools.cached_property
-    def _tv_episode_classes(self) -> Set[wikidata_value.Item]:
+    def _tv_episode_classes(self) -> Set[wikidata_value.ItemRef]:
         return self._api.transitive_subclasses(
             wikidata_value.Q_TELEVISION_SERIES_EPISODE
         )
 
     @functools.cached_property
-    def _tv_episode_parent_classes(self) -> Set[wikidata_value.Item]:
+    def _tv_episode_parent_classes(self) -> Set[wikidata_value.ItemRef]:
         return {
             *self._tv_season_part_parent_classes,
             *self._tv_season_part_classes,
         }
 
     @functools.cached_property
-    def _possible_tv_special_classes(self) -> Set[wikidata_value.Item]:
+    def _possible_tv_special_classes(self) -> Set[wikidata_value.ItemRef]:
         return {
             *self._api.transitive_subclasses(wikidata_value.Q_TELEVISION_FILM),
             *self._api.transitive_subclasses(
@@ -550,14 +550,14 @@ class Filter(media_filter.CachedFilter):
         }
 
     @functools.cached_property
-    def _video_classes(self) -> Set[wikidata_value.Item]:
+    def _video_classes(self) -> Set[wikidata_value.ItemRef]:
         return {
             *self._api.transitive_subclasses(wikidata_value.Q_FILM),
             *self._tv_episode_classes,
         }
 
     @functools.cached_property
-    def _unlikely_to_be_processed_classes(self) -> Set[wikidata_value.Item]:
+    def _unlikely_to_be_processed_classes(self) -> Set[wikidata_value.ItemRef]:
         return {
             *self._tv_season_classes,
             *self._tv_episode_classes,
@@ -565,10 +565,10 @@ class Filter(media_filter.CachedFilter):
 
     def _is_ignored(
         self,
-        item: wikidata_value.Item,
+        item: wikidata_value.ItemRef,
         *,
         request: media_filter.FilterRequest,
-        ignored_from_config: set[wikidata_value.Item],
+        ignored_from_config: set[wikidata_value.ItemRef],
     ) -> bool:
         config_classes_ignore = request.item.wikidata_classes_ignore_recursive
         if item in request.item.wikidata_ignore_items_recursive:
@@ -589,7 +589,9 @@ class Filter(media_filter.CachedFilter):
 
     def _integral_child_classes(
         self,
-    ) -> Iterable[tuple[Set[wikidata_value.Item], Set[wikidata_value.Item]]]:
+    ) -> Iterable[
+        tuple[Set[wikidata_value.ItemRef], Set[wikidata_value.ItemRef]]
+    ]:
         """Yields (parent, child) classes that indicate an integral child."""
         yield (self._tv_show_classes, self._tv_season_classes)
         yield (
@@ -603,7 +605,7 @@ class Filter(media_filter.CachedFilter):
         )
 
     def _is_integral_child(
-        self, parent: wikidata_value.Item, child: wikidata_value.Item
+        self, parent: wikidata_value.ItemRef, child: wikidata_value.ItemRef
     ) -> bool:
         parent_classes = self._api.item_classes(parent)
         child_classes = self._api.item_classes(child)
@@ -625,8 +627,8 @@ class Filter(media_filter.CachedFilter):
         return False
 
     def _integral_children(
-        self, item: wikidata_value.Item, related: RelatedMedia
-    ) -> Iterable[wikidata_value.Item]:
+        self, item: wikidata_value.ItemRef, related: RelatedMedia
+    ) -> Iterable[wikidata_value.ItemRef]:
         if any(
             self._is_integral_child(parent, item) for parent in related.parents
         ):
@@ -638,7 +640,7 @@ class Filter(media_filter.CachedFilter):
         )
 
     def _should_cross_parent_child_border(
-        self, parent: wikidata_value.Item, child: wikidata_value.Item
+        self, parent: wikidata_value.ItemRef, child: wikidata_value.ItemRef
     ) -> bool:
         del child  # Unused.
         parent_classes = self._api.item_classes(parent)
@@ -652,13 +654,13 @@ class Filter(media_filter.CachedFilter):
 
     def _update_unprocessed(
         self,
-        iterable: Iterable[wikidata_value.Item],
+        iterable: Iterable[wikidata_value.ItemRef],
         /,
         *,
-        current: wikidata_value.Item,
-        reached_from: dict[wikidata_value.Item, wikidata_value.Item],
-        unprocessed: set[wikidata_value.Item],
-        unprocessed_unlikely: set[wikidata_value.Item],
+        current: wikidata_value.ItemRef,
+        reached_from: dict[wikidata_value.ItemRef, wikidata_value.ItemRef],
+        unprocessed: set[wikidata_value.ItemRef],
+        unprocessed_unlikely: set[wikidata_value.ItemRef],
     ) -> None:
         for item in iterable:
             reached_from.setdefault(item, current)
@@ -673,7 +675,7 @@ class Filter(media_filter.CachedFilter):
     def _related_item_result_extra(
         self,
         category: str,
-        item: wikidata_value.Item,
+        item: wikidata_value.ItemRef,
     ) -> media_filter.ResultExtra:
         item_data = self._api.item(item)
         item_description_parts = []
@@ -695,13 +697,13 @@ class Filter(media_filter.CachedFilter):
             return frozenset()
         items_from_config = request.item.all_wikidata_items_recursive
         assert request.item.wikidata_item is not None  # Already checked.
-        reached_from: dict[wikidata_value.Item, wikidata_value.Item] = {}
-        ignored_from_config: set[wikidata_value.Item] = set()
-        unprocessed: set[wikidata_value.Item] = {request.item.wikidata_item}
-        unprocessed_unlikely: set[wikidata_value.Item] = set()
-        processed: set[wikidata_value.Item] = set()
-        loose: set[wikidata_value.Item] = set()
-        integral_children: set[wikidata_value.Item] = set()
+        reached_from: dict[wikidata_value.ItemRef, wikidata_value.ItemRef] = {}
+        ignored_from_config: set[wikidata_value.ItemRef] = set()
+        unprocessed: set[wikidata_value.ItemRef] = {request.item.wikidata_item}
+        unprocessed_unlikely: set[wikidata_value.ItemRef] = set()
+        processed: set[wikidata_value.ItemRef] = set()
+        loose: set[wikidata_value.ItemRef] = set()
+        integral_children: set[wikidata_value.ItemRef] = set()
         is_ignored = functools.partial(
             self._is_ignored,
             request=request,
