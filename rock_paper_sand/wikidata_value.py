@@ -57,7 +57,7 @@ _ENTITY_PREFIX_CANONICAL_URI = "http://www.wikidata.org/entity/"
 
 
 @dataclasses.dataclass(frozen=True)
-class EntityRef:
+class EntityRef(abc.ABC):
     """Reference (ID/URI) to a Wikidata entity.
 
     Attributes:
