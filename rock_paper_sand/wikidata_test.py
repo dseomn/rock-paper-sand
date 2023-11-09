@@ -327,59 +327,6 @@ class WikidataUtilsTest(parameterized.TestCase):
             error_regex=r"non-value",
         ),
         dict(
-            testcase_name="datatype_not_item",
-            snak={"snaktype": "value", "datatype": "string"},
-            error_class=ValueError,
-            error_regex=r"non-item",
-        ),
-        dict(
-            testcase_name="type_not_item",
-            snak={
-                "snaktype": "value",
-                "datatype": "wikibase-item",
-                "datavalue": {"type": "string"},
-            },
-            error_class=ValueError,
-            error_regex=r"non-item",
-        ),
-        dict(
-            testcase_name="entity_type_not_item",
-            snak={
-                "snaktype": "value",
-                "datatype": "wikibase-item",
-                "datavalue": {
-                    "type": "wikibase-entityid",
-                    "value": {"entity-type": "foo"},
-                },
-            },
-            error_class=ValueError,
-            error_regex=r"non-item",
-        ),
-    )
-    def test_parse_snak_item_error(
-        self,
-        *,
-        snak: Any,
-        error_class: type[Exception],
-        error_regex: str,
-    ) -> None:
-        with self.assertRaisesRegex(error_class, error_regex):
-            wikidata._parse_snak_item(snak)
-
-    def test_parse_snak_item(self) -> None:
-        self.assertEqual(
-            wikidata_value.ItemRef("Q1"),
-            wikidata._parse_snak_item(_snak_item("Q1")),
-        )
-
-    @parameterized.named_parameters(
-        dict(
-            testcase_name="not_value",
-            snak={"snaktype": "somevalue"},
-            error_class=NotImplementedError,
-            error_regex=r"non-value",
-        ),
-        dict(
             testcase_name="datatype_not_time",
             snak={"snaktype": "value", "datatype": "string"},
             error_class=ValueError,

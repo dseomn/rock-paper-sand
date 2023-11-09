@@ -194,6 +194,7 @@ P_TAKES_PLACE_IN_FICTIONAL_UNIVERSE = _p(
 )
 del _p
 
+Snak = NewType("Snak", Mapping[str, Any])
 Statement = NewType("Statement", Mapping[str, Any])
 
 
@@ -209,6 +210,21 @@ def _language_keyed_string(
             if other_language.startswith(f"{language}-"):
                 return record["value"]
     return None
+
+
+def parse_snak_item(snak: Snak) -> ItemRef:
+    """Returns an item value from a snak."""
+    if snak["snaktype"] != "value":
+        raise NotImplementedError(
+            f"Cannot parse non-value snak as an item: {snak}"
+        )
+    if (
+        snak["datatype"] != "wikibase-item"
+        or snak["datavalue"]["type"] != "wikibase-entityid"
+        or snak["datavalue"]["value"]["entity-type"] != "item"
+    ):
+        raise ValueError(f"Cannot parse non-item snak as a item: {snak}")
+    return ItemRef(snak["datavalue"]["value"]["id"])
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

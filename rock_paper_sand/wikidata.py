@@ -71,20 +71,6 @@ def requests_session() -> Generator[requests.Session, None, None]:
         yield session
 
 
-def _parse_snak_item(snak: Any) -> wikidata_value.ItemRef:
-    if snak["snaktype"] != "value":
-        raise NotImplementedError(
-            f"Cannot parse non-value snak as an item: {snak}"
-        )
-    if (
-        snak["datatype"] != "wikibase-item"
-        or snak["datavalue"]["type"] != "wikibase-entityid"
-        or snak["datavalue"]["value"]["entity-type"] != "item"
-    ):
-        raise ValueError(f"Cannot parse non-item snak as a item: {snak}")
-    return wikidata_value.ItemRef(snak["datavalue"]["value"]["id"])
-
-
 def _parse_snak_time(snak: Any) -> tuple[datetime.datetime, datetime.datetime]:
     """Returns (earliest possible time, latest possible time) of a time snak."""
     # https://doc.wikimedia.org/Wikibase/master/php/docs_topics_json.html#json_datavalues_time
@@ -283,7 +269,9 @@ class Api:
         """Returns the classes that the entity is an instance of."""
         if entity_ref not in self._entity_classes:
             self._entity_classes[entity_ref] = frozenset(
-                _parse_snak_item(statement["mainsnak"])
+                wikidata_value.parse_snak_item(
+                    wikidata_value.Snak(statement["mainsnak"])
+                )
                 for statement in self.entity(entity_ref).truthy_statements(
                     wikidata_value.P_INSTANCE_OF
                 )
