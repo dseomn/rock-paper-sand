@@ -17,7 +17,7 @@ See https://www.mediawiki.org/wiki/Wikibase/DataModel
 """
 
 import abc
-from collections.abc import Collection
+from collections.abc import Collection, Mapping, Sequence
 import dataclasses
 import re
 from typing import Any, Self
@@ -195,6 +195,20 @@ P_TAKES_PLACE_IN_FICTIONAL_UNIVERSE = _p(
 del _p
 
 
+def _language_keyed_string(
+    mapping: Mapping[str, Any],
+    languages: Sequence[str],
+) -> str | None:
+    # https://doc.wikimedia.org/Wikibase/master/php/docs_topics_json.html#json_fingerprint
+    for language in languages:
+        if language in mapping:
+            return mapping[language]["value"]
+        for other_language, record in mapping.items():
+            if other_language.startswith(f"{language}-"):
+                return record["value"]
+    return None
+
+
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Entity:
     """Data about an entity.
@@ -208,3 +222,11 @@ class Entity:
     """
 
     json_full: Any
+
+    def label(self, languages: Sequence[str]) -> str | None:
+        """Returns a label in the first matching language, or None."""
+        return _language_keyed_string(self.json_full["labels"], languages)
+
+    def description(self, languages: Sequence[str]) -> str | None:
+        """Returns a description in the first matching language, or None."""
+        return _language_keyed_string(self.json_full["descriptions"], languages)

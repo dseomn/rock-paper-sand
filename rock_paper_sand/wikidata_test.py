@@ -14,7 +14,7 @@
 
 # pylint: disable=missing-module-docstring
 
-from collections.abc import Callable, Collection, Mapping, Sequence, Set
+from collections.abc import Collection, Mapping, Sequence, Set
 import datetime
 from typing import Any
 from unittest import mock
@@ -318,50 +318,6 @@ class WikidataApiTest(parameterized.TestCase):
 
 class WikidataUtilsTest(parameterized.TestCase):
     # pylint: disable=protected-access
-    @parameterized.product(
-        (
-            dict(function=wikidata._label, section="labels"),
-            dict(function=wikidata._description, section="descriptions"),
-        ),
-        (
-            dict(
-                mapping={},
-                languages=("en",),
-                expected_value=None,
-            ),
-            dict(
-                mapping={"en": {"value": "foo"}},
-                languages=(),
-                expected_value=None,
-            ),
-            dict(
-                mapping={
-                    "en": {"value": "foo"},
-                    "en-us": {"value": "bar"},
-                },
-                languages=("qa", "en"),
-                expected_value="foo",
-            ),
-            dict(
-                mapping={"en-us": {"value": "foo"}},
-                languages=("en",),
-                expected_value="foo",
-            ),
-        ),
-    )
-    def test_language_keyed_string(
-        self,
-        *,
-        function: Callable[[Any, Sequence[str]], str | None],
-        section: str,
-        mapping: Mapping[str, Any],
-        languages: Sequence[str],
-        expected_value: str | None,
-    ) -> None:
-        self.assertEqual(
-            expected_value,
-            function({section: mapping}, languages),
-        )
 
     @parameterized.named_parameters(
         dict(

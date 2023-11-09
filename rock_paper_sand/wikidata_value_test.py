@@ -14,6 +14,9 @@
 
 # pylint: disable=missing-module-docstring
 
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any
+
 from absl.testing import absltest
 from absl.testing import parameterized
 
@@ -93,6 +96,57 @@ class WikidataValueTest(parameterized.TestCase):
             wikidata_value.ItemRef.from_uri(
                 "http://www.wikidata.org/entity/Q1"
             ).id,
+        )
+
+    @parameterized.product(
+        (
+            dict(function=wikidata_value.Entity.label, section="labels"),
+            dict(
+                function=wikidata_value.Entity.description,
+                section="descriptions",
+            ),
+        ),
+        (
+            dict(
+                mapping={},
+                languages=("en",),
+                expected_value=None,
+            ),
+            dict(
+                mapping={"en": {"value": "foo"}},
+                languages=(),
+                expected_value=None,
+            ),
+            dict(
+                mapping={
+                    "en": {"value": "foo"},
+                    "en-us": {"value": "bar"},
+                },
+                languages=("qa", "en"),
+                expected_value="foo",
+            ),
+            dict(
+                mapping={"en-us": {"value": "foo"}},
+                languages=("en",),
+                expected_value="foo",
+            ),
+        ),
+    )
+    def test_language_keyed_string(
+        self,
+        *,
+        function: Callable[[wikidata_value.Entity, Sequence[str]], str | None],
+        section: str,
+        mapping: Mapping[str, Any],
+        languages: Sequence[str],
+        expected_value: str | None,
+    ) -> None:
+        self.assertEqual(
+            expected_value,
+            function(
+                wikidata_value.Entity(json_full={section: mapping}),
+                languages,
+            ),
         )
 
 

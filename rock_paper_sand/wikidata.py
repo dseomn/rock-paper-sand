@@ -14,7 +14,7 @@
 """Code that uses Wikidata's APIs."""
 
 import collections
-from collections.abc import Generator, Iterable, Mapping, Sequence, Set
+from collections.abc import Generator, Iterable, Sequence, Set
 import contextlib
 import dataclasses
 import datetime
@@ -69,28 +69,6 @@ def requests_session() -> Generator[requests.Session, None, None]:
     ) as session:
         network.configure_session(session)
         yield session
-
-
-def _language_keyed_string(
-    mapping: Mapping[str, Any],
-    languages: Sequence[str],
-) -> str | None:
-    # https://doc.wikimedia.org/Wikibase/master/php/docs_topics_json.html#json_fingerprint
-    for language in languages:
-        if language in mapping:
-            return mapping[language]["value"]
-        for other_language, record in mapping.items():
-            if other_language.startswith(f"{language}-"):
-                return record["value"]
-    return None
-
-
-def _label(item: Any, languages: Sequence[str]) -> str | None:
-    return _language_keyed_string(item["labels"], languages)
-
-
-def _description(item: Any, languages: Sequence[str]) -> str | None:
-    return _language_keyed_string(item["descriptions"], languages)
 
 
 def _truthy_statements(
@@ -686,12 +664,12 @@ class Filter(media_filter.CachedFilter):
         category: str,
         item: wikidata_value.ItemRef,
     ) -> media_filter.ResultExtra:
-        item_data = self._api.entity(item).json_full
+        entity = self._api.entity(item)
         item_description_parts = []
-        if (label := _label(item_data, self._config.languages)) is not None:
+        if (label := entity.label(self._config.languages)) is not None:
             item_description_parts.append(label)
         if (
-            description := _description(item_data, self._config.languages)
+            description := entity.description(self._config.languages)
         ) is not None:
             item_description_parts.append(f"({description})")
         item_description_parts.append(f"<{item}>")
