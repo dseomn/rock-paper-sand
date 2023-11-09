@@ -14,7 +14,7 @@
 """Code that uses Wikidata's APIs."""
 
 import collections
-from collections.abc import Generator, Iterable, Sequence, Set
+from collections.abc import Generator, Iterable, Set
 import contextlib
 import dataclasses
 import datetime
@@ -69,20 +69,6 @@ def requests_session() -> Generator[requests.Session, None, None]:
     ) as session:
         network.configure_session(session)
         yield session
-
-
-def _truthy_statements(
-    item: Any, prop: wikidata_value.PropertyRef
-) -> Sequence[Any]:
-    # https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Truthy_statements
-    statements = item["claims"].get(prop.id, ())
-    return tuple(
-        statement
-        for statement in statements
-        if statement["rank"] == "preferred"
-    ) or tuple(
-        statement for statement in statements if statement["rank"] == "normal"
-    )
 
 
 def _parse_snak_item(snak: Any) -> wikidata_value.ItemRef:
@@ -298,9 +284,8 @@ class Api:
         if entity_ref not in self._entity_classes:
             self._entity_classes[entity_ref] = frozenset(
                 _parse_snak_item(statement["mainsnak"])
-                for statement in _truthy_statements(
-                    self.entity(entity_ref).json_full,
-                    wikidata_value.P_INSTANCE_OF,
+                for statement in self.entity(entity_ref).truthy_statements(
+                    wikidata_value.P_INSTANCE_OF
                 )
             )
         return self._entity_classes[entity_ref]
@@ -401,22 +386,20 @@ class Api:
 
 
 def _release_status(
-    item: Any,
+    item: wikidata_value.Entity,
     *,
     now: datetime.datetime,
 ) -> config_pb2.WikidataFilter.ReleaseStatus.ValueType:
     start = _min(
         (
             _min(_parse_statement_time(statement))
-            for statement in _truthy_statements(
-                item, wikidata_value.P_START_TIME
-            )
+            for statement in item.truthy_statements(wikidata_value.P_START_TIME)
         )
     )
     end = _max(
         (
             _max(_parse_statement_time(statement))
-            for statement in _truthy_statements(item, wikidata_value.P_END_TIME)
+            for statement in item.truthy_statements(wikidata_value.P_END_TIME)
         )
     )
     if start is not None and now < start:
@@ -435,7 +418,7 @@ def _release_status(
         released = _min(
             (
                 _min(_parse_statement_time(statement))
-                for statement in _truthy_statements(item, prop)
+                for statement in item.truthy_statements(prop)
             )
         )
         if released is None:
@@ -793,7 +776,7 @@ class Filter(media_filter.CachedFilter):
                 return media_filter.FilterResult(False)
             extra_information: set[media_filter.ResultExtra] = set()
             if self._config.release_statuses:
-                item = self._api.entity(request.item.wikidata_item).json_full
+                item = self._api.entity(request.item.wikidata_item)
                 if (
                     _release_status(item, now=request.now)
                     not in self._config.release_statuses

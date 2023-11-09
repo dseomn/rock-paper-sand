@@ -149,6 +149,83 @@ class WikidataValueTest(parameterized.TestCase):
             ),
         )
 
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="preferred",
+            entity={
+                "claims": {
+                    "P1": [
+                        {"id": "foo", "rank": "preferred"},
+                        {"id": "quux", "rank": "normal"},
+                        {"id": "baz", "rank": "deprecated"},
+                        {"id": "bar", "rank": "preferred"},
+                    ],
+                },
+            },
+            prop=wikidata_value.PropertyRef("P1"),
+            statements=(
+                {"id": "foo", "rank": "preferred"},
+                {"id": "bar", "rank": "preferred"},
+            ),
+        ),
+        dict(
+            testcase_name="normal",
+            entity={
+                "claims": {
+                    "P1": [
+                        {"id": "foo", "rank": "normal"},
+                        {"id": "quux", "rank": "deprecated"},
+                        {"id": "bar", "rank": "normal"},
+                    ],
+                },
+            },
+            prop=wikidata_value.PropertyRef("P1"),
+            statements=(
+                {"id": "foo", "rank": "normal"},
+                {"id": "bar", "rank": "normal"},
+            ),
+        ),
+        dict(
+            testcase_name="deprecated",
+            entity={
+                "claims": {
+                    "P1": [
+                        {"id": "quux", "rank": "deprecated"},
+                    ],
+                },
+            },
+            prop=wikidata_value.PropertyRef("P1"),
+            statements=(),
+        ),
+        dict(
+            testcase_name="empty",
+            entity={
+                "claims": {
+                    "P1": [],
+                },
+            },
+            prop=wikidata_value.PropertyRef("P1"),
+            statements=(),
+        ),
+        dict(
+            testcase_name="missing",
+            entity={"claims": {}},
+            prop=wikidata_value.PropertyRef("P1"),
+            statements=(),
+        ),
+    )
+    def test_truthy_statements(
+        self,
+        *,
+        entity: Any,
+        prop: wikidata_value.PropertyRef,
+        statements: Sequence[Any],
+    ) -> None:
+        self.assertSequenceEqual(
+            statements,
+            wikidata_value.Entity(json_full=entity).truthy_statements(prop),
+        )
+
 
 if __name__ == "__main__":
     absltest.main()

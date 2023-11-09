@@ -20,7 +20,7 @@ import abc
 from collections.abc import Collection, Mapping, Sequence
 import dataclasses
 import re
-from typing import Any, Self
+from typing import Any, NewType, Self
 
 
 def _parse_id(
@@ -194,6 +194,8 @@ P_TAKES_PLACE_IN_FICTIONAL_UNIVERSE = _p(
 )
 del _p
 
+Statement = NewType("Statement", Mapping[str, Any])
+
 
 def _language_keyed_string(
     mapping: Mapping[str, Any],
@@ -230,3 +232,18 @@ class Entity:
     def description(self, languages: Sequence[str]) -> str | None:
         """Returns a description in the first matching language, or None."""
         return _language_keyed_string(self.json_full["descriptions"], languages)
+
+    def truthy_statements(
+        self, property_ref: PropertyRef
+    ) -> Sequence[Statement]:
+        # https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Truthy_statements
+        statements = self.json_full["claims"].get(property_ref.id, ())
+        return tuple(
+            Statement(statement)
+            for statement in statements
+            if statement["rank"] == "preferred"
+        ) or tuple(
+            Statement(statement)
+            for statement in statements
+            if statement["rank"] == "normal"
+        )
