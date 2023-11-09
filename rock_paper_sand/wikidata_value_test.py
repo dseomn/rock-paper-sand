@@ -22,6 +22,30 @@ from absl.testing import parameterized
 
 from rock_paper_sand import wikidata_value
 
+_PRECISION_YEAR = 9
+_PRECISION_MONTH = 10
+_PRECISION_DAY = 11
+
+
+def _snak_time(time: str, *, precision: int = _PRECISION_DAY) -> Any:
+    return {
+        "snaktype": "value",
+        "datatype": "time",
+        "datavalue": {
+            "type": "time",
+            "value": {
+                "calendarmodel": (
+                    wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
+                ),
+                "timezone": 0,
+                "before": 0,
+                "after": 0,
+                "precision": precision,
+                "time": time,
+            },
+        },
+    }
+
 
 class WikidataValueTest(parameterized.TestCase):
     @parameterized.parameters(
@@ -158,6 +182,263 @@ class WikidataValueTest(parameterized.TestCase):
                             "value": {"entity-type": "item", "id": "Q1"},
                         },
                     }
+                )
+            ),
+        )
+
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="not_value",
+            snak={"snaktype": "somevalue"},
+            error_class=NotImplementedError,
+            error_regex=r"non-value",
+        ),
+        dict(
+            testcase_name="datatype_not_time",
+            snak={"snaktype": "value", "datatype": "string"},
+            error_class=ValueError,
+            error_regex=r"non-time",
+        ),
+        dict(
+            testcase_name="type_not_time",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {"type": "string"},
+            },
+            error_class=ValueError,
+            error_regex=r"non-time",
+        ),
+        dict(
+            testcase_name="not_gregorian",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": "http://www.wikidata.org/entity/Q1",
+                    },
+                },
+            },
+            error_class=NotImplementedError,
+            error_regex=r"non-Gregorian",
+        ),
+        dict(
+            testcase_name="not_utc",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": (
+                            wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
+                        ),
+                        "timezone": 42,
+                    },
+                },
+            },
+            error_class=NotImplementedError,
+            error_regex=r"non-UTC",
+        ),
+        dict(
+            testcase_name="before",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": (
+                            wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
+                        ),
+                        "timezone": 0,
+                        "before": 42,
+                        "after": 0,
+                    },
+                },
+            },
+            error_class=NotImplementedError,
+            error_regex=r"uncertainty range",
+        ),
+        dict(
+            testcase_name="after",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": (
+                            wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
+                        ),
+                        "timezone": 0,
+                        "before": 0,
+                        "after": 42,
+                    },
+                },
+            },
+            error_class=NotImplementedError,
+            error_regex=r"uncertainty range",
+        ),
+        dict(
+            testcase_name="unimplemented_precision",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": (
+                            wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
+                        ),
+                        "timezone": 0,
+                        "before": 0,
+                        "after": 0,
+                        "precision": 0,
+                    },
+                },
+            },
+            error_class=NotImplementedError,
+            error_regex=r"precision",
+        ),
+        dict(
+            testcase_name="no_match",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": (
+                            wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
+                        ),
+                        "timezone": 0,
+                        "before": 0,
+                        "after": 0,
+                        "precision": 11,
+                        "time": "foo",
+                    },
+                },
+            },
+            error_class=ValueError,
+            error_regex=r"Cannot parse time",
+        ),
+    )
+    def test_parse_snak_time_error(
+        self,
+        *,
+        snak: Any,
+        error_class: type[Exception],
+        error_regex: str,
+    ) -> None:
+        with self.assertRaisesRegex(error_class, error_regex):
+            wikidata_value.parse_snak_time(wikidata_value.Snak(snak))
+
+    @parameterized.parameters(
+        (
+            _snak_time("+1979-10-12T00:00:00Z", precision=_PRECISION_DAY),
+            ("1979-10-12T00:00:00+00:00", "1979-10-12T23:59:59.999999+00:00"),
+        ),
+        (
+            # day is 00
+            _snak_time("+2008-07-00T00:00:00Z", precision=_PRECISION_MONTH),
+            ("2008-07-01T00:00:00+00:00", "2008-07-31T23:59:59.999999+00:00"),
+        ),
+        (
+            _snak_time("+1938-01-01T00:00:00Z", precision=_PRECISION_YEAR),
+            ("1938-01-01T00:00:00+00:00", "1938-12-31T23:59:59.999999+00:00"),
+        ),
+        (
+            # month and day are 00
+            _snak_time("+1600-00-00T00:00:00Z", precision=_PRECISION_YEAR),
+            ("1600-01-01T00:00:00+00:00", "1600-12-31T23:59:59.999999+00:00"),
+        ),
+    )
+    def test_parse_snak_time(
+        self,
+        snak: Any,
+        values: tuple[str, str],
+    ) -> None:
+        self.assertSequenceEqual(
+            values,
+            tuple(
+                value.isoformat()
+                for value in wikidata_value.parse_snak_time(
+                    wikidata_value.Snak(snak)
+                )
+            ),
+        )
+
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="datatype_not_time",
+            statement={
+                "mainsnak": {"snaktype": "novalue", "datatype": "string"},
+            },
+            error_class=ValueError,
+            error_regex=r"non-time",
+        ),
+        dict(
+            testcase_name="somevalue_with_qualifiers",
+            statement={
+                "mainsnak": {"snaktype": "somevalue", "datatype": "time"},
+                "qualifiers": {"P1": []},
+            },
+            error_class=NotImplementedError,
+            error_regex=r"somevalue time with qualifiers",
+        ),
+        dict(
+            testcase_name="invalid_snaktype",
+            statement={
+                "mainsnak": {"snaktype": "foo", "datatype": "time"},
+            },
+            error_class=ValueError,
+            error_regex=r"Unexpected snaktype",
+        ),
+    )
+    def test_parse_statement_time_error(
+        self,
+        *,
+        statement: Any,
+        error_class: type[Exception],
+        error_regex: str,
+    ) -> None:
+        with self.assertRaisesRegex(error_class, error_regex):
+            wikidata_value.parse_statement_time(
+                wikidata_value.Statement(statement)
+            )
+
+    @parameterized.parameters(
+        (
+            {
+                "mainsnak": _snak_time(
+                    "+2000-01-01T00:00:00Z", precision=_PRECISION_DAY
+                )
+            },
+            ("2000-01-01T00:00:00+00:00", "2000-01-01T23:59:59.999999+00:00"),
+        ),
+        (
+            {"mainsnak": {"snaktype": "somevalue", "datatype": "time"}},
+            (None, None),
+        ),
+        (
+            {"mainsnak": {"snaktype": "novalue", "datatype": "time"}},
+            (None, None),
+        ),
+    )
+    def test_parse_statement_time(
+        self,
+        statement: Any,
+        values: tuple[str | None, str | None],
+    ) -> None:
+        self.assertSequenceEqual(
+            values,
+            tuple(
+                (None if value is None else value.isoformat())
+                for value in wikidata_value.parse_statement_time(
+                    wikidata_value.Statement(statement)
                 )
             ),
         )

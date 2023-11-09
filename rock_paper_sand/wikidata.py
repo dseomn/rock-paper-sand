@@ -20,11 +20,9 @@ import dataclasses
 import datetime
 import functools
 import logging
-import re
 import typing
 from typing import Any
 
-from dateutil import relativedelta
 import requests
 import requests_cache
 
@@ -69,94 +67,6 @@ def requests_session() -> Generator[requests.Session, None, None]:
     ) as session:
         network.configure_session(session)
         yield session
-
-
-def _parse_snak_time(snak: Any) -> tuple[datetime.datetime, datetime.datetime]:
-    """Returns (earliest possible time, latest possible time) of a time snak."""
-    # https://doc.wikimedia.org/Wikibase/master/php/docs_topics_json.html#json_datavalues_time
-    if snak["snaktype"] != "value":
-        raise NotImplementedError(
-            f"Cannot parse non-value snak as a time: {snak}"
-        )
-    if snak["datatype"] != "time" or snak["datavalue"]["type"] != "time":
-        raise ValueError(f"Cannot parse non-time snak as a time: {snak}")
-    value = snak["datavalue"]["value"]
-    if value["calendarmodel"] not in (
-        wikidata_value.Q_GREGORIAN_CALENDAR.uri,
-        wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri,
-    ):
-        raise NotImplementedError(f"Cannot parse non-Gregorian time: {snak}")
-    if value["timezone"] != 0:
-        raise NotImplementedError(f"Cannot parse non-UTC time: {snak}")
-    if value.get("before", 0) != 0 or value.get("after", 0) != 0:
-        raise NotImplementedError(
-            f"Cannot parse time with uncertainty range: {snak}"
-        )
-    try:
-        precision = {
-            7: relativedelta.relativedelta(years=100),
-            8: relativedelta.relativedelta(years=10),
-            9: relativedelta.relativedelta(years=1),
-            10: relativedelta.relativedelta(months=1),
-            11: relativedelta.relativedelta(days=1),
-        }[value["precision"]]
-    except KeyError:
-        raise NotImplementedError(
-            f"Cannot parse time's precision: {snak}"
-        ) from None
-    match = re.fullmatch(
-        r"\+([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})Z",
-        value["time"],
-    )
-    if match is None:
-        raise ValueError(f"Cannot parse time: {snak}")
-    year, month, day, hour, minute, second = map(int, match.groups())
-    earliest = datetime.datetime(
-        year=year,
-        month=month or 1,
-        day=day or 1,
-        hour=hour,
-        minute=minute,
-        second=second,
-        tzinfo=datetime.timezone.utc,
-    )
-    latest = earliest + precision - datetime.timedelta(microseconds=1)
-    return earliest, latest
-
-
-def _parse_statement_time(
-    statement: Any,
-) -> tuple[datetime.datetime | None, datetime.datetime | None]:
-    """Parses a statement about a time.
-
-    Args:
-        statement: Statement to parse.
-
-    Returns:
-        Tuple of (earliest possible time, latest possible time). Either or both
-        parts may be None if they're unknown or there is no value.
-    """
-    mainsnak = statement["mainsnak"]
-    if mainsnak["datatype"] != "time":
-        raise ValueError(
-            f"Cannot parse non-time statement as a time: {statement}"
-        )
-    match mainsnak["snaktype"]:
-        case "value":
-            return _parse_snak_time(mainsnak)
-        case "somevalue":
-            if statement.get("qualifiers", {}):
-                raise NotImplementedError(
-                    f"Cannot parse somevalue time with qualifiers: {statement}"
-                )
-            else:
-                return (None, None)
-        case "novalue":
-            return (None, None)
-        case _:
-            raise ValueError(
-                f"Unexpected snaktype in time statement: {statement}"
-            )
 
 
 def _parse_sparql_result_item(term: Any) -> wikidata_value.ItemRef:
@@ -380,13 +290,13 @@ def _release_status(
 ) -> config_pb2.WikidataFilter.ReleaseStatus.ValueType:
     start = _min(
         (
-            _min(_parse_statement_time(statement))
+            _min(wikidata_value.parse_statement_time(statement))
             for statement in item.truthy_statements(wikidata_value.P_START_TIME)
         )
     )
     end = _max(
         (
-            _max(_parse_statement_time(statement))
+            _max(wikidata_value.parse_statement_time(statement))
             for statement in item.truthy_statements(wikidata_value.P_END_TIME)
         )
     )
@@ -405,7 +315,7 @@ def _release_status(
     ):
         released = _min(
             (
-                _min(_parse_statement_time(statement))
+                _min(wikidata_value.parse_statement_time(statement))
                 for statement in item.truthy_statements(prop)
             )
         )

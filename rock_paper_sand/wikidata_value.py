@@ -19,8 +19,11 @@ See https://www.mediawiki.org/wiki/Wikibase/DataModel
 import abc
 from collections.abc import Collection, Mapping, Sequence
 import dataclasses
+import datetime
 import re
 from typing import Any, NewType, Self
+
+from dateutil import relativedelta
 
 
 def _parse_id(
@@ -225,6 +228,96 @@ def parse_snak_item(snak: Snak) -> ItemRef:
     ):
         raise ValueError(f"Cannot parse non-item snak as a item: {snak}")
     return ItemRef(snak["datavalue"]["value"]["id"])
+
+
+def parse_snak_time(snak: Snak) -> tuple[datetime.datetime, datetime.datetime]:
+    """Returns (earliest possible time, latest possible time) of a time snak."""
+    # https://doc.wikimedia.org/Wikibase/master/php/docs_topics_json.html#json_datavalues_time
+    if snak["snaktype"] != "value":
+        raise NotImplementedError(
+            f"Cannot parse non-value snak as a time: {snak}"
+        )
+    if snak["datatype"] != "time" or snak["datavalue"]["type"] != "time":
+        raise ValueError(f"Cannot parse non-time snak as a time: {snak}")
+    value = snak["datavalue"]["value"]
+    if value["calendarmodel"] not in (
+        Q_GREGORIAN_CALENDAR.uri,
+        Q_PROLEPTIC_GREGORIAN_CALENDAR.uri,
+    ):
+        raise NotImplementedError(f"Cannot parse non-Gregorian time: {snak}")
+    if value["timezone"] != 0:
+        raise NotImplementedError(f"Cannot parse non-UTC time: {snak}")
+    if value.get("before", 0) != 0 or value.get("after", 0) != 0:
+        raise NotImplementedError(
+            f"Cannot parse time with uncertainty range: {snak}"
+        )
+    try:
+        precision = {
+            7: relativedelta.relativedelta(years=100),
+            8: relativedelta.relativedelta(years=10),
+            9: relativedelta.relativedelta(years=1),
+            10: relativedelta.relativedelta(months=1),
+            11: relativedelta.relativedelta(days=1),
+        }[value["precision"]]
+    except KeyError:
+        raise NotImplementedError(
+            f"Cannot parse time's precision: {snak}"
+        ) from None
+    match = re.fullmatch(
+        r"\+([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})Z",
+        value["time"],
+    )
+    if match is None:
+        raise ValueError(f"Cannot parse time: {snak}")
+    year, month, day, hour, minute, second = map(int, match.groups())
+    earliest = datetime.datetime(
+        year=year,
+        month=month or 1,
+        day=day or 1,
+        hour=hour,
+        minute=minute,
+        second=second,
+        tzinfo=datetime.timezone.utc,
+    )
+    latest = earliest + precision - datetime.timedelta(microseconds=1)
+    return earliest, latest
+
+
+def parse_statement_time(
+    statement: Statement,
+) -> tuple[datetime.datetime | None, datetime.datetime | None]:
+    """Parses a statement about a time.
+
+    Args:
+        statement: Statement to parse.
+
+    Returns:
+        Tuple of (earliest possible time, latest possible time). Either or both
+        parts may be None if they're unknown or there is no value.
+    """
+    # TODO(https://github.com/pylint-dev/pylint/issues/4944): Remove
+    # unsubscriptable-object disables.
+    mainsnak = Snak(statement["mainsnak"])
+    if mainsnak["datatype"] != "time":  # pylint: disable=unsubscriptable-object
+        raise ValueError(
+            f"Cannot parse non-time statement as a time: {statement}"
+        )
+    match mainsnak["snaktype"]:  # pylint: disable=unsubscriptable-object
+        case "value":
+            return parse_snak_time(mainsnak)
+        case "somevalue":
+            if statement.get("qualifiers", {}):
+                raise NotImplementedError(
+                    f"Cannot parse somevalue time with qualifiers: {statement}"
+                )
+            else:
+                return (None, None)
+        case "novalue":
+            return (None, None)
+        case _:
+            raise ValueError(
+                f"Unexpected snaktype in time statement: {statement}"
+            )
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
