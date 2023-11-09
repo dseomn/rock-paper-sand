@@ -312,51 +312,6 @@ class WikidataApiTest(parameterized.TestCase):
             self._api.related_media(wikidata_value.ItemRef("Q1"))
 
 
-class WikidataUtilsTest(parameterized.TestCase):
-    # pylint: disable=protected-access
-
-    def test_parse_sparql_result_item_error(self) -> None:
-        with self.assertRaisesRegex(ValueError, "non-uri"):
-            wikidata._parse_sparql_result_item({"type": "literal"})
-
-    def test_parse_sparql_result_item(self) -> None:
-        self.assertEqual(
-            wikidata_value.ItemRef("Q1"),
-            wikidata._parse_sparql_result_item(_sparql_item("Q1")),
-        )
-
-    @parameterized.named_parameters(
-        dict(
-            testcase_name="not_literal",
-            term={"type": "uri"},
-            error_regex=r"non-literal",
-        ),
-        dict(
-            testcase_name="not_plain",
-            term={
-                "type": "literal",
-                "value": "Alice",
-                "datatype": "https://example.com/person",
-            },
-            error_regex=r"non-plain",
-        ),
-    )
-    def test_parse_sparql_result_string_error(
-        self,
-        *,
-        term: Any,
-        error_regex: str,
-    ) -> None:
-        with self.assertRaisesRegex(ValueError, error_regex):
-            wikidata._parse_sparql_result_string(term)
-
-    def test_parse_sparql_result_string(self) -> None:
-        self.assertEqual(
-            "foo",
-            wikidata._parse_sparql_result_string(_sparql_string("foo")),
-        )
-
-
 class WikidataFilterTest(parameterized.TestCase):
     def setUp(self) -> None:
         super().setUp()

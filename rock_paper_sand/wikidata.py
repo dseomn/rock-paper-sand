@@ -69,20 +69,6 @@ def requests_session() -> Generator[requests.Session, None, None]:
         yield session
 
 
-def _parse_sparql_result_item(term: Any) -> wikidata_value.ItemRef:
-    if term["type"] != "uri":
-        raise ValueError(f"Cannot parse non-uri term as an item: {term}")
-    return wikidata_value.ItemRef.from_uri(term["value"])
-
-
-def _parse_sparql_result_string(term: Any) -> str:
-    if term["type"] != "literal":
-        raise ValueError(f"Cannot parse non-literal term as a string: {term}")
-    if term.keys() & {"datatype", "xml:lang"}:
-        raise ValueError(f"Cannot parse non-plain literal as a string: {term}")
-    return term["value"]
-
-
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class RelatedMedia:
     """Media or media groups related to a media item.
@@ -200,7 +186,8 @@ class Api:
                 "}"
             )
             self._transitive_subclasses[class_id] = frozenset(
-                _parse_sparql_result_item(result["class"]) for result in results
+                wikidata_value.parse_sparql_term_item(result["class"])
+                for result in results
             )
         return self._transitive_subclasses[class_id]
 
@@ -255,14 +242,16 @@ class Api:
                 collections.defaultdict[str, set[wikidata_value.ItemRef]]
             ) = collections.defaultdict(set)
             for result in results:
-                related_item = _parse_sparql_result_item(result["item"])
+                related_item = wikidata_value.parse_sparql_term_item(
+                    result["item"]
+                )
                 related_item_classes = item_classes[related_item]
                 if "class" in result:
                     related_item_classes.add(
-                        _parse_sparql_result_item(result["class"])
+                        wikidata_value.parse_sparql_term_item(result["class"])
                     )
                 items_by_relation[
-                    _parse_sparql_result_string(result["relation"])
+                    wikidata_value.parse_sparql_term_string(result["relation"])
                 ].add(related_item)
             for related_item, classes in item_classes.items():
                 self._entity_classes.setdefault(

@@ -571,6 +571,51 @@ class WikidataValueTest(parameterized.TestCase):
             wikidata_value.Entity(json_full=entity).truthy_statements(prop),
         )
 
+    def test_parse_sparql_term_item_error(self) -> None:
+        with self.assertRaisesRegex(ValueError, "non-uri"):
+            wikidata_value.parse_sparql_term_item({"type": "literal"})
+
+    def test_parse_sparql_term_item(self) -> None:
+        self.assertEqual(
+            wikidata_value.ItemRef("Q1"),
+            wikidata_value.parse_sparql_term_item(
+                {"type": "uri", "value": "http://www.wikidata.org/entity/Q1"}
+            ),
+        )
+
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="not_literal",
+            term={"type": "uri"},
+            error_regex=r"non-literal",
+        ),
+        dict(
+            testcase_name="not_plain",
+            term={
+                "type": "literal",
+                "value": "Alice",
+                "datatype": "https://example.com/person",
+            },
+            error_regex=r"non-plain",
+        ),
+    )
+    def test_parse_sparql_term_string_error(
+        self,
+        *,
+        term: wikidata_value.SparqlTerm,
+        error_regex: str,
+    ) -> None:
+        with self.assertRaisesRegex(ValueError, error_regex):
+            wikidata_value.parse_sparql_term_string(term)
+
+    def test_parse_sparql_term_string(self) -> None:
+        self.assertEqual(
+            "foo",
+            wikidata_value.parse_sparql_term_string(
+                {"type": "literal", "value": "foo"}
+            ),
+        )
+
 
 if __name__ == "__main__":
     absltest.main()

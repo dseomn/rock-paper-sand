@@ -356,3 +356,23 @@ class Entity:
             for statement in statements
             if statement["rank"] == "normal"
         )
+
+
+# https://www.w3.org/TR/2013/REC-sparql11-results-json-20130321/#select-encode-terms
+SparqlTerm = Mapping[str, Any]
+
+
+def parse_sparql_term_item(term: SparqlTerm) -> ItemRef:
+    """Returns an item value from a term."""
+    if term["type"] != "uri":
+        raise ValueError(f"Cannot parse non-uri term as an item: {term}")
+    return ItemRef.from_uri(term["value"])
+
+
+def parse_sparql_term_string(term: SparqlTerm) -> str:
+    """Returns an string value from a term."""
+    if term["type"] != "literal":
+        raise ValueError(f"Cannot parse non-literal term as a string: {term}")
+    if term.keys() & {"datatype", "xml:lang"}:
+        raise ValueError(f"Cannot parse non-plain literal as a string: {term}")
+    return term["value"]
