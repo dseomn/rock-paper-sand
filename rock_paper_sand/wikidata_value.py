@@ -344,7 +344,7 @@ class Entity:
 
     def truthy_statements(
         self, property_ref: PropertyRef
-    ) -> Sequence[Statement]:
+    ) -> Collection[Statement]:
         # https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Truthy_statements
         statements = self.json_full["claims"].get(property_ref.id, ())
         return tuple(
