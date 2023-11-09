@@ -193,6 +193,10 @@ class Api:
 
     def related_media(self, item_ref: wikidata_value.ItemRef) -> RelatedMedia:
         """Returns related media."""
+        # This also gets the classes for the related items and stores them for
+        # later use by entity_classes(), to save many API calls for related
+        # media that aren't going to be looked at any further than checking
+        # their classes.
         if item_ref not in self._related_media:
             predicate_by_relation = {
                 "parent": "|".join(
@@ -415,6 +419,11 @@ class Filter(media_filter.CachedFilter):
 
     @functools.cached_property
     def _unlikely_to_be_processed_classes(self) -> Set[wikidata_value.ItemRef]:
+        """Returns classes that are unlikely to be processed for related media.
+
+        E.g., TV episodes are likely to be integral children of TV shows, so
+        they're unlikely to be processed any further.
+        """
         return {
             *self._tv_season_classes,
             *self._tv_season_part_classes,
@@ -465,6 +474,22 @@ class Filter(media_filter.CachedFilter):
     def _is_integral_child(
         self, parent: wikidata_value.ItemRef, child: wikidata_value.ItemRef
     ) -> bool:
+        """Returns whether child is an integral child of parent.
+
+        An integral child (as defined here) is an item that a casual
+        viewer/reader/etc. of the parent would likely view/read/etc. with no
+        additional effort. E.g., somebody who casually watched a TV show and
+        thought they had finished that show probably watched all the regular
+        seasons and episodes of that show. But they could have missed the
+        specials. So the regular seasons and episodes are considered integral
+        children of the show (because it's unnecessary noise to list all of
+        them), but the specials are not (because listing them could help the
+        user find something they missed).
+
+        Args:
+            parent: Parent.
+            child: Child.
+        """
         parent_classes = self._api.entity_classes(parent)
         child_classes = self._api.entity_classes(child)
         for (
@@ -501,6 +526,26 @@ class Filter(media_filter.CachedFilter):
     def _should_cross_parent_child_border(
         self, parent: wikidata_value.ItemRef, child: wikidata_value.ItemRef
     ) -> bool:
+        """Returns whether to cross the parent-child border for related media.
+
+        Some parent-child pairs cross the border between generally unrelated
+        sets of media. E.g., somebody interested in watching a series of
+        anthology films might want to know all the films in the series. But
+        there could be many items related to stories in the individual
+        anthologies, and those items don't have much of a connection to the
+        series of anthologies that the user is interested in. Or from the other
+        side, if the user is interested in a book that was adapted into a part
+        of an anthology movie, they might be interested in that part of the
+        anthology movie, but not necessarily in the entire anthology series.
+        Similarly, somebody interested in a movie that's part of the US National
+        Film Registry <https://www.wikidata.org/wiki/Q823422> is not necessarily
+        interested in every other movie in that list, and all the media
+        transitively related to those.
+
+        Args:
+            parent: Parent.
+            child: Child.
+        """
         del child  # Unused.
         parent_classes = self._api.entity_classes(parent)
         for collection in (
