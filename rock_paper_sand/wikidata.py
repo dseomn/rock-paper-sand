@@ -175,25 +175,25 @@ class Api:
         return self._entity_classes[entity_ref]
 
     def transitive_subclasses(
-        self, class_id: wikidata_value.ItemRef
+        self, class_ref: wikidata_value.ItemRef
     ) -> Set[wikidata_value.ItemRef]:
         """Returns transitive subclasses of the given class."""
-        if class_id not in self._transitive_subclasses:
+        if class_ref not in self._transitive_subclasses:
             subclass_of = wikidata_value.P_SUBCLASS_OF.id
             results = self.sparql(
                 "SELECT REDUCED ?class WHERE { "
-                f"?class wdt:{subclass_of}* wd:{class_id.id}. "
+                f"?class wdt:{subclass_of}* wd:{class_ref.id}. "
                 "}"
             )
-            self._transitive_subclasses[class_id] = frozenset(
+            self._transitive_subclasses[class_ref] = frozenset(
                 wikidata_value.parse_sparql_term_item(result["class"])
                 for result in results
             )
-        return self._transitive_subclasses[class_id]
+        return self._transitive_subclasses[class_ref]
 
-    def related_media(self, item_id: wikidata_value.ItemRef) -> RelatedMedia:
+    def related_media(self, item_ref: wikidata_value.ItemRef) -> RelatedMedia:
         """Returns related media."""
-        if item_id not in self._related_media:
+        if item_ref not in self._related_media:
             predicate_by_relation = {
                 "parent": "|".join(
                     (
@@ -221,7 +221,7 @@ class Api:
                     " UNION ".join(
                         (
                             "{ "
-                            f"wd:{item_id.id} ({predicate}) ?item. "
+                            f"wd:{item_ref.id} ({predicate}) ?item. "
                             f'BIND ("{relation}" AS ?relation) '
                             "}"
                         )
@@ -268,8 +268,8 @@ class Api:
                     "Unexpected media relation types: "
                     f"{list(items_by_relation)}"
                 )
-            self._related_media[item_id] = related_media
-        return self._related_media[item_id]
+            self._related_media[item_ref] = related_media
+        return self._related_media[item_ref]
 
 
 def _release_status(

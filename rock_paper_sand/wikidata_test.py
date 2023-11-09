@@ -318,8 +318,8 @@ class WikidataFilterTest(parameterized.TestCase):
         self._mock_api = mock.create_autospec(
             wikidata.Api, spec_set=True, instance=True
         )
-        self._mock_api.transitive_subclasses.side_effect = lambda class_id: {
-            class_id
+        self._mock_api.transitive_subclasses.side_effect = lambda class_ref: {
+            class_ref
         }
 
     @parameterized.named_parameters(
@@ -947,7 +947,7 @@ class WikidataFilterTest(parameterized.TestCase):
             lambda entity_ref: api_entity_classes[entity_ref.id]
         )
         self._mock_api.related_media.side_effect = (
-            lambda item_id: api_related_media[item_id.id]
+            lambda item_ref: api_related_media[item_ref.id]
         )
         test_filter = wikidata.Filter(
             json_format.ParseDict(filter_config, config_pb2.WikidataFilter()),
