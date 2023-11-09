@@ -98,17 +98,17 @@ class WikidataApiTest(parameterized.TestCase):
         )
         self._api = wikidata.Api(session=self._mock_session)
 
-    def test_item(self) -> None:
-        item = {"foo": "bar"}
+    def test_entity(self) -> None:
+        entity = wikidata_value.Entity(json_full={"foo": "bar"})
         self._mock_session.get.return_value.json.return_value = {
-            "entities": {"Q1": item}
+            "entities": {"Q1": entity.json_full}
         }
 
-        first_response = self._api.item(wikidata_value.ItemRef("Q1"))
-        second_response = self._api.item(wikidata_value.ItemRef("Q1"))
+        first_response = self._api.entity(wikidata_value.ItemRef("Q1"))
+        second_response = self._api.entity(wikidata_value.ItemRef("Q1"))
 
-        self.assertEqual(item, first_response)
-        self.assertEqual(item, second_response)
+        self.assertEqual(entity, first_response)
+        self.assertEqual(entity, second_response)
         self.assertSequenceEqual(
             (
                 # Note that this only happens once because the second time is
@@ -143,7 +143,7 @@ class WikidataApiTest(parameterized.TestCase):
             self._mock_session.mock_calls,
         )
 
-    def test_item_classes(self) -> None:
+    def test_entity_classes(self) -> None:
         self._mock_session.get.return_value.json.return_value = {
             "entities": {
                 "Q1": {
@@ -157,8 +157,8 @@ class WikidataApiTest(parameterized.TestCase):
             }
         }
 
-        first_result = self._api.item_classes(wikidata_value.ItemRef("Q1"))
-        second_result = self._api.item_classes(wikidata_value.ItemRef("Q1"))
+        first_result = self._api.entity_classes(wikidata_value.ItemRef("Q1"))
+        second_result = self._api.entity_classes(wikidata_value.ItemRef("Q1"))
 
         expected_classes = {
             wikidata_value.ItemRef("Q2"),
@@ -272,7 +272,7 @@ class WikidataApiTest(parameterized.TestCase):
         first_result = self._api.related_media(wikidata_value.ItemRef("Q1"))
         second_result = self._api.related_media(wikidata_value.ItemRef("Q1"))
         actual_classes = {
-            item: self._api.item_classes(item)
+            item: self._api.entity_classes(item)
             for item in {
                 *first_result.parents,
                 *first_result.siblings,
@@ -805,28 +805,28 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="no_match_conditions",
             filter_config={},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={"Q1": {}},
+            api_entities={"Q1": {}},
             expected_result=media_filter.FilterResult(True),
         ),
         dict(
             testcase_name="release_statuses_no_match",
             filter_config={"releaseStatuses": ["RELEASED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={"Q1": {"claims": {}}},
+            api_entities={"Q1": {"claims": {}}},
             expected_result=media_filter.FilterResult(False),
         ),
         dict(
             testcase_name="release_statuses_unknown",
             filter_config={"releaseStatuses": ["RELEASE_STATUS_UNSPECIFIED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={"Q1": {"claims": {}}},
+            api_entities={"Q1": {"claims": {}}},
             expected_result=media_filter.FilterResult(True),
         ),
         dict(
             testcase_name="release_statuses_before_range",
             filter_config={"releaseStatuses": ["UNRELEASED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={
+            api_entities={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_START_TIME.id: [
@@ -850,7 +850,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_before_start",
             filter_config={"releaseStatuses": ["UNRELEASED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={
+            api_entities={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_START_TIME.id: [
@@ -868,7 +868,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_in_range",
             filter_config={"releaseStatuses": ["ONGOING"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={
+            api_entities={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_START_TIME.id: [
@@ -892,7 +892,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_after_start",
             filter_config={"releaseStatuses": ["ONGOING"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={
+            api_entities={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_START_TIME.id: [
@@ -910,7 +910,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_before_end",
             filter_config={"releaseStatuses": ["ONGOING"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={
+            api_entities={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_END_TIME.id: [
@@ -928,7 +928,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_after_range",
             filter_config={"releaseStatuses": ["RELEASED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={
+            api_entities={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_START_TIME.id: [
@@ -952,7 +952,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_after_end",
             filter_config={"releaseStatuses": ["RELEASED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={
+            api_entities={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_END_TIME.id: [
@@ -970,7 +970,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_before_release",
             filter_config={"releaseStatuses": ["UNRELEASED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={
+            api_entities={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_PUBLICATION_DATE.id: [
@@ -988,7 +988,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="release_statuses_after_release",
             filter_config={"releaseStatuses": ["RELEASED"]},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={
+            api_entities={
                 "Q1": {
                     "claims": {
                         wikidata_value.P_PUBLICATION_DATE.id: [
@@ -1031,12 +1031,12 @@ class WikidataFilterTest(parameterized.TestCase):
                 "wikidata": "Q1",
                 "parts": [{"name": "bar", "wikidata": "Q4"}],
             },
-            api_items={
+            api_entities={
                 "Q2": {"labels": {}, "descriptions": {}},
                 "Q3": {"labels": {}, "descriptions": {}},
                 "Q5": {"labels": {}, "descriptions": {}},
             },
-            api_item_classes={
+            api_entity_classes={
                 "Q1": set(),
                 "Q2": set(),
                 "Q3": set(),
@@ -1105,10 +1105,10 @@ class WikidataFilterTest(parameterized.TestCase):
                 "wikidata": "Q1",
                 "parts": [{"name": "bar", "wikidata": "Q2"}],
             },
-            api_items={
+            api_entities={
                 "Q3": {"labels": {}, "descriptions": {}},
             },
-            api_item_classes={
+            api_entity_classes={
                 "Q2": set(),
                 "Q3": set(),
             },
@@ -1174,7 +1174,7 @@ class WikidataFilterTest(parameterized.TestCase):
                 "wikidataIgnore": ["Q3", "Q4", "Q5"],
                 "wikidataClassesIgnore": ["Q61"],
             },
-            api_item_classes={
+            api_entity_classes={
                 "Q1": set(),
                 "Q2": {wikidata_value.Q_FICTIONAL_ENTITY},
                 "Q3": set(),
@@ -1206,13 +1206,13 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="related_media_ignores_integral_children",
             filter_config={"relatedMedia": {}},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={
+            api_entities={
                 "Q2": {"labels": {}, "descriptions": {}},
                 "Q22": {"labels": {}, "descriptions": {}},
                 "Q3": {"labels": {}, "descriptions": {}},
                 "Q4": {"labels": {}, "descriptions": {}},
             },
-            api_item_classes={
+            api_entity_classes={
                 "Q1": set(),
                 "Q2": {wikidata_value.Q_TELEVISION_SERIES},
                 "Q21": {wikidata_value.Q_TELEVISION_SERIES_EPISODE},
@@ -1316,10 +1316,10 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="related_media_does_not_traverse_collections",
             filter_config={"relatedMedia": {}},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={
+            api_entities={
                 "Q3": {"labels": {}, "descriptions": {}},
             },
-            api_item_classes={
+            api_entity_classes={
                 "Q1": set(),
                 "Q2": {wikidata_value.Q_LIST},
                 "Q3": {wikidata_value.Q_ANTHOLOGY},
@@ -1352,7 +1352,7 @@ class WikidataFilterTest(parameterized.TestCase):
             testcase_name="related_media_includes_label_and_description",
             filter_config={"languages": ["en"], "relatedMedia": {}},
             item={"name": "foo", "wikidata": "Q1"},
-            api_items={
+            api_entities={
                 "Q2": {
                     "labels": {"en": {"value": "film 2"}},
                     "descriptions": {"en": {"value": "2002 film"}},
@@ -1362,7 +1362,7 @@ class WikidataFilterTest(parameterized.TestCase):
                     "descriptions": {"en": {"value": "2003 film"}},
                 },
             },
-            api_item_classes={
+            api_entity_classes={
                 "Q2": set(),
                 "Q3": set(),
             },
@@ -1401,8 +1401,8 @@ class WikidataFilterTest(parameterized.TestCase):
         filter_config: Any,
         item: Any,
         parent_fully_qualified_name: str | None = None,
-        api_items: Mapping[str, Any] = immutabledict.immutabledict(),
-        api_item_classes: Mapping[str, Set[wikidata_value.ItemRef]] = (
+        api_entities: Mapping[str, Any] = immutabledict.immutabledict(),
+        api_entity_classes: Mapping[str, Set[wikidata_value.ItemRef]] = (
             immutabledict.immutabledict()
         ),
         api_related_media: Mapping[str, wikidata.RelatedMedia] = (
@@ -1410,9 +1410,13 @@ class WikidataFilterTest(parameterized.TestCase):
         ),
         expected_result: media_filter.FilterResult,
     ) -> None:
-        self._mock_api.item.side_effect = lambda item_id: api_items[item_id.id]
-        self._mock_api.item_classes.side_effect = (
-            lambda item_id: api_item_classes[item_id.id]
+        self._mock_api.entity.side_effect = (
+            lambda entity_ref: wikidata_value.Entity(
+                json_full=api_entities[entity_ref.id]
+            )
+        )
+        self._mock_api.entity_classes.side_effect = (
+            lambda entity_ref: api_entity_classes[entity_ref.id]
         )
         self._mock_api.related_media.side_effect = (
             lambda item_id: api_related_media[item_id.id]
@@ -1434,7 +1438,7 @@ class WikidataFilterTest(parameterized.TestCase):
         self.assertEqual(expected_result, result)
 
     def test_too_many_related_items(self) -> None:
-        self._mock_api.item_classes.return_value = set()
+        self._mock_api.entity_classes.return_value = set()
         self._mock_api.related_media.return_value = wikidata.RelatedMedia(
             parents=set(),
             siblings={wikidata_value.ItemRef(f"Q{n}") for n in range(1001)},

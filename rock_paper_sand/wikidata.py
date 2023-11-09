@@ -277,24 +277,30 @@ class Api:
         session: requests.Session,
     ) -> None:
         self._session = session
-        self._item_by_id: dict[wikidata_value.ItemRef, Any] = {}
-        self._item_classes: (
-            dict[wikidata_value.ItemRef, Set[wikidata_value.ItemRef]]
+        self._entity_by_ref: (
+            dict[wikidata_value.EntityRef, wikidata_value.Entity]
+        ) = {}
+        self._entity_classes: (
+            dict[wikidata_value.EntityRef, Set[wikidata_value.ItemRef]]
         ) = {}
         self._transitive_subclasses: (
             dict[wikidata_value.ItemRef, Set[wikidata_value.ItemRef]]
         ) = {}
         self._related_media: dict[wikidata_value.ItemRef, RelatedMedia] = {}
 
-    def item(self, item_id: wikidata_value.ItemRef) -> Any:
-        """Returns an item in full JSON format."""
-        if item_id not in self._item_by_id:
+    def entity(
+        self, entity_ref: wikidata_value.EntityRef
+    ) -> wikidata_value.Entity:
+        """Returns an entity."""
+        if entity_ref not in self._entity_by_ref:
             response = self._session.get(
-                f"https://www.wikidata.org/wiki/Special:EntityData/{item_id.id}.json"  # pylint: disable=line-too-long
+                f"https://www.wikidata.org/wiki/Special:EntityData/{entity_ref.id}.json"  # pylint: disable=line-too-long
             )
             response.raise_for_status()
-            self._item_by_id[item_id] = response.json()["entities"][item_id.id]
-        return self._item_by_id[item_id]
+            self._entity_by_ref[entity_ref] = wikidata_value.Entity(
+                json_full=response.json()["entities"][entity_ref.id],
+            )
+        return self._entity_by_ref[entity_ref]
 
     def sparql(self, query: str) -> Any:
         """Returns results from a SPARQL query."""
@@ -307,18 +313,19 @@ class Api:
         response.raise_for_status()
         return response.json()["results"]["bindings"]
 
-    def item_classes(
-        self, item_id: wikidata_value.ItemRef
+    def entity_classes(
+        self, entity_ref: wikidata_value.EntityRef
     ) -> Set[wikidata_value.ItemRef]:
-        """Returns the classes that the item is an instance of."""
-        if item_id not in self._item_classes:
-            self._item_classes[item_id] = frozenset(
+        """Returns the classes that the entity is an instance of."""
+        if entity_ref not in self._entity_classes:
+            self._entity_classes[entity_ref] = frozenset(
                 _parse_snak_item(statement["mainsnak"])
                 for statement in _truthy_statements(
-                    self.item(item_id), wikidata_value.P_INSTANCE_OF
+                    self.entity(entity_ref).json_full,
+                    wikidata_value.P_INSTANCE_OF,
                 )
             )
-        return self._item_classes[item_id]
+        return self._entity_classes[entity_ref]
 
     def transitive_subclasses(
         self, class_id: wikidata_value.ItemRef
@@ -397,7 +404,9 @@ class Api:
                     _parse_sparql_result_string(result["relation"])
                 ].add(related_item)
             for related_item, classes in item_classes.items():
-                self._item_classes.setdefault(related_item, frozenset(classes))
+                self._entity_classes.setdefault(
+                    related_item, frozenset(classes)
+                )
             related_media = RelatedMedia(
                 parents=frozenset(items_by_relation.pop("parent", ())),
                 siblings=frozenset(items_by_relation.pop("sibling", ())),
@@ -576,9 +585,9 @@ class Filter(media_filter.CachedFilter):
             return True
         elif (
             item in self._ignored_items
-            or self._api.item_classes(item) & self._ignored_classes
+            or self._api.entity_classes(item) & self._ignored_classes
             or any(
-                self._api.item_classes(item)
+                self._api.entity_classes(item)
                 & self._api.transitive_subclasses(ignored_class)
                 for ignored_class in config_classes_ignore
             )
@@ -607,8 +616,8 @@ class Filter(media_filter.CachedFilter):
     def _is_integral_child(
         self, parent: wikidata_value.ItemRef, child: wikidata_value.ItemRef
     ) -> bool:
-        parent_classes = self._api.item_classes(parent)
-        child_classes = self._api.item_classes(child)
+        parent_classes = self._api.entity_classes(parent)
+        child_classes = self._api.entity_classes(child)
         for (
             parent_classes_to_check,
             child_classes_to_check,
@@ -643,7 +652,7 @@ class Filter(media_filter.CachedFilter):
         self, parent: wikidata_value.ItemRef, child: wikidata_value.ItemRef
     ) -> bool:
         del child  # Unused.
-        parent_classes = self._api.item_classes(parent)
+        parent_classes = self._api.entity_classes(parent)
         for collection in (
             wikidata_value.Q_ANTHOLOGY,
             wikidata_value.Q_LIST,
@@ -665,7 +674,7 @@ class Filter(media_filter.CachedFilter):
         for item in iterable:
             reached_from.setdefault(item, current)
             if (
-                self._api.item_classes(item)
+                self._api.entity_classes(item)
                 & self._unlikely_to_be_processed_classes
             ):
                 unprocessed_unlikely.add(item)
@@ -677,7 +686,7 @@ class Filter(media_filter.CachedFilter):
         category: str,
         item: wikidata_value.ItemRef,
     ) -> media_filter.ResultExtra:
-        item_data = self._api.item(item)
+        item_data = self._api.entity(item).json_full
         item_description_parts = []
         if (label := _label(item_data, self._config.languages)) is not None:
             item_description_parts.append(label)
@@ -806,7 +815,7 @@ class Filter(media_filter.CachedFilter):
                 return media_filter.FilterResult(False)
             extra_information: set[media_filter.ResultExtra] = set()
             if self._config.release_statuses:
-                item = self._api.item(request.item.wikidata_item)
+                item = self._api.entity(request.item.wikidata_item).json_full
                 if (
                     _release_status(item, now=request.now)
                     not in self._config.release_statuses

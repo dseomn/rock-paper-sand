@@ -20,7 +20,7 @@ import abc
 from collections.abc import Collection
 import dataclasses
 import re
-from typing import Self
+from typing import Any, Self
 
 
 def _parse_id(
@@ -193,3 +193,18 @@ P_TAKES_PLACE_IN_FICTIONAL_UNIVERSE = _p(
     "https://www.wikidata.org/wiki/Property:P1434"
 )
 del _p
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class Entity:
+    """Data about an entity.
+
+    Attributes:
+        json_full: JSON data about the entity, full flavor. See
+            https://www.wikidata.org/wiki/Wikidata:Data_access#Linked_Data_Interface_(URI)
+            for how to get the data and
+            https://doc.wikimedia.org/Wikibase/master/php/docs_topics_json.html
+            for the format.
+    """
+
+    json_full: Any
