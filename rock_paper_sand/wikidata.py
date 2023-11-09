@@ -422,20 +422,20 @@ class Filter(media_filter.CachedFilter):
 
     def _is_ignored(
         self,
-        item: wikidata_value.ItemRef,
+        item_ref: wikidata_value.ItemRef,
         *,
         request: media_filter.FilterRequest,
         ignored_from_config: set[wikidata_value.ItemRef],
     ) -> bool:
         config_classes_ignore = request.item.wikidata_classes_ignore_recursive
-        if item in request.item.wikidata_ignore_items_recursive:
-            ignored_from_config.add(item)
+        if item_ref in request.item.wikidata_ignore_items_recursive:
+            ignored_from_config.add(item_ref)
             return True
         elif (
-            item in self._ignored_items
-            or self._api.entity_classes(item) & self._ignored_classes
+            item_ref in self._ignored_items
+            or self._api.entity_classes(item_ref) & self._ignored_classes
             or any(
-                self._api.entity_classes(item)
+                self._api.entity_classes(item_ref)
                 & self._api.transitive_subclasses(ignored_class)
                 for ignored_class in config_classes_ignore
             )
@@ -484,16 +484,17 @@ class Filter(media_filter.CachedFilter):
         return False
 
     def _integral_children(
-        self, item: wikidata_value.ItemRef, related: RelatedMedia
+        self, item_ref: wikidata_value.ItemRef, related: RelatedMedia
     ) -> Iterable[wikidata_value.ItemRef]:
         if any(
-            self._is_integral_child(parent, item) for parent in related.parents
+            self._is_integral_child(parent, item_ref)
+            for parent in related.parents
         ):
-            yield item
+            yield item_ref
         yield from (
             child
             for child in related.children
-            if self._is_integral_child(item, child)
+            if self._is_integral_child(item_ref, child)
         )
 
     def _should_cross_parent_child_border(
@@ -519,22 +520,22 @@ class Filter(media_filter.CachedFilter):
         unprocessed: set[wikidata_value.ItemRef],
         unprocessed_unlikely: set[wikidata_value.ItemRef],
     ) -> None:
-        for item in iterable:
-            reached_from.setdefault(item, current)
+        for item_ref in iterable:
+            reached_from.setdefault(item_ref, current)
             if (
-                self._api.entity_classes(item)
+                self._api.entity_classes(item_ref)
                 & self._unlikely_to_be_processed_classes
             ):
-                unprocessed_unlikely.add(item)
+                unprocessed_unlikely.add(item_ref)
             else:
-                unprocessed.add(item)
+                unprocessed.add(item_ref)
 
     def _related_item_result_extra(
         self,
         category: str,
-        item: wikidata_value.ItemRef,
+        item_ref: wikidata_value.ItemRef,
     ) -> media_filter.ResultExtra:
-        entity = self._api.entity(item)
+        entity = self._api.entity(item_ref)
         item_description_parts = []
         if (label := entity.label(self._config.languages)) is not None:
             item_description_parts.append(label)
@@ -542,7 +543,7 @@ class Filter(media_filter.CachedFilter):
             description := entity.description(self._config.languages)
         ) is not None:
             item_description_parts.append(f"({description})")
-        item_description_parts.append(f"<{item}>")
+        item_description_parts.append(f"<{item_ref}>")
         return media_filter.ResultExtraString(
             f"{category}: {' '.join(item_description_parts)}"
         )

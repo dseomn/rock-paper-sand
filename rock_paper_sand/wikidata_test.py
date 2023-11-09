@@ -268,8 +268,8 @@ class WikidataApiTest(parameterized.TestCase):
         first_result = self._api.related_media(wikidata_value.ItemRef("Q1"))
         second_result = self._api.related_media(wikidata_value.ItemRef("Q1"))
         actual_classes = {
-            item: self._api.entity_classes(item)
-            for item in {
+            item_ref: self._api.entity_classes(item_ref)
+            for item_ref in {
                 *first_result.parents,
                 *first_result.siblings,
                 *first_result.children,
