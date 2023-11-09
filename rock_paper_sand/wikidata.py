@@ -417,6 +417,7 @@ class Filter(media_filter.CachedFilter):
     def _unlikely_to_be_processed_classes(self) -> Set[wikidata_value.ItemRef]:
         return {
             *self._tv_season_classes,
+            *self._tv_season_part_classes,
             *self._tv_episode_classes,
         }
 
