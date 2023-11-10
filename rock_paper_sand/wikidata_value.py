@@ -230,6 +230,17 @@ def parse_snak_item(snak: Snak) -> ItemRef:
     return ItemRef(snak["datavalue"]["value"]["id"])
 
 
+def parse_snak_string(snak: Snak) -> str:
+    """Returns a string value from a snak."""
+    if snak["snaktype"] != "value":
+        raise NotImplementedError(
+            f"Cannot parse non-value snak as a string: {snak}"
+        )
+    if snak["datatype"] != "string" or snak["datavalue"]["type"] != "string":
+        raise ValueError(f"Cannot parse non-string snak as a string: {snak}")
+    return snak["datavalue"]["value"]
+
+
 def parse_snak_time(snak: Snak) -> tuple[datetime.datetime, datetime.datetime]:
     """Returns (earliest possible time, latest possible time) of a time snak."""
     # https://doc.wikimedia.org/Wikibase/master/php/docs_topics_json.html#json_datavalues_time

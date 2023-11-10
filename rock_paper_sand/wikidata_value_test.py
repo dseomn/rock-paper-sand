@@ -194,6 +194,54 @@ class WikidataValueTest(parameterized.TestCase):
             error_regex=r"non-value",
         ),
         dict(
+            testcase_name="datatype_not_string",
+            snak={"snaktype": "value", "datatype": "wikibase-item"},
+            error_class=ValueError,
+            error_regex=r"non-string",
+        ),
+        dict(
+            testcase_name="type_not_string",
+            snak={
+                "snaktype": "value",
+                "datatype": "string",
+                "datavalue": {"type": "wikibase-entityid"},
+            },
+            error_class=ValueError,
+            error_regex=r"non-string",
+        ),
+    )
+    def test_parse_snak_string_error(
+        self,
+        *,
+        snak: Any,
+        error_class: type[Exception],
+        error_regex: str,
+    ) -> None:
+        with self.assertRaisesRegex(error_class, error_regex):
+            wikidata_value.parse_snak_string(wikidata_value.Snak(snak))
+
+    def test_parse_snak_string(self) -> None:
+        self.assertEqual(
+            "foo",
+            wikidata_value.parse_snak_string(
+                wikidata_value.Snak(
+                    {
+                        "snaktype": "value",
+                        "datatype": "string",
+                        "datavalue": {"type": "string", "value": "foo"},
+                    }
+                )
+            ),
+        )
+
+    @parameterized.named_parameters(
+        dict(
+            testcase_name="not_value",
+            snak={"snaktype": "somevalue"},
+            error_class=NotImplementedError,
+            error_regex=r"non-value",
+        ),
+        dict(
             testcase_name="datatype_not_time",
             snak={"snaktype": "value", "datatype": "string"},
             error_class=ValueError,
