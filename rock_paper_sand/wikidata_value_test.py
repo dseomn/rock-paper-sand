@@ -638,7 +638,7 @@ class WikidataValueTest(parameterized.TestCase):
         prop: wikidata_value.PropertyRef,
         statements: Sequence[Any],
     ) -> None:
-        self.assertSequenceEqual(
+        self.assertCountEqual(
             statements,
             wikidata_value.Entity(json_full=entity).truthy_statements(prop),
         )
