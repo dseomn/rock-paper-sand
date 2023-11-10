@@ -226,7 +226,7 @@ def parse_snak_item(snak: Snak) -> ItemRef:
         or snak["datavalue"]["type"] != "wikibase-entityid"
         or snak["datavalue"]["value"]["entity-type"] != "item"
     ):
-        raise ValueError(f"Cannot parse non-item snak as a item: {snak}")
+        raise ValueError(f"Cannot parse non-item snak as an item: {snak}")
     return ItemRef(snak["datavalue"]["value"]["id"])
 
 
