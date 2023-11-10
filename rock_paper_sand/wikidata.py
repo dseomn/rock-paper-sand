@@ -23,6 +23,7 @@ import logging
 import typing
 from typing import Any
 
+from absl import flags
 import requests
 import requests_cache
 
@@ -34,6 +35,12 @@ from rock_paper_sand.proto import config_pb2
 
 if typing.TYPE_CHECKING:
     import _typeshed
+
+_WIKIDATA_REFRESH = flags.DEFINE_bool(
+    "wikidata_refresh",
+    default=False,
+    help="Use fresh data from wikidata, instead of cached.",
+)
 
 
 def _min(
@@ -53,19 +60,18 @@ def _max(
 @contextlib.contextmanager
 def requests_session() -> Generator[requests.Session, None, None]:
     """Returns a context manager for a session for Wikidata APIs."""
-    # TODO(https://github.com/requests-cache/requests-cache/issues/899): Add a
-    # flag to manually refresh data, and increase the cache duration
-    # significantly.
     with requests_cache.CachedSession(
         **(
             network.requests_cache_defaults()
             | dict[str, Any](
-                expire_after=datetime.timedelta(minutes=30),
+                expire_after=datetime.timedelta(hours=20),
                 cache_control=False,
             )
         ),
     ) as session:
         network.configure_session(session)
+        if _WIKIDATA_REFRESH.value:
+            session.headers["Cache-Control"] = "no-cache"
         yield session
 
 

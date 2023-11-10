@@ -20,6 +20,7 @@ from typing import Any
 from unittest import mock
 
 from absl.testing import absltest
+from absl.testing import flagsaver
 from absl.testing import parameterized
 from google.protobuf import json_format
 import immutabledict
@@ -79,9 +80,11 @@ def _sparql_string(value: str) -> Any:
 
 
 class WikidataSessionTest(parameterized.TestCase):
-    def test_session(self) -> None:
+    @parameterized.parameters(False, True)
+    def test_session(self, refresh: bool) -> None:
         # For now this is basicaly just a smoke test, because it's probably not
         # worth the effort to really test this function.
+        self.enterContext(flagsaver.flagsaver(wikidata_refresh=refresh))
         with wikidata.requests_session() as session:
             self.assertIsInstance(session, requests.Session)
 
