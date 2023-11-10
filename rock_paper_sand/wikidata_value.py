@@ -215,6 +215,15 @@ def _language_keyed_string(
     return None
 
 
+def statement_qualifiers(
+    statement: Statement, property_ref: PropertyRef
+) -> Collection[Snak]:
+    """Returns property_ref's qualifiers of statement."""
+    return tuple(
+        map(Snak, statement.get("qualifiers", {}).get(property_ref.id, ()))
+    )
+
+
 def parse_snak_item(snak: Snak) -> ItemRef:
     """Returns an item value from a snak."""
     if snak["snaktype"] != "value":

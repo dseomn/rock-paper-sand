@@ -14,7 +14,7 @@
 
 # pylint: disable=missing-module-docstring
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from typing import Any
 
 from absl.testing import absltest
@@ -120,6 +120,30 @@ class WikidataValueTest(parameterized.TestCase):
             wikidata_value.ItemRef.from_uri(
                 "http://www.wikidata.org/entity/Q1"
             ).id,
+        )
+
+    @parameterized.parameters(
+        ({}, "P1", ()),
+        ({"qualifiers": {}}, "P1", ()),
+        ({"qualifiers": {"P1": []}}, "P1", ()),
+        (
+            {"qualifiers": {"P1": [{"foo": 1}, {"foo": 2}]}},
+            "P1",
+            ({"foo": 1}, {"foo": 2}),
+        ),
+    )
+    def test_statement_qualifiers(
+        self,
+        statement: Any,
+        property_id: str,
+        expected_qualifiers: Collection[Any],
+    ) -> None:
+        self.assertCountEqual(
+            map(wikidata_value.Snak, expected_qualifiers),
+            wikidata_value.statement_qualifiers(
+                wikidata_value.Statement(statement),
+                wikidata_value.PropertyRef(property_id),
+            ),
         )
 
     @parameterized.named_parameters(
