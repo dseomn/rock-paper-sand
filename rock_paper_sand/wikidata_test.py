@@ -51,6 +51,14 @@ def _snak_item(item_id: str) -> Any:
     }
 
 
+def _snak_string(value: str) -> Any:
+    return {
+        "snaktype": "value",
+        "datatype": "string",
+        "datavalue": {"type": "string", "value": value},
+    }
+
+
 def _snak_time(time: str) -> Any:
     return {
         "snaktype": "value",
@@ -740,6 +748,20 @@ class WikidataFilterTest(parameterized.TestCase):
             api_entities={
                 "Q2": {"labels": {}, "descriptions": {}},
                 "Q22": {"labels": {}, "descriptions": {}},
+                "Q24": {
+                    "claims": {
+                        wikidata_value.P_PART_OF_THE_SERIES.id: [
+                            {
+                                "rank": "normal",
+                                "qualifiers": {
+                                    wikidata_value.P_SERIES_ORDINAL.id: [
+                                        _snak_string("1"),
+                                    ],
+                                },
+                            },
+                        ],
+                    },
+                },
                 "Q3": {"labels": {}, "descriptions": {}},
                 "Q4": {"labels": {}, "descriptions": {}},
             },
@@ -752,6 +774,7 @@ class WikidataFilterTest(parameterized.TestCase):
                     wikidata_value.Q_TELEVISION_SPECIAL,
                 },
                 "Q23": {wikidata_value.Q_TELEVISION_SERIES_SEASON},
+                "Q24": {wikidata_value.Q_TELEVISION_PILOT},
                 "Q31": {wikidata_value.Q_LITERARY_WORK},
                 "Q3": {wikidata_value.Q_LITERARY_WORK},
                 "Q4": {wikidata_value.Q_FILM},
@@ -775,6 +798,7 @@ class WikidataFilterTest(parameterized.TestCase):
                         wikidata_value.ItemRef("Q21"),
                         wikidata_value.ItemRef("Q22"),
                         wikidata_value.ItemRef("Q23"),
+                        wikidata_value.ItemRef("Q24"),
                     },
                     loose=set(),
                 ),
@@ -791,6 +815,12 @@ class WikidataFilterTest(parameterized.TestCase):
                     loose=set(),
                 ),
                 "Q23": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
+                "Q24": wikidata.RelatedMedia(
                     parents=set(),
                     siblings=set(),
                     children=set(),
@@ -832,6 +862,7 @@ class WikidataFilterTest(parameterized.TestCase):
                         "related item: <https://www.wikidata.org/wiki/Q22>"
                     ),
                     # Q23 is an integral child of Q2.
+                    # Q24 is an integral child of Q2.
                     # Q31 is an integral child of Q3.
                     media_filter.ResultExtraString(
                         "related item: <https://www.wikidata.org/wiki/Q3>"
@@ -840,6 +871,97 @@ class WikidataFilterTest(parameterized.TestCase):
                         "related item: <https://www.wikidata.org/wiki/Q4>"
                     ),
                     # Q41 is an integral child of Q4.
+                },
+            ),
+        ),
+        dict(
+            testcase_name="related_media_does_not_ignore_special_tv_pilots",
+            filter_config={"relatedMedia": {}},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_entities={
+                "Q2": {"labels": {}, "descriptions": {}, "claims": {}},
+                "Q3": {
+                    "labels": {},
+                    "descriptions": {},
+                    "claims": {
+                        wikidata_value.P_PART_OF_THE_SERIES.id: [
+                            {
+                                "rank": "normal",
+                                "qualifiers": {
+                                    wikidata_value.P_SERIES_ORDINAL.id: [
+                                        _snak_string("0"),
+                                        _snak_string("1"),
+                                    ],
+                                },
+                            },
+                        ],
+                    },
+                },
+                "Q4": {
+                    "labels": {},
+                    "descriptions": {},
+                    "claims": {
+                        wikidata_value.P_PART_OF_THE_SERIES.id: [
+                            {
+                                "rank": "normal",
+                                "qualifiers": {
+                                    wikidata_value.P_SERIES_ORDINAL.id: [
+                                        _snak_string("1.5"),
+                                    ],
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            api_entity_classes={
+                "Q1": {wikidata_value.Q_TELEVISION_SERIES},
+                "Q2": {wikidata_value.Q_TELEVISION_PILOT},
+                "Q3": {wikidata_value.Q_TELEVISION_PILOT},
+                "Q4": {wikidata_value.Q_TELEVISION_PILOT},
+            },
+            api_related_media={
+                "Q1": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children={
+                        wikidata_value.ItemRef("Q2"),
+                        wikidata_value.ItemRef("Q3"),
+                        wikidata_value.ItemRef("Q4"),
+                    },
+                    loose=set(),
+                ),
+                "Q2": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
+                "Q3": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
+                "Q4": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
+            },
+            expected_result=media_filter.FilterResult(
+                True,
+                extra={
+                    media_filter.ResultExtraString(
+                        "related item: <https://www.wikidata.org/wiki/Q2>"
+                    ),
+                    media_filter.ResultExtraString(
+                        "related item: <https://www.wikidata.org/wiki/Q3>"
+                    ),
+                    media_filter.ResultExtraString(
+                        "related item: <https://www.wikidata.org/wiki/Q4>"
+                    ),
                 },
             ),
         ),

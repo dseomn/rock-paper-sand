@@ -280,6 +280,14 @@ class Api:
         return self._related_media[item_ref]
 
 
+def _is_positive_integer(value: str) -> bool:
+    try:
+        int_value = int(value)
+    except ValueError:
+        return False
+    return int_value > 0
+
+
 def _release_status(
     item: wikidata_value.Entity,
     *,
@@ -406,6 +414,12 @@ class Filter(media_filter.CachedFilter):
         }
 
     @functools.cached_property
+    def _tv_pilot_classes(self) -> Set[wikidata_value.ItemRef]:
+        return self._api.transitive_subclasses(
+            wikidata_value.Q_TELEVISION_PILOT
+        )
+
+    @functools.cached_property
     def _possible_tv_special_classes(self) -> Set[wikidata_value.ItemRef]:
         return {
             *self._api.transitive_subclasses(wikidata_value.Q_TELEVISION_FILM),
@@ -505,6 +519,27 @@ class Filter(media_filter.CachedFilter):
                 and child_classes & child_classes_to_check
             ):
                 return True
+        if (
+            child_classes & self._tv_pilot_classes
+            and parent_classes & self._tv_episode_parent_classes
+        ):
+            # Some pilots are regular episodes, some aren't. This code assumes
+            # that if all of the pilot's ordinals (e.g., episode number and
+            # season number) are positive integers (like in the common case of
+            # S1E1), it's a regular episode.
+            pilot = self._api.entity(child)
+            has_ordinals = False
+            for statement in (
+                *pilot.truthy_statements(wikidata_value.P_SEASON),
+                *pilot.truthy_statements(wikidata_value.P_PART_OF_THE_SERIES),
+            ):
+                for snak in statement.qualifiers(
+                    wikidata_value.P_SERIES_ORDINAL
+                ):
+                    has_ordinals = True
+                    if not _is_positive_integer(snak.string_value()):
+                        return False
+            return has_ordinals
         if (
             child_classes & self._tv_episode_classes
             and not child_classes & self._possible_tv_special_classes
