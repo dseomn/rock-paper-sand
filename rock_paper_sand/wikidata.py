@@ -171,9 +171,7 @@ class Api:
         """Returns the classes that the entity is an instance of."""
         if entity_ref not in self._entity_classes:
             self._entity_classes[entity_ref] = frozenset(
-                wikidata_value.parse_snak_item(
-                    wikidata_value.Snak(statement["mainsnak"])
-                )
+                statement.mainsnak().item_value()
                 for statement in self.entity(entity_ref).truthy_statements(
                     wikidata_value.P_INSTANCE_OF
                 )
@@ -289,13 +287,13 @@ def _release_status(
 ) -> config_pb2.WikidataFilter.ReleaseStatus.ValueType:
     start = _min(
         (
-            _min(wikidata_value.parse_statement_time(statement))
+            _min(statement.time_value())
             for statement in item.truthy_statements(wikidata_value.P_START_TIME)
         )
     )
     end = _max(
         (
-            _max(wikidata_value.parse_statement_time(statement))
+            _max(statement.time_value())
             for statement in item.truthy_statements(wikidata_value.P_END_TIME)
         )
     )
@@ -314,7 +312,7 @@ def _release_status(
     ):
         released = _min(
             (
-                _min(wikidata_value.parse_statement_time(statement))
+                _min(statement.time_value())
                 for statement in item.truthy_statements(prop)
             )
         )

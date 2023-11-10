@@ -21,7 +21,7 @@ from collections.abc import Collection, Mapping, Sequence
 import dataclasses
 import datetime
 import re
-from typing import Any, NewType, Self
+from typing import Any, Self
 
 from dateutil import relativedelta
 
@@ -197,9 +197,6 @@ P_TAKES_PLACE_IN_FICTIONAL_UNIVERSE = _p(
 )
 del _p
 
-Snak = NewType("Snak", Mapping[str, Any])
-Statement = NewType("Statement", Mapping[str, Any])
-
 
 def _language_keyed_string(
     mapping: Mapping[str, Any],
@@ -215,129 +212,164 @@ def _language_keyed_string(
     return None
 
 
-def statement_qualifiers(
-    statement: Statement, property_ref: PropertyRef
-) -> Collection[Snak]:
-    """Returns property_ref's qualifiers of statement."""
-    return tuple(
-        map(Snak, statement.get("qualifiers", {}).get(property_ref.id, ()))
-    )
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class Snak:
+    """Snak.
 
-
-def parse_snak_item(snak: Snak) -> ItemRef:
-    """Returns an item value from a snak."""
-    if snak["snaktype"] != "value":
-        raise NotImplementedError(
-            f"Cannot parse non-value snak as an item: {snak}"
-        )
-    if (
-        snak["datatype"] != "wikibase-item"
-        or snak["datavalue"]["type"] != "wikibase-entityid"
-        or snak["datavalue"]["value"]["entity-type"] != "item"
-    ):
-        raise ValueError(f"Cannot parse non-item snak as an item: {snak}")
-    return ItemRef(snak["datavalue"]["value"]["id"])
-
-
-def parse_snak_string(snak: Snak) -> str:
-    """Returns a string value from a snak."""
-    if snak["snaktype"] != "value":
-        raise NotImplementedError(
-            f"Cannot parse non-value snak as a string: {snak}"
-        )
-    if snak["datatype"] != "string" or snak["datavalue"]["type"] != "string":
-        raise ValueError(f"Cannot parse non-string snak as a string: {snak}")
-    return snak["datavalue"]["value"]
-
-
-def parse_snak_time(snak: Snak) -> tuple[datetime.datetime, datetime.datetime]:
-    """Returns (earliest possible time, latest possible time) of a time snak."""
-    # https://doc.wikimedia.org/Wikibase/master/php/docs_topics_json.html#json_datavalues_time
-    if snak["snaktype"] != "value":
-        raise NotImplementedError(
-            f"Cannot parse non-value snak as a time: {snak}"
-        )
-    if snak["datatype"] != "time" or snak["datavalue"]["type"] != "time":
-        raise ValueError(f"Cannot parse non-time snak as a time: {snak}")
-    value = snak["datavalue"]["value"]
-    if value["calendarmodel"] not in (
-        Q_GREGORIAN_CALENDAR.uri,
-        Q_PROLEPTIC_GREGORIAN_CALENDAR.uri,
-    ):
-        raise NotImplementedError(f"Cannot parse non-Gregorian time: {snak}")
-    if value["timezone"] != 0:
-        raise NotImplementedError(f"Cannot parse non-UTC time: {snak}")
-    if value.get("before", 0) != 0 or value.get("after", 0) != 0:
-        raise NotImplementedError(
-            f"Cannot parse time with uncertainty range: {snak}"
-        )
-    try:
-        precision = {
-            7: relativedelta.relativedelta(years=100),
-            8: relativedelta.relativedelta(years=10),
-            9: relativedelta.relativedelta(years=1),
-            10: relativedelta.relativedelta(months=1),
-            11: relativedelta.relativedelta(days=1),
-        }[value["precision"]]
-    except KeyError:
-        raise NotImplementedError(
-            f"Cannot parse time's precision: {snak}"
-        ) from None
-    match = re.fullmatch(
-        r"\+([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})Z",
-        value["time"],
-    )
-    if match is None:
-        raise ValueError(f"Cannot parse time: {snak}")
-    year, month, day, hour, minute, second = map(int, match.groups())
-    earliest = datetime.datetime(
-        year=year,
-        month=month or 1,
-        day=day or 1,
-        hour=hour,
-        minute=minute,
-        second=second,
-        tzinfo=datetime.timezone.utc,
-    )
-    latest = earliest + precision - datetime.timedelta(microseconds=1)
-    return earliest, latest
-
-
-def parse_statement_time(
-    statement: Statement,
-) -> tuple[datetime.datetime | None, datetime.datetime | None]:
-    """Parses a statement about a time.
-
-    Args:
-        statement: Statement to parse.
-
-    Returns:
-        Tuple of (earliest possible time, latest possible time). Either or both
-        parts may be None if they're unknown or there is no value.
+    Attributes:
+        json: See
+            https://doc.wikimedia.org/Wikibase/master/php/docs_topics_json.html#json_snaks
     """
-    # TODO(https://github.com/pylint-dev/pylint/issues/4944): Remove
-    # unsubscriptable-object disables.
-    mainsnak = Snak(statement["mainsnak"])
-    if mainsnak["datatype"] != "time":  # pylint: disable=unsubscriptable-object
-        raise ValueError(
-            f"Cannot parse non-time statement as a time: {statement}"
-        )
-    match mainsnak["snaktype"]:  # pylint: disable=unsubscriptable-object
-        case "value":
-            return parse_snak_time(mainsnak)
-        case "somevalue":
-            if statement.get("qualifiers", {}):
-                raise NotImplementedError(
-                    f"Cannot parse somevalue time with qualifiers: {statement}"
-                )
-            else:
-                return (None, None)
-        case "novalue":
-            return (None, None)
-        case _:
-            raise ValueError(
-                f"Unexpected snaktype in time statement: {statement}"
+
+    json: Any
+
+    def item_value(self) -> ItemRef:
+        """Returns the snak's item value."""
+        if self.json["snaktype"] != "value":
+            raise NotImplementedError(
+                f"Cannot parse non-value snak as an item: {self.json}"
             )
+        if (
+            self.json["datatype"] != "wikibase-item"
+            or self.json["datavalue"]["type"] != "wikibase-entityid"
+            or self.json["datavalue"]["value"]["entity-type"] != "item"
+        ):
+            raise ValueError(
+                f"Cannot parse non-item snak as an item: {self.json}"
+            )
+        return ItemRef(self.json["datavalue"]["value"]["id"])
+
+    def string_value(self) -> str:
+        """Returns the snak's string value."""
+        if self.json["snaktype"] != "value":
+            raise NotImplementedError(
+                f"Cannot parse non-value snak as a string: {self.json}"
+            )
+        if (
+            self.json["datatype"] != "string"
+            or self.json["datavalue"]["type"] != "string"
+        ):
+            raise ValueError(
+                f"Cannot parse non-string snak as a string: {self.json}"
+            )
+        return self.json["datavalue"]["value"]
+
+    def time_value(self) -> tuple[datetime.datetime, datetime.datetime]:
+        """Returns (earliest possible time, latest possible time)."""
+        if self.json["snaktype"] != "value":
+            raise NotImplementedError(
+                f"Cannot parse non-value snak as a time: {self.json}"
+            )
+        if (
+            self.json["datatype"] != "time"
+            or self.json["datavalue"]["type"] != "time"
+        ):
+            raise ValueError(
+                f"Cannot parse non-time snak as a time: {self.json}"
+            )
+        value = self.json["datavalue"]["value"]
+        if value["calendarmodel"] not in (
+            Q_GREGORIAN_CALENDAR.uri,
+            Q_PROLEPTIC_GREGORIAN_CALENDAR.uri,
+        ):
+            raise NotImplementedError(
+                f"Cannot parse non-Gregorian time: {self.json}"
+            )
+        if value["timezone"] != 0:
+            raise NotImplementedError(f"Cannot parse non-UTC time: {self.json}")
+        if value.get("before", 0) != 0 or value.get("after", 0) != 0:
+            raise NotImplementedError(
+                f"Cannot parse time with uncertainty range: {self.json}"
+            )
+        try:
+            precision = {
+                7: relativedelta.relativedelta(years=100),
+                8: relativedelta.relativedelta(years=10),
+                9: relativedelta.relativedelta(years=1),
+                10: relativedelta.relativedelta(months=1),
+                11: relativedelta.relativedelta(days=1),
+            }[value["precision"]]
+        except KeyError:
+            raise NotImplementedError(
+                f"Cannot parse time's precision: {self.json}"
+            ) from None
+        match = re.fullmatch(
+            (
+                r"\+([0-9]{4})-([0-9]{2})-([0-9]{2})"
+                r"T"
+                r"([0-9]{2}):([0-9]{2}):([0-9]{2})Z"
+            ),
+            value["time"],
+        )
+        if match is None:
+            raise ValueError(f"Cannot parse time: {self.json}")
+        year, month, day, hour, minute, second = map(int, match.groups())
+        earliest = datetime.datetime(
+            year=year,
+            month=month or 1,
+            day=day or 1,
+            hour=hour,
+            minute=minute,
+            second=second,
+            tzinfo=datetime.timezone.utc,
+        )
+        latest = earliest + precision - datetime.timedelta(microseconds=1)
+        return earliest, latest
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class Statement:
+    """Statement.
+
+    Attributes:
+        json: See
+            https://doc.wikimedia.org/Wikibase/master/php/docs_topics_json.html#json_statements
+    """
+
+    json: Any
+
+    def mainsnak(self) -> Snak:
+        """Returns the main snak."""
+        return Snak(json=self.json["mainsnak"])
+
+    def qualifiers(self, property_ref: PropertyRef) -> Collection[Snak]:
+        """Returns qualifiers for the given property."""
+        return tuple(
+            Snak(json=snak)
+            for snak in self.json.get("qualifiers", {}).get(property_ref.id, ())
+        )
+
+    def time_value(
+        self,
+    ) -> tuple[datetime.datetime | None, datetime.datetime | None]:
+        """Returns the statement as time values.
+
+        Returns:
+            Tuple of (earliest possible time, latest possible time). Either or
+            both parts may be None if they're unknown or there is no value.
+        """
+        mainsnak = self.mainsnak()
+        if mainsnak.json["datatype"] != "time":
+            raise ValueError(
+                f"Cannot parse non-time statement as a time: {self.json}"
+            )
+        match mainsnak.json["snaktype"]:
+            case "value":
+                return mainsnak.time_value()
+            case "somevalue":
+                if self.json.get("qualifiers", {}):
+                    raise NotImplementedError(
+                        "Cannot parse somevalue time with qualifiers: "
+                        f"{self.json}"
+                    )
+                else:
+                    return (None, None)
+            case "novalue":
+                return (None, None)
+            case _:
+                raise ValueError(
+                    f"Unexpected snaktype in time statement: {self.json}"
+                )
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -368,11 +400,11 @@ class Entity:
         # https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Truthy_statements
         statements = self.json_full["claims"].get(property_ref.id, ())
         return tuple(
-            Statement(statement)
+            Statement(json=statement)
             for statement in statements
             if statement["rank"] == "preferred"
         ) or tuple(
-            Statement(statement)
+            Statement(json=statement)
             for statement in statements
             if statement["rank"] == "normal"
         )

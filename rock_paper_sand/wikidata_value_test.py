@@ -122,30 +122,6 @@ class WikidataValueTest(parameterized.TestCase):
             ).id,
         )
 
-    @parameterized.parameters(
-        ({}, "P1", ()),
-        ({"qualifiers": {}}, "P1", ()),
-        ({"qualifiers": {"P1": []}}, "P1", ()),
-        (
-            {"qualifiers": {"P1": [{"foo": 1}, {"foo": 2}]}},
-            "P1",
-            ({"foo": 1}, {"foo": 2}),
-        ),
-    )
-    def test_statement_qualifiers(
-        self,
-        statement: Any,
-        property_id: str,
-        expected_qualifiers: Collection[Any],
-    ) -> None:
-        self.assertCountEqual(
-            map(wikidata_value.Snak, expected_qualifiers),
-            wikidata_value.statement_qualifiers(
-                wikidata_value.Statement(statement),
-                wikidata_value.PropertyRef(property_id),
-            ),
-        )
-
     @parameterized.named_parameters(
         dict(
             testcase_name="not_value",
@@ -183,7 +159,7 @@ class WikidataValueTest(parameterized.TestCase):
             error_regex=r"non-item",
         ),
     )
-    def test_parse_snak_item_error(
+    def test_snak_item_value_error(
         self,
         *,
         snak: Any,
@@ -191,23 +167,21 @@ class WikidataValueTest(parameterized.TestCase):
         error_regex: str,
     ) -> None:
         with self.assertRaisesRegex(error_class, error_regex):
-            wikidata_value.parse_snak_item(wikidata_value.Snak(snak))
+            wikidata_value.Snak(json=snak).item_value()
 
-    def test_parse_snak_item(self) -> None:
+    def test_snak_item_value(self) -> None:
         self.assertEqual(
             wikidata_value.ItemRef("Q1"),
-            wikidata_value.parse_snak_item(
-                wikidata_value.Snak(
-                    {
-                        "snaktype": "value",
-                        "datatype": "wikibase-item",
-                        "datavalue": {
-                            "type": "wikibase-entityid",
-                            "value": {"entity-type": "item", "id": "Q1"},
-                        },
-                    }
-                )
-            ),
+            wikidata_value.Snak(
+                json={
+                    "snaktype": "value",
+                    "datatype": "wikibase-item",
+                    "datavalue": {
+                        "type": "wikibase-entityid",
+                        "value": {"entity-type": "item", "id": "Q1"},
+                    },
+                }
+            ).item_value(),
         )
 
     @parameterized.named_parameters(
@@ -234,7 +208,7 @@ class WikidataValueTest(parameterized.TestCase):
             error_regex=r"non-string",
         ),
     )
-    def test_parse_snak_string_error(
+    def test_snak_string_value_error(
         self,
         *,
         snak: Any,
@@ -242,20 +216,18 @@ class WikidataValueTest(parameterized.TestCase):
         error_regex: str,
     ) -> None:
         with self.assertRaisesRegex(error_class, error_regex):
-            wikidata_value.parse_snak_string(wikidata_value.Snak(snak))
+            wikidata_value.Snak(json=snak).string_value()
 
-    def test_parse_snak_string(self) -> None:
+    def test_snak_string_value(self) -> None:
         self.assertEqual(
             "foo",
-            wikidata_value.parse_snak_string(
-                wikidata_value.Snak(
-                    {
-                        "snaktype": "value",
-                        "datatype": "string",
-                        "datavalue": {"type": "string", "value": "foo"},
-                    }
-                )
-            ),
+            wikidata_value.Snak(
+                json={
+                    "snaktype": "value",
+                    "datatype": "string",
+                    "datavalue": {"type": "string", "value": "foo"},
+                }
+            ).string_value(),
         )
 
     @parameterized.named_parameters(
@@ -398,7 +370,7 @@ class WikidataValueTest(parameterized.TestCase):
             error_regex=r"Cannot parse time",
         ),
     )
-    def test_parse_snak_time_error(
+    def test_snak_time_value_error(
         self,
         *,
         snak: Any,
@@ -406,7 +378,7 @@ class WikidataValueTest(parameterized.TestCase):
         error_regex: str,
     ) -> None:
         with self.assertRaisesRegex(error_class, error_regex):
-            wikidata_value.parse_snak_time(wikidata_value.Snak(snak))
+            wikidata_value.Snak(json=snak).time_value()
 
     @parameterized.parameters(
         (
@@ -428,7 +400,7 @@ class WikidataValueTest(parameterized.TestCase):
             ("1600-01-01T00:00:00+00:00", "1600-12-31T23:59:59.999999+00:00"),
         ),
     )
-    def test_parse_snak_time(
+    def test_snak_time_value(
         self,
         snak: Any,
         values: tuple[str, str],
@@ -437,9 +409,39 @@ class WikidataValueTest(parameterized.TestCase):
             values,
             tuple(
                 value.isoformat()
-                for value in wikidata_value.parse_snak_time(
-                    wikidata_value.Snak(snak)
-                )
+                for value in wikidata_value.Snak(json=snak).time_value()
+            ),
+        )
+
+    def test_statement_mainsnak(self) -> None:
+        mainsnak = {"foo": "bar"}
+        self.assertEqual(
+            wikidata_value.Snak(json=mainsnak),
+            wikidata_value.Statement(json={"mainsnak": mainsnak}).mainsnak(),
+        )
+
+    @parameterized.parameters(
+        ({}, "P1", ()),
+        ({"qualifiers": {}}, "P1", ()),
+        ({"qualifiers": {"P1": []}}, "P1", ()),
+        (
+            {"qualifiers": {"P1": [{"foo": 1}, {"foo": 2}]}},
+            "P1",
+            ({"foo": 1}, {"foo": 2}),
+        ),
+    )
+    def test_statement_qualifiers(
+        self,
+        statement: Any,
+        property_id: str,
+        expected_qualifiers: Collection[Any],
+    ) -> None:
+        self.assertCountEqual(
+            tuple(
+                wikidata_value.Snak(json=snak) for snak in expected_qualifiers
+            ),
+            wikidata_value.Statement(json=statement).qualifiers(
+                wikidata_value.PropertyRef(property_id)
             ),
         )
 
@@ -470,7 +472,7 @@ class WikidataValueTest(parameterized.TestCase):
             error_regex=r"Unexpected snaktype",
         ),
     )
-    def test_parse_statement_time_error(
+    def test_statement_time_error(
         self,
         *,
         statement: Any,
@@ -478,9 +480,7 @@ class WikidataValueTest(parameterized.TestCase):
         error_regex: str,
     ) -> None:
         with self.assertRaisesRegex(error_class, error_regex):
-            wikidata_value.parse_statement_time(
-                wikidata_value.Statement(statement)
-            )
+            wikidata_value.Statement(json=statement).time_value()
 
     @parameterized.parameters(
         (
@@ -500,7 +500,7 @@ class WikidataValueTest(parameterized.TestCase):
             (None, None),
         ),
     )
-    def test_parse_statement_time(
+    def test_statement_time(
         self,
         statement: Any,
         values: tuple[str | None, str | None],
@@ -509,9 +509,9 @@ class WikidataValueTest(parameterized.TestCase):
             values,
             tuple(
                 (None if value is None else value.isoformat())
-                for value in wikidata_value.parse_statement_time(
-                    wikidata_value.Statement(statement)
-                )
+                for value in wikidata_value.Statement(
+                    json=statement
+                ).time_value()
             ),
         )
 
@@ -639,7 +639,10 @@ class WikidataValueTest(parameterized.TestCase):
         statements: Sequence[Any],
     ) -> None:
         self.assertCountEqual(
-            statements,
+            tuple(
+                wikidata_value.Statement(json=statement)
+                for statement in statements
+            ),
             wikidata_value.Entity(json_full=entity).truthy_statements(prop),
         )
 
