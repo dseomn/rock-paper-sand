@@ -13,7 +13,7 @@
 # limitations under the License.
 """Utilities for accessing network resources."""
 
-from collections.abc import Collection, Mapping
+from collections.abc import Collection
 import datetime
 import importlib.metadata
 import os.path
@@ -34,7 +34,7 @@ def _user_agent() -> str:
     return " ".join(parts)
 
 
-def requests_cache_defaults() -> Mapping[str, Any]:
+def requests_cache_defaults() -> dict[str, Any]:
     """Returns default kwargs for requests_cache.CachedSession."""
     # TODO(requests-cache >= 1.0.0): Delete old cache entries using the
     # older_than parameter.
