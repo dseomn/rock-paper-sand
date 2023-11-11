@@ -204,6 +204,7 @@ class Api:
             results = self.sparql(
                 "SELECT REDUCED ?class WHERE { "
                 f"?class wdt:{subclass_of}* wd:{class_ref.id}. "
+                "?class wikibase:sitelinks []. "
                 "}"
             )
             self._transitive_subclasses[class_ref] = frozenset(
