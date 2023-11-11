@@ -19,6 +19,7 @@ import contextlib
 import dataclasses
 import datetime
 import functools
+import itertools
 import logging
 import typing
 from typing import Any
@@ -415,6 +416,26 @@ class Filter(media_filter.CachedFilter):
             *self._api.transitive_subclasses(wikidata_value.Q_PLACEHOLDER_NAME),
         }
 
+    def _ignored_classes_from_request(
+        self,
+        request: media_filter.FilterRequest,
+    ) -> Set[wikidata_value.ItemRef]:
+        return frozenset(
+            itertools.chain.from_iterable(
+                map(
+                    self._api.transitive_subclasses,
+                    request.item.wikidata_classes_ignore_recursive,
+                )
+            )
+        ) - frozenset(
+            itertools.chain.from_iterable(
+                map(
+                    self._api.transitive_subclasses,
+                    request.item.wikidata_classes_ignore_excluded_recursive,
+                )
+            )
+        )
+
     @functools.cached_property
     def _anthology_classes(self) -> Set[wikidata_value.ItemRef]:
         return self._api.transitive_subclasses(wikidata_value.Q_ANTHOLOGY)
@@ -503,22 +524,16 @@ class Filter(media_filter.CachedFilter):
         request: media_filter.FilterRequest,
         ignored_from_config: set[wikidata_value.ItemRef],
     ) -> bool:
-        config_classes_ignore = request.item.wikidata_classes_ignore_recursive
         if item_ref in request.item.wikidata_ignore_items_recursive:
             ignored_from_config.add(item_ref)
             return True
-        elif (
-            item_ref in self._ignored_items
-            or self._api.entity_classes(item_ref) & self._ignored_classes
-            or any(
-                self._api.entity_classes(item_ref)
-                & self._api.transitive_subclasses(ignored_class)
-                for ignored_class in config_classes_ignore
-            )
-        ):
+        elif item_ref in self._ignored_items:
             return True
-        else:
-            return False
+        item_classes = self._api.entity_classes(item_ref)
+        return bool(
+            item_classes & self._ignored_classes
+            or item_classes & self._ignored_classes_from_request(request)
+        )
 
     def _integral_child_classes(
         self,

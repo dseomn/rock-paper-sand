@@ -50,6 +50,8 @@ class MediaItem:
             all parts.
         wikidata_classes_ignore_recursive: Wikidata classes to ignore from this
             and all parts.
+        wikidata_classes_ignore_excluded_recursive: Wikidata classes to exclude
+            from wikidata_classes_ignore_recursive.
         has_parent: Whether or not this item appears in the `parts` field of
             another item.
         parts: Parsed proto.parts field.
@@ -69,6 +71,7 @@ class MediaItem:
     all_wikidata_items_recursive: Set[wikidata_value.ItemRef]
     wikidata_ignore_items_recursive: Set[wikidata_value.ItemRef]
     wikidata_classes_ignore_recursive: Set[wikidata_value.ItemRef]
+    wikidata_classes_ignore_excluded_recursive: Set[wikidata_value.ItemRef]
     has_parent: bool
     parts: Sequence["MediaItem"]
 
@@ -154,6 +157,18 @@ class MediaItem:
                     *(part.wikidata_classes_ignore_recursive for part in parts),
                 )
             )
+            wikidata_classes_ignore_excluded_recursive = frozenset(
+                itertools.chain(
+                    map(
+                        wikidata_value.ItemRef.from_string,
+                        proto.wikidata_classes_ignore_excluded,
+                    ),
+                    *(
+                        part.wikidata_classes_ignore_excluded_recursive
+                        for part in parts
+                    ),
+                )
+            )
             wikidata_included_and_ignored = (
                 all_wikidata_items_recursive & wikidata_ignore_items_recursive
             )
@@ -178,6 +193,9 @@ class MediaItem:
                 wikidata_ignore_items_recursive=wikidata_ignore_items_recursive,
                 wikidata_classes_ignore_recursive=(
                     wikidata_classes_ignore_recursive
+                ),
+                wikidata_classes_ignore_excluded_recursive=(
+                    wikidata_classes_ignore_excluded_recursive
                 ),
                 has_parent=parent_fully_qualified_name is not None,
                 parts=parts,

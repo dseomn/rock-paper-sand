@@ -318,8 +318,13 @@ message MediaItem {
   // Wikidata items to ignore when checking for related media.
   repeated string wikidata_ignore = 11;
 
-  // Wikidata classes to ignore instances of when checking for related media.
+  // Wikidata classes to ignore instances of (subclasses of) when checking for
+  // related media.
   repeated string wikidata_classes_ignore = 12;
+
+  // Wikidata classes to exclude (subclasses of) from the
+  // wikidata_classes_ignore set.
+  repeated string wikidata_classes_ignore_excluded = 14;
 
   // JustWatch URL or ID, e.g.,
   // "https://www.justwatch.com/us/tv-show/monty-pythons-flying-circus" or

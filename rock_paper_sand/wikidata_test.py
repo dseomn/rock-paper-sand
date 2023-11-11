@@ -775,6 +775,7 @@ class WikidataFilterTest(parameterized.TestCase):
                 "wikidata": "Q1",
                 "wikidataIgnore": ["Q3", "Q4", "Q5"],
                 "wikidataClassesIgnore": ["Q61"],
+                "wikidataClassesIgnoreExcluded": ["Q611"],
             },
             api_entity_classes={
                 "Q1": set(),

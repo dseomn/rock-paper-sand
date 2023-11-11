@@ -35,6 +35,7 @@ class MediaItemTest(parameterized.TestCase):
             "wikidataAdditional": ["Q20"],
             "wikidataIgnore": ["Q21", "Q22"],
             "wikidataClassesIgnore": ["Q23", "Q24"],
+            "wikidataClassesIgnoreExcluded": ["Q25", "Q26"],
         }
         other_part_proto = json_format.ParseDict(
             other_part, config_pb2.MediaItem()
@@ -47,6 +48,7 @@ class MediaItemTest(parameterized.TestCase):
                 "wikidata": "Q1",
                 "wikidataIgnore": ["Q11"],
                 "wikidataClassesIgnore": ["Q12"],
+                "wikidataClassesIgnoreExcluded": ["Q13"],
                 "parts": [
                     {"name": "some-part"},
                     other_part,
@@ -82,6 +84,11 @@ class MediaItemTest(parameterized.TestCase):
                     wikidata_value.ItemRef("Q23"),
                     wikidata_value.ItemRef("Q24"),
                 },
+                wikidata_classes_ignore_excluded_recursive={
+                    wikidata_value.ItemRef("Q13"),
+                    wikidata_value.ItemRef("Q25"),
+                    wikidata_value.ItemRef("Q26"),
+                },
                 has_parent=False,
                 parts=(
                     media_item.MediaItem(
@@ -98,6 +105,7 @@ class MediaItemTest(parameterized.TestCase):
                         all_wikidata_items_recursive=frozenset(),
                         wikidata_ignore_items_recursive=frozenset(),
                         wikidata_classes_ignore_recursive=frozenset(),
+                        wikidata_classes_ignore_excluded_recursive=frozenset(),
                         has_parent=True,
                         parts=(),
                     ),
@@ -126,6 +134,10 @@ class MediaItemTest(parameterized.TestCase):
                         wikidata_classes_ignore_recursive={
                             wikidata_value.ItemRef("Q23"),
                             wikidata_value.ItemRef("Q24"),
+                        },
+                        wikidata_classes_ignore_excluded_recursive={
+                            wikidata_value.ItemRef("Q25"),
+                            wikidata_value.ItemRef("Q26"),
                         },
                         has_parent=True,
                         parts=(),
