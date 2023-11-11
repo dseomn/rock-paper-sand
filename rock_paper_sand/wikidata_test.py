@@ -974,7 +974,7 @@ class WikidataFilterTest(parameterized.TestCase):
             },
             api_entity_classes={
                 "Q1": set(),
-                "Q2": {wikidata_value.Q_LIST},
+                "Q2": {wikidata_value.Q_ANTHOLOGY},
                 "Q3": {wikidata_value.Q_ANTHOLOGY},
                 "Q4": set(),
             },

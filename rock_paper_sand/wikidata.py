@@ -365,11 +365,19 @@ class Filter(media_filter.CachedFilter):
 
     @functools.cached_property
     def _ignored_classes(self) -> Set[wikidata_value.ItemRef]:
-        # Fictional entities (other than fictional universes) can be part of
-        # fictional universes, but they're not media items.
-        return self._api.transitive_subclasses(
-            wikidata_value.Q_FICTIONAL_ENTITY
-        ) - self._api.transitive_subclasses(wikidata_value.Q_FICTIONAL_UNIVERSE)
+        return {
+            # Fictional entities (other than fictional universes) can be part of
+            # fictional universes, but they're not media items.
+            *(
+                self._api.transitive_subclasses(
+                    wikidata_value.Q_FICTIONAL_ENTITY
+                )
+                - self._api.transitive_subclasses(
+                    wikidata_value.Q_FICTIONAL_UNIVERSE
+                )
+            ),
+            *self._api.transitive_subclasses(wikidata_value.Q_LIST),
+        }
 
     @functools.cached_property
     def _music_classes(self) -> Set[wikidata_value.ItemRef]:
@@ -576,10 +584,6 @@ class Filter(media_filter.CachedFilter):
         side, if the user is interested in a book that was adapted into a part
         of an anthology movie, they might be interested in that part of the
         anthology movie, but not necessarily in the entire anthology series.
-        Similarly, somebody interested in a movie that's part of the US National
-        Film Registry <https://www.wikidata.org/wiki/Q823422> is not necessarily
-        interested in every other movie in that list, and all the media
-        transitively related to those.
 
         Args:
             parent: Parent.
@@ -587,13 +591,9 @@ class Filter(media_filter.CachedFilter):
         """
         del child  # Unused.
         parent_classes = self._api.entity_classes(parent)
-        for collection in (
-            wikidata_value.Q_ANTHOLOGY,
-            wikidata_value.Q_LIST,
-        ):
-            if parent_classes & self._api.transitive_subclasses(collection):
-                return False
-        return True
+        return not parent_classes & self._api.transitive_subclasses(
+            wikidata_value.Q_ANTHOLOGY
+        )
 
     def _update_unprocessed(
         self,
