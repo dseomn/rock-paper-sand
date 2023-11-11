@@ -524,6 +524,7 @@ class Filter(media_filter.CachedFilter):
         *,
         request: media_filter.FilterRequest,
         ignored_from_config: set[wikidata_value.ItemRef],
+        ignored_classes_from_request: Set[wikidata_value.ItemRef],
     ) -> bool:
         if item_ref in request.item.wikidata_ignore_items_recursive:
             ignored_from_config.add(item_ref)
@@ -533,7 +534,7 @@ class Filter(media_filter.CachedFilter):
         item_classes = self._api.entity_classes(item_ref)
         return bool(
             item_classes & self._ignored_classes
-            or item_classes & self._ignored_classes_from_request(request)
+            or item_classes & ignored_classes_from_request
         )
 
     def _integral_child_classes(
@@ -709,6 +710,9 @@ class Filter(media_filter.CachedFilter):
             self._is_ignored,
             request=request,
             ignored_from_config=ignored_from_config,
+            ignored_classes_from_request=self._ignored_classes_from_request(
+                request
+            ),
         )
         while unprocessed or unprocessed_unlikely:
             if len(unprocessed) + len(processed) > 1000:
