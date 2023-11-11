@@ -409,6 +409,10 @@ class Filter(media_filter.CachedFilter):
                 )
             ),
             *self._api.transitive_subclasses(wikidata_value.Q_LIST),
+            # "to be announced" <https://www.wikidata.org/wiki/Q603908> is
+            # sometimes used for "followed by" statements, but it's not a useful
+            # thing to list, and it's connected to many unrelated things.
+            *self._api.transitive_subclasses(wikidata_value.Q_PLACEHOLDER_NAME),
         }
 
     @functools.cached_property
