@@ -154,6 +154,9 @@ Q_TELEVISION_SERIES_EPISODE = _i("https://www.wikidata.org/wiki/Q21191270")
 Q_TELEVISION_SERIES_SEASON = _i("https://www.wikidata.org/wiki/Q3464665")
 Q_TELEVISION_SPECIAL = _i("https://www.wikidata.org/wiki/Q1261214")
 Q_TOMMY_WESTPHALL_UNIVERSE = _i("https://www.wikidata.org/wiki/Q95410310")
+Q_WIKIMEDIA_PAGE_OUTSIDE_THE_MAIN_KNOWLEDGE_TREE = _i(
+    "https://www.wikidata.org/wiki/Q17379835"
+)
 del _i
 
 

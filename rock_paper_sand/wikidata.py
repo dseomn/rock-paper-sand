@@ -415,6 +415,10 @@ class Filter(media_filter.CachedFilter):
             # sometimes used for "followed by" statements, but it's not a useful
             # thing to list, and it's connected to many unrelated things.
             *self._api.transitive_subclasses(wikidata_value.Q_PLACEHOLDER_NAME),
+            # Disambiguation pages and the like are not media items.
+            *self._api.transitive_subclasses(
+                wikidata_value.Q_WIKIMEDIA_PAGE_OUTSIDE_THE_MAIN_KNOWLEDGE_TREE
+            ),
         }
 
     def _ignored_classes_from_request(
