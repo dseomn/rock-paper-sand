@@ -638,6 +638,13 @@ class WikidataFilterTest(parameterized.TestCase):
                 "Q4": set(),
                 "Q5": set(),
             },
+            api_forms_of_creative_work={
+                "Q1": set(),
+                "Q2": set(),
+                "Q3": set(),
+                "Q4": set(),
+                "Q5": set(),
+            },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
                     parents=set(),
@@ -776,6 +783,13 @@ class WikidataFilterTest(parameterized.TestCase):
                 "Q4": set(),
                 "Q6": {wikidata_value.ItemRef("Q61")},
             },
+            api_forms_of_creative_work={
+                "Q1": set(),
+                "Q2": set(),
+                "Q3": set(),
+                "Q4": set(),
+                "Q6": set(),
+            },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
                     parents={wikidata_value.ItemRef("Q4")},
@@ -835,6 +849,18 @@ class WikidataFilterTest(parameterized.TestCase):
                 "Q3": {wikidata_value.Q_LITERARY_WORK},
                 "Q4": {wikidata_value.Q_FILM},
                 "Q41": {wikidata_value.Q_RELEASE_GROUP},
+            },
+            api_forms_of_creative_work={
+                "Q1": set(),
+                "Q2": set(),
+                "Q21": set(),
+                "Q22": set(),
+                "Q23": set(),
+                "Q24": set(),
+                "Q31": set(),
+                "Q3": set(),
+                "Q4": set(),
+                "Q41": set(),
             },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
@@ -976,6 +1002,12 @@ class WikidataFilterTest(parameterized.TestCase):
                 "Q3": {wikidata_value.Q_TELEVISION_PILOT},
                 "Q4": {wikidata_value.Q_TELEVISION_PILOT},
             },
+            api_forms_of_creative_work={
+                "Q1": set(),
+                "Q2": set(),
+                "Q3": set(),
+                "Q4": set(),
+            },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
                     parents=set(),
@@ -1031,6 +1063,12 @@ class WikidataFilterTest(parameterized.TestCase):
             api_entity_classes={
                 "Q1": set(),
                 "Q2": {wikidata_value.Q_ANTHOLOGY},
+                "Q3": set(),
+                "Q4": set(),
+            },
+            api_forms_of_creative_work={
+                "Q1": set(),
+                "Q2": set(),
                 "Q3": {wikidata_value.Q_ANTHOLOGY},
                 "Q4": set(),
             },
@@ -1114,6 +1152,9 @@ class WikidataFilterTest(parameterized.TestCase):
         api_entity_classes: Mapping[str, Set[wikidata_value.ItemRef]] = (
             immutabledict.immutabledict()
         ),
+        api_forms_of_creative_work: (
+            Mapping[str, Set[wikidata_value.ItemRef]]
+        ) = (immutabledict.immutabledict()),
         api_related_media: Mapping[str, wikidata.RelatedMedia] = (
             immutabledict.immutabledict()
         ),
@@ -1126,6 +1167,9 @@ class WikidataFilterTest(parameterized.TestCase):
         )
         self._mock_api.entity_classes.side_effect = (
             lambda entity_ref: api_entity_classes[entity_ref.id]
+        )
+        self._mock_api.forms_of_creative_work.side_effect = (
+            lambda item_ref: api_forms_of_creative_work[item_ref.id]
         )
         self._mock_api.related_media.side_effect = (
             lambda item_ref: api_related_media[item_ref.id]

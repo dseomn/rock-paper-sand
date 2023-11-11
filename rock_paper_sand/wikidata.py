@@ -412,6 +412,10 @@ class Filter(media_filter.CachedFilter):
         }
 
     @functools.cached_property
+    def _anthology_classes(self) -> Set[wikidata_value.ItemRef]:
+        return self._api.transitive_subclasses(wikidata_value.Q_ANTHOLOGY)
+
+    @functools.cached_property
     def _music_classes(self) -> Set[wikidata_value.ItemRef]:
         return self._api.transitive_subclasses(wikidata_value.Q_RELEASE_GROUP)
 
@@ -623,8 +627,10 @@ class Filter(media_filter.CachedFilter):
         """
         del child  # Unused.
         parent_classes = self._api.entity_classes(parent)
-        return not parent_classes & self._api.transitive_subclasses(
-            wikidata_value.Q_ANTHOLOGY
+        parent_forms = self._api.forms_of_creative_work(parent)
+        return (
+            not parent_classes & self._anthology_classes
+            and not parent_forms & self._anthology_classes
         )
 
     def _update_unprocessed(
