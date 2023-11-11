@@ -178,6 +178,38 @@ class WikidataApiTest(parameterized.TestCase):
             "https://www.wikidata.org/wiki/Special:EntityData/Q1.json"
         )
 
+    def test_forms_of_creative_work(self) -> None:
+        self._mock_session.get.return_value.json.return_value = {
+            "entities": {
+                "Q1": {
+                    "claims": {
+                        wikidata_value.P_FORM_OF_CREATIVE_WORK.id: [
+                            {"rank": "normal", "mainsnak": _snak_item("Q2")},
+                            {"rank": "normal", "mainsnak": _snak_item("Q3")},
+                        ],
+                    }
+                }
+            }
+        }
+
+        first_result = self._api.forms_of_creative_work(
+            wikidata_value.ItemRef("Q1")
+        )
+        second_result = self._api.forms_of_creative_work(
+            wikidata_value.ItemRef("Q1")
+        )
+
+        expected_forms = {
+            wikidata_value.ItemRef("Q2"),
+            wikidata_value.ItemRef("Q3"),
+        }
+        self.assertEqual(expected_forms, first_result)
+        self.assertEqual(expected_forms, second_result)
+        # Note that this only happens once because the second time is cached.
+        self._mock_session.get.assert_called_once_with(
+            "https://www.wikidata.org/wiki/Special:EntityData/Q1.json"
+        )
+
     def test_transitive_subclasses(self) -> None:
         self._mock_session.get.return_value.json.return_value = {
             "results": {

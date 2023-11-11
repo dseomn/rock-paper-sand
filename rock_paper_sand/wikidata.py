@@ -135,6 +135,9 @@ class Api:
         self._entity_classes: (
             dict[wikidata_value.EntityRef, Set[wikidata_value.ItemRef]]
         ) = {}
+        self._forms_of_creative_work: (
+            dict[wikidata_value.ItemRef, Set[wikidata_value.ItemRef]]
+        ) = {}
         self._transitive_subclasses: (
             dict[wikidata_value.ItemRef, Set[wikidata_value.ItemRef]]
         ) = {}
@@ -177,6 +180,19 @@ class Api:
                 )
             )
         return self._entity_classes[entity_ref]
+
+    def forms_of_creative_work(
+        self, item_ref: wikidata_value.ItemRef
+    ) -> Set[wikidata_value.ItemRef]:
+        """Returns the forms of the creative work."""
+        if item_ref not in self._forms_of_creative_work:
+            self._forms_of_creative_work[item_ref] = frozenset(
+                statement.mainsnak().item_value()
+                for statement in self.entity(item_ref).truthy_statements(
+                    wikidata_value.P_FORM_OF_CREATIVE_WORK
+                )
+            )
+        return self._forms_of_creative_work[item_ref]
 
     def transitive_subclasses(
         self, class_ref: wikidata_value.ItemRef
