@@ -239,9 +239,10 @@ class Api:
                 ),
             }
             instance_of = wikidata_value.P_INSTANCE_OF.id
+            form = wikidata_value.P_FORM_OF_CREATIVE_WORK.id
             query = " ".join(
                 (
-                    "SELECT REDUCED ?item ?relation ?class WHERE {",
+                    "SELECT REDUCED ?item ?relation ?class ?form WHERE {",
                     " UNION ".join(
                         (
                             "{ "
@@ -253,11 +254,17 @@ class Api:
                     ),
                     "FILTER (!wikibase:isSomeValue(?item))",
                     f"OPTIONAL {{ ?item wdt:{instance_of} ?class. }}",
+                    f"OPTIONAL {{ ?item wdt:{form} ?form. }}",
                     "}",
                 )
             )
             results = self.sparql(query)
             item_classes: (
+                collections.defaultdict[
+                    wikidata_value.ItemRef, set[wikidata_value.ItemRef]
+                ]
+            ) = collections.defaultdict(set)
+            item_forms: (
                 collections.defaultdict[
                     wikidata_value.ItemRef, set[wikidata_value.ItemRef]
                 ]
@@ -274,12 +281,21 @@ class Api:
                     related_item_classes.add(
                         wikidata_value.parse_sparql_term_item(result["class"])
                     )
+                related_item_forms = item_forms[related_item]
+                if "form" in result:
+                    related_item_forms.add(
+                        wikidata_value.parse_sparql_term_item(result["form"])
+                    )
                 items_by_relation[
                     wikidata_value.parse_sparql_term_string(result["relation"])
                 ].add(related_item)
             for related_item, classes in item_classes.items():
                 self._entity_classes.setdefault(
                     related_item, frozenset(classes)
+                )
+            for related_item, forms in item_forms.items():
+                self._forms_of_creative_work.setdefault(
+                    related_item, frozenset(forms)
                 )
             related_media = RelatedMedia(
                 parents=frozenset(items_by_relation.pop("parent", ())),

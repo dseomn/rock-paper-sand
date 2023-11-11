@@ -247,6 +247,7 @@ class WikidataApiTest(parameterized.TestCase):
                 loose=(),
             ),
             expected_cached_classes={},
+            expected_cached_forms={},
         ),
         dict(
             testcase_name="with_results",
@@ -259,16 +260,19 @@ class WikidataApiTest(parameterized.TestCase):
                     "item": _sparql_item("Q3"),
                     "relation": _sparql_string("sibling"),
                     "class": _sparql_item("Q31"),
+                    "form": _sparql_item("Q33"),
                 },
                 {
                     "item": _sparql_item("Q3"),
                     "relation": _sparql_string("sibling"),
                     "class": _sparql_item("Q31"),
+                    "form": _sparql_item("Q33"),
                 },
                 {
                     "item": _sparql_item("Q3"),
                     "relation": _sparql_string("sibling"),
                     "class": _sparql_item("Q32"),
+                    "form": _sparql_item("Q34"),
                 },
                 {
                     "item": _sparql_item("Q4"),
@@ -295,6 +299,12 @@ class WikidataApiTest(parameterized.TestCase):
                 "Q4": (),
                 "Q5": (),
             },
+            expected_cached_forms={
+                "Q2": (),
+                "Q3": ("Q33", "Q34"),
+                "Q4": (),
+                "Q5": (),
+            },
         ),
     )
     def test_related_media(
@@ -303,6 +313,7 @@ class WikidataApiTest(parameterized.TestCase):
         sparql_results: list[Any],
         expected_result: Mapping[str, Collection[str]],
         expected_cached_classes: Mapping[str, Collection[str]],
+        expected_cached_forms: Mapping[str, Collection[str]],
     ) -> None:
         self._mock_session.get.return_value.json.return_value = {
             "results": {"bindings": sparql_results}
@@ -310,14 +321,19 @@ class WikidataApiTest(parameterized.TestCase):
 
         first_result = self._api.related_media(wikidata_value.ItemRef("Q1"))
         second_result = self._api.related_media(wikidata_value.ItemRef("Q1"))
+        related_items = {
+            *first_result.parents,
+            *first_result.siblings,
+            *first_result.children,
+            *first_result.loose,
+        }
         actual_classes = {
             item_ref: self._api.entity_classes(item_ref)
-            for item_ref in {
-                *first_result.parents,
-                *first_result.siblings,
-                *first_result.children,
-                *first_result.loose,
-            }
+            for item_ref in related_items
+        }
+        actual_forms = {
+            item_ref: self._api.forms_of_creative_work(item_ref)
+            for item_ref in related_items
         }
 
         expected_related_media = wikidata.RelatedMedia(
@@ -332,11 +348,19 @@ class WikidataApiTest(parameterized.TestCase):
             )
             for item_id, classes in expected_cached_classes.items()
         }
+        expected_forms = {
+            wikidata_value.ItemRef(item_id): frozenset(
+                map(wikidata_value.ItemRef, forms)
+            )
+            for item_id, forms in expected_cached_forms.items()
+        }
         self.assertEqual(expected_related_media, first_result)
         self.assertEqual(expected_related_media, second_result)
         self.assertEqual(expected_classes, actual_classes)
+        self.assertEqual(expected_forms, actual_forms)
         # Note that this only happens once because the second related_media()
-        # call and all the item_classes() calls are cached.
+        # call and all the item_classes() and forms_of_creative_work() calls are
+        # cached.
         self._mock_session.get.assert_called_once()
 
     def test_related_media_error(self) -> None:
