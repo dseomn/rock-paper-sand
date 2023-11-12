@@ -402,6 +402,9 @@ class Filter(media_filter.CachedFilter):
         return {
             # Fictional entities (other than fictional universes) can be part of
             # fictional universes, but they're not media items.
+            *self._api.transitive_subclasses(
+                wikidata_value.Q_CLASS_OF_FICTIONAL_ENTITIES
+            ),
             *(
                 self._api.transitive_subclasses(
                     wikidata_value.Q_FICTIONAL_ENTITY
