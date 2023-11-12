@@ -27,7 +27,13 @@ _PRECISION_MONTH = 10
 _PRECISION_DAY = 11
 
 
-def _snak_time(time: str, *, precision: int = _PRECISION_DAY) -> Any:
+def _snak_time(
+    time: str,
+    *,
+    before: int = 0,
+    after: int = 0,
+    precision: int = _PRECISION_DAY,
+) -> Any:
     return {
         "snaktype": "value",
         "datatype": "time",
@@ -38,8 +44,8 @@ def _snak_time(time: str, *, precision: int = _PRECISION_DAY) -> Any:
                     wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
                 ),
                 "timezone": 0,
-                "before": 0,
-                "after": 0,
+                "before": before,
+                "after": after,
                 "precision": precision,
                 "time": time,
             },
@@ -287,46 +293,6 @@ class WikidataValueTest(parameterized.TestCase):
             error_regex=r"non-UTC",
         ),
         dict(
-            testcase_name="before",
-            snak={
-                "snaktype": "value",
-                "datatype": "time",
-                "datavalue": {
-                    "type": "time",
-                    "value": {
-                        "calendarmodel": (
-                            wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
-                        ),
-                        "timezone": 0,
-                        "before": 42,
-                        "after": 0,
-                    },
-                },
-            },
-            error_class=NotImplementedError,
-            error_regex=r"uncertainty range",
-        ),
-        dict(
-            testcase_name="after",
-            snak={
-                "snaktype": "value",
-                "datatype": "time",
-                "datavalue": {
-                    "type": "time",
-                    "value": {
-                        "calendarmodel": (
-                            wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
-                        ),
-                        "timezone": 0,
-                        "before": 0,
-                        "after": 42,
-                    },
-                },
-            },
-            error_class=NotImplementedError,
-            error_regex=r"uncertainty range",
-        ),
-        dict(
             testcase_name="unimplemented_precision",
             snak={
                 "snaktype": "value",
@@ -384,6 +350,15 @@ class WikidataValueTest(parameterized.TestCase):
         (
             _snak_time("+1979-10-12T00:00:00Z", precision=_PRECISION_DAY),
             ("1979-10-12T00:00:00+00:00", "1979-10-12T23:59:59.999999+00:00"),
+        ),
+        (
+            _snak_time(
+                "+1979-10-12T00:00:00Z",
+                before=1,
+                after=2,
+                precision=_PRECISION_DAY,
+            ),
+            ("1979-10-11T00:00:00+00:00", "1979-10-14T23:59:59.999999+00:00"),
         ),
         (
             # day is 00

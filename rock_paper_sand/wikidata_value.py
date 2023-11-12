@@ -287,10 +287,6 @@ class Snak:
             )
         if value["timezone"] != 0:
             raise NotImplementedError(f"Cannot parse non-UTC time: {self.json}")
-        if value.get("before", 0) != 0 or value.get("after", 0) != 0:
-            raise NotImplementedError(
-                f"Cannot parse time with uncertainty range: {self.json}"
-            )
         try:
             precision = {
                 7: relativedelta.relativedelta(years=100),
@@ -314,7 +310,7 @@ class Snak:
         if match is None:
             raise ValueError(f"Cannot parse time: {self.json}")
         year, month, day, hour, minute, second = map(int, match.groups())
-        earliest = datetime.datetime(
+        base = datetime.datetime(
             year=year,
             month=month or 1,
             day=day or 1,
@@ -323,7 +319,13 @@ class Snak:
             second=second,
             tzinfo=datetime.timezone.utc,
         )
-        latest = earliest + precision - datetime.timedelta(microseconds=1)
+        earliest = base - value.get("before", 0) * precision
+        latest = (
+            base
+            + value.get("after", 0) * precision
+            + precision
+            - datetime.timedelta(microseconds=1)
+        )
         return earliest, latest
 
 
