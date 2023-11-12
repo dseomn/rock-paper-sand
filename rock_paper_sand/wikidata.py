@@ -381,8 +381,29 @@ class Filter(media_filter.CachedFilter):
         self._api = api
 
     @functools.cached_property
+    def _fictional_entity_classes(self) -> Set[wikidata_value.ItemRef]:
+        # Fictional entities (other than fictional universes) can be part of
+        # fictional universes, but they're not media items.
+        return {
+            *self._api.transitive_subclasses(
+                wikidata_value.Q_CLASS_OF_FICTIONAL_ENTITIES
+            ),
+            *(
+                self._api.transitive_subclasses(
+                    wikidata_value.Q_FICTIONAL_ENTITY
+                )
+                - self._api.transitive_subclasses(
+                    wikidata_value.Q_FICTIONAL_UNIVERSE
+                )
+            ),
+        }
+
+    @functools.cached_property
     def _ignored_items(self) -> Set[wikidata_value.ItemRef]:
         return {
+            # Sometimes these classes are linked to media, instead of instances
+            # of those classes being linked to the media.
+            *self._fictional_entity_classes,
             # Subclases of paratext, like preface or introduction, are sometimes
             # used in "has parts" relationships for a book. Since these items
             # are generic (e.g., "introduction") rather than specific to the
@@ -400,19 +421,7 @@ class Filter(media_filter.CachedFilter):
     @functools.cached_property
     def _ignored_classes(self) -> Set[wikidata_value.ItemRef]:
         return {
-            # Fictional entities (other than fictional universes) can be part of
-            # fictional universes, but they're not media items.
-            *self._api.transitive_subclasses(
-                wikidata_value.Q_CLASS_OF_FICTIONAL_ENTITIES
-            ),
-            *(
-                self._api.transitive_subclasses(
-                    wikidata_value.Q_FICTIONAL_ENTITY
-                )
-                - self._api.transitive_subclasses(
-                    wikidata_value.Q_FICTIONAL_UNIVERSE
-                )
-            ),
+            *self._fictional_entity_classes,
             *self._api.transitive_subclasses(wikidata_value.Q_LIST),
             # "to be announced" <https://www.wikidata.org/wiki/Q603908> is
             # sometimes used for "followed by" statements, but it's not a useful
