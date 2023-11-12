@@ -450,7 +450,10 @@ class Filter(media_filter.CachedFilter):
 
     @functools.cached_property
     def _music_classes(self) -> Set[wikidata_value.ItemRef]:
-        return self._api.transitive_subclasses(wikidata_value.Q_RELEASE_GROUP)
+        return {
+            *self._api.transitive_subclasses(wikidata_value.Q_MUSICAL_WORK),
+            *self._api.transitive_subclasses(wikidata_value.Q_RELEASE_GROUP),
+        }
 
     @functools.cached_property
     def _tv_show_classes(self) -> Set[wikidata_value.ItemRef]:
@@ -509,7 +512,12 @@ class Filter(media_filter.CachedFilter):
     def _video_classes(self) -> Set[wikidata_value.ItemRef]:
         return {
             *self._api.transitive_subclasses(wikidata_value.Q_FILM),
+            *self._tv_show_classes,
+            *self._tv_season_classes,
+            *self._tv_season_part_classes,
             *self._tv_episode_classes,
+            *self._tv_pilot_classes,
+            *self._possible_tv_special_classes,
         }
 
     @functools.cached_property
