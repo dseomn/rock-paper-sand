@@ -200,10 +200,18 @@ class Api:
     ) -> Set[wikidata_value.ItemRef]:
         """Returns transitive subclasses of the given class."""
         if class_ref not in self._transitive_subclasses:
-            subclass_of = wikidata_value.P_SUBCLASS_OF.id
+            subclass_predicate = "|".join(
+                (
+                    f"wdt:{wikidata_value.P_SUBCLASS_OF.id}",
+                    (
+                        f"(wdt:{wikidata_value.P_INSTANCE_OF.id}/"
+                        f"wdt:{wikidata_value.P_IS_METACLASS_FOR.id})"
+                    ),
+                )
+            )
             results = self.sparql(
                 "SELECT REDUCED ?class WHERE { "
-                f"?class wdt:{subclass_of}* wd:{class_ref.id}. "
+                f"?class ({subclass_predicate})* wd:{class_ref.id}. "
                 "?class wikibase:sitelinks []. "
                 "}"
             )
