@@ -421,6 +421,7 @@ class Filter(media_filter.CachedFilter):
     @functools.cached_property
     def _ignored_classes(self) -> Set[wikidata_value.ItemRef]:
         return {
+            *self._api.transitive_subclasses(wikidata_value.Q_BOX_OFFICE),
             *self._fictional_entity_classes,
             *self._api.transitive_subclasses(wikidata_value.Q_LIST),
             # "to be announced" <https://www.wikidata.org/wiki/Q603908> is
