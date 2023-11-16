@@ -573,6 +573,7 @@ class Filter(media_filter.CachedFilter):
             self._tv_season_part_parent_classes,
             self._tv_season_part_classes,
         )
+        yield (self._video_classes, self._video_classes)
         yield (self._video_classes, self._music_classes)
         yield (self._tv_show_classes, self._music_classes)
         yield (self._tv_season_classes, self._music_classes)
