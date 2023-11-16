@@ -136,6 +136,7 @@ class ItemRef(EntityRef):
 
 _i = ItemRef.from_string
 Q_ANTHOLOGY = _i("https://www.wikidata.org/wiki/Q105420")
+Q_ANTHOLOGY_FILM = _i("https://www.wikidata.org/wiki/Q336144")
 Q_BOX_OFFICE = _i("https://www.wikidata.org/wiki/Q21707777")
 Q_CLASS_OF_FICTIONAL_ENTITIES = _i("https://www.wikidata.org/wiki/Q15831596")
 Q_FICTIONAL_ENTITY = _i("https://www.wikidata.org/wiki/Q14897293")

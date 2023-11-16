@@ -456,7 +456,10 @@ class Filter(media_filter.CachedFilter):
 
     @functools.cached_property
     def _anthology_classes(self) -> Set[wikidata_value.ItemRef]:
-        return self._api.transitive_subclasses(wikidata_value.Q_ANTHOLOGY)
+        return {
+            *self._api.transitive_subclasses(wikidata_value.Q_ANTHOLOGY),
+            *self._api.transitive_subclasses(wikidata_value.Q_ANTHOLOGY_FILM),
+        }
 
     @functools.cached_property
     def _music_classes(self) -> Set[wikidata_value.ItemRef]:
