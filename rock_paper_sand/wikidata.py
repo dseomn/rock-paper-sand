@@ -574,6 +574,7 @@ class Filter(media_filter.CachedFilter):
             self._tv_season_part_classes,
         )
         yield (self._video_classes, self._music_classes)
+        yield (self._music_classes, self._music_classes)
         yield (
             {wikidata_value.Q_LITERARY_WORK},
             {wikidata_value.Q_LITERARY_WORK},
