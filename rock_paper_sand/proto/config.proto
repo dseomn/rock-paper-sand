@@ -85,8 +85,17 @@ message WikidataFilter {
   // If specified, only items with one of these release statuses will match.
   repeated ReleaseStatus release_statuses = 1;
 
-  // Placeholder for future options for related_media.
-  message RelatedMedia {}
+  // Options for related_media.
+  message RelatedMedia {
+    // Items to ignore.
+    repeated string ignore = 1;
+
+    // Classes to ignore instances of (subclasses of).
+    repeated string classes_ignore = 2;
+
+    // Classes to exclude (subclasses of) from the classes_ignore set.
+    repeated string classes_ignore_excluded = 3;
+  }
 
   // Filters for top-level media to find potential additional parts that aren't
   // present in the config file, and existing parts that aren't related to the

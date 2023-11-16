@@ -380,6 +380,25 @@ class Filter(media_filter.CachedFilter):
         self._config = filter_config
         self._api = api
 
+        self._config_ignore = tuple(
+            map(
+                wikidata_value.ItemRef.from_string,
+                self._config.related_media.ignore,
+            )
+        )
+        self._config_classes_ignore = tuple(
+            map(
+                wikidata_value.ItemRef.from_string,
+                self._config.related_media.classes_ignore,
+            )
+        )
+        self._config_classes_ignore_excluded = tuple(
+            map(
+                wikidata_value.ItemRef.from_string,
+                self._config.related_media.classes_ignore_excluded,
+            )
+        )
+
     @functools.cached_property
     def _fictional_entity_classes(self) -> Set[wikidata_value.ItemRef]:
         # Fictional entities (other than fictional universes) can be part of
@@ -401,6 +420,7 @@ class Filter(media_filter.CachedFilter):
     @functools.cached_property
     def _ignored_items(self) -> Set[wikidata_value.ItemRef]:
         return {
+            *self._config_ignore,
             # Sometimes these classes are linked to media, instead of instances
             # of those classes being linked to the media.
             *self._fictional_entity_classes,
@@ -421,6 +441,24 @@ class Filter(media_filter.CachedFilter):
     @functools.cached_property
     def _ignored_classes(self) -> Set[wikidata_value.ItemRef]:
         return {
+            *(
+                frozenset(
+                    itertools.chain.from_iterable(
+                        map(
+                            self._api.transitive_subclasses,
+                            self._config_classes_ignore,
+                        )
+                    )
+                )
+                - frozenset(
+                    itertools.chain.from_iterable(
+                        map(
+                            self._api.transitive_subclasses,
+                            self._config_classes_ignore_excluded,
+                        )
+                    )
+                )
+            ),
             *self._api.transitive_subclasses(wikidata_value.Q_BOX_OFFICE),
             *self._fictional_entity_classes,
             *self._api.transitive_subclasses(wikidata_value.Q_LIST),

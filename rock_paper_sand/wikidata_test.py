@@ -769,7 +769,13 @@ class WikidataFilterTest(parameterized.TestCase):
         ),
         dict(
             testcase_name="related_media_excludes_ignored_items",
-            filter_config={"relatedMedia": {}},
+            filter_config={
+                "relatedMedia": {
+                    "ignore": ["Q7"],
+                    "classesIgnore": ["Q81"],
+                    "classesIgnoreExcluded": ["Q811"],
+                },
+            },
             item={
                 "name": "foo",
                 "wikidata": "Q1",
@@ -783,6 +789,8 @@ class WikidataFilterTest(parameterized.TestCase):
                 "Q3": set(),
                 "Q4": set(),
                 "Q6": {wikidata_value.ItemRef("Q61")},
+                "Q7": set(),
+                "Q8": {wikidata_value.ItemRef("Q81")},
             },
             api_forms_of_creative_work={
                 "Q1": set(),
@@ -790,11 +798,17 @@ class WikidataFilterTest(parameterized.TestCase):
                 "Q3": set(),
                 "Q4": set(),
                 "Q6": set(),
+                "Q7": set(),
+                "Q8": set(),
             },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
                     parents={wikidata_value.ItemRef("Q4")},
-                    siblings={wikidata_value.Q_PARATEXT},
+                    siblings={
+                        wikidata_value.Q_PARATEXT,
+                        wikidata_value.ItemRef("Q7"),
+                        wikidata_value.ItemRef("Q8"),
+                    },
                     children={wikidata_value.ItemRef("Q6")},
                     loose={
                         wikidata_value.ItemRef("Q2"),
