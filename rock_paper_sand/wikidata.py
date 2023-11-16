@@ -525,9 +525,6 @@ class Filter(media_filter.CachedFilter):
     def _video_classes(self) -> Set[wikidata_value.ItemRef]:
         return {
             *self._api.transitive_subclasses(wikidata_value.Q_FILM),
-            *self._tv_show_classes,
-            *self._tv_season_classes,
-            *self._tv_season_part_classes,
             *self._tv_episode_classes,
             *self._tv_pilot_classes,
             *self._possible_tv_special_classes,
@@ -577,6 +574,9 @@ class Filter(media_filter.CachedFilter):
             self._tv_season_part_classes,
         )
         yield (self._video_classes, self._music_classes)
+        yield (self._tv_show_classes, self._music_classes)
+        yield (self._tv_season_classes, self._music_classes)
+        yield (self._tv_season_part_classes, self._music_classes)
         yield (self._music_classes, self._music_classes)
         yield (
             {wikidata_value.Q_LITERARY_WORK},
