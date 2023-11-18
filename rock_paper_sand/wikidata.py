@@ -424,6 +424,7 @@ class Filter(media_filter.CachedFilter):
             # Sometimes these classes are linked to media, instead of instances
             # of those classes being linked to the media.
             *self._fictional_entity_classes,
+            wikidata_value.Q_OMNIVERSE,
             # Subclases of paratext, like preface or introduction, are sometimes
             # used in "has parts" relationships for a book. Since these items
             # are generic (e.g., "introduction") rather than specific to the
