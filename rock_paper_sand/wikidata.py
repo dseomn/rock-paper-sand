@@ -733,7 +733,9 @@ class Filter(media_filter.CachedFilter):
         unprocessed_unlikely: set[wikidata_value.ItemRef],
     ) -> None:
         for item_ref in iterable:
-            reached_from.setdefault(item_ref, current)
+            if item_ref not in reached_from:
+                logging.debug("%s reached from %s", item_ref, current)
+                reached_from[item_ref] = current
             if (
                 self._api.entity_classes(item_ref)
                 & self._unlikely_to_be_processed_classes
