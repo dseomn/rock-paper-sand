@@ -152,6 +152,9 @@ Q_PART_OF_TELEVISION_SEASON = _i("https://www.wikidata.org/wiki/Q93992677")
 Q_PLACEHOLDER_NAME = _i("https://www.wikidata.org/wiki/Q1318274")
 Q_PROLEPTIC_GREGORIAN_CALENDAR = _i("https://www.wikidata.org/wiki/Q1985727")
 Q_RELEASE_GROUP = _i("https://www.wikidata.org/wiki/Q108346082")
+Q_SEGMENT_OF_A_TELEVISION_EPISODE = _i(
+    "https://www.wikidata.org/wiki/Q29555881"
+)
 Q_TELEVISION_FILM = _i("https://www.wikidata.org/wiki/Q506240")
 Q_TELEVISION_PILOT = _i("https://www.wikidata.org/wiki/Q653916")
 Q_TELEVISION_SERIES = _i("https://www.wikidata.org/wiki/Q5398426")

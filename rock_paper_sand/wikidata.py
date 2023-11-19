@@ -546,6 +546,19 @@ class Filter(media_filter.CachedFilter):
         }
 
     @functools.cached_property
+    def _tv_episode_segment_classes(self) -> Set[wikidata_value.ItemRef]:
+        return self._api.transitive_subclasses(
+            wikidata_value.Q_SEGMENT_OF_A_TELEVISION_EPISODE
+        )
+
+    @functools.cached_property
+    def _tv_episode_segment_parent_classes(self) -> Set[wikidata_value.ItemRef]:
+        return {
+            *self._tv_episode_parent_classes,
+            *self._tv_episode_classes,
+        }
+
+    @functools.cached_property
     def _tv_pilot_classes(self) -> Set[wikidata_value.ItemRef]:
         return self._api.transitive_subclasses(
             wikidata_value.Q_TELEVISION_PILOT
@@ -599,6 +612,7 @@ class Filter(media_filter.CachedFilter):
             *self._tv_season_classes,
             *self._tv_season_part_classes,
             *self._tv_episode_classes,
+            *self._tv_episode_segment_classes,
             *self._api.transitive_subclasses(
                 wikidata_value.Q_WEB_SERIES_SEASON
             ),
@@ -636,6 +650,10 @@ class Filter(media_filter.CachedFilter):
         yield (
             self._tv_season_part_parent_classes,
             self._tv_season_part_classes,
+        )
+        yield (
+            self._tv_episode_segment_parent_classes,
+            self._tv_episode_segment_classes,
         )
         yield (self._web_series_classes, self._web_series_child_classes)
         yield (self._video_classes, self._video_classes)
