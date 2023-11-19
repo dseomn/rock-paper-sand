@@ -599,6 +599,12 @@ class Filter(media_filter.CachedFilter):
             *self._tv_season_classes,
             *self._tv_season_part_classes,
             *self._tv_episode_classes,
+            *self._api.transitive_subclasses(
+                wikidata_value.Q_WEB_SERIES_SEASON
+            ),
+            *self._api.transitive_subclasses(
+                wikidata_value.Q_WEB_SERIES_EPISODE
+            ),
         }
 
     def _is_ignored(
