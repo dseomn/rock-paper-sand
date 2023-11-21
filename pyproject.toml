@@ -80,7 +80,6 @@ warn_unused_ignores = true
 [[tool.mypy.overrides]]
 module = [
   "absl.*",
-  "google.protobuf.*",
 ]
 ignore_missing_imports = true
 
