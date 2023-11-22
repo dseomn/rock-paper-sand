@@ -129,6 +129,13 @@ class WikidataApiTest(parameterized.TestCase):
             self._mock_session.mock_calls,
         )
 
+    def test_entity_merged(self) -> None:
+        self._mock_session.get.return_value.json.return_value = {
+            "entities": {"Q2": {}}
+        }
+        with self.assertRaisesRegex(ValueError, "Q1.*merged"):
+            self._api.entity(wikidata_value.ItemRef("Q1"))
+
     def test_sparql(self) -> None:
         self._mock_session.get.return_value.json.return_value = {
             "results": {"bindings": [{"foo": "bar"}]}

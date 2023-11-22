@@ -153,8 +153,15 @@ class Api:
                 f"https://www.wikidata.org/wiki/Special:EntityData/{entity_ref.id}.json"  # pylint: disable=line-too-long
             )
             response.raise_for_status()
+            entities = response.json()["entities"]
+            if entity_ref.id not in entities:
+                raise ValueError(
+                    f"JSON data for {entity_ref} does not contain "
+                    f"{entity_ref.id!r}. Maybe it was merged with another "
+                    "entity?"
+                )
             self._entity_by_ref[entity_ref] = wikidata_value.Entity(
-                json_full=response.json()["entities"][entity_ref.id],
+                json_full=entities[entity_ref.id],
             )
         return self._entity_by_ref[entity_ref]
 
