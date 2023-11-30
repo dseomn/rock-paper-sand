@@ -14,7 +14,7 @@
 """Filters for media items."""
 
 import abc
-from collections.abc import Callable, Hashable, Iterable, Set
+from collections.abc import Callable, Hashable, Iterable, Mapping, Set
 import dataclasses
 import datetime
 import functools
@@ -59,27 +59,19 @@ class FilterRequest:
         return (self.item.id, self.now)
 
 
-class ResultExtra(immutabledict.immutabledict[str, Any]):
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class ResultExtra:
     """Extra information about a filter result.
 
-    Keys should generally be scoped with dots. E.g., the justwatch filter should
-    use keys like "justwatch.provider" instead of just "provider".
+    Attributes:
+        human_readable: Human-readable description of the extra info, or None.
+        data: Data for grouping or use by parent filters. Keys should generally
+            be scoped with dots. E.g., the justwatch filter should use keys like
+            "justwatch.provider" instead of just "provider".
     """
 
-    def human_readable(self) -> str | None:
-        """Returns a human-readable description of the extra info, or None."""
-        return None
-
-
-class ResultExtraString(ResultExtra):
-    """Simple ResultExtra implementation for strings with no additional data."""
-
-    def __init__(self, human_readable: str, /) -> None:
-        super().__init__({"_result_extra_string": human_readable})
-
-    def human_readable(self) -> str | None:
-        """See base class."""
-        return self["_result_extra_string"]
+    human_readable: str | None = None
+    data: Mapping[str, Any] = immutabledict.immutabledict()
 
 
 @dataclasses.dataclass(frozen=True)

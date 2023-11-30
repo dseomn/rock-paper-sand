@@ -28,6 +28,7 @@ from unittest import mock
 from absl.testing import absltest
 from absl.testing import parameterized
 from google.protobuf import json_format
+import immutabledict
 
 from rock_paper_sand import media_filter
 from rock_paper_sand import media_item
@@ -59,7 +60,11 @@ class _FirstWordIsNotNo(media_filter.Filter):
         first_word, _, _ = request.item.proto.name.partition(" ")
         return media_filter.FilterResult(
             first_word != "no",
-            extra={media_filter.ResultExtra(first_word=first_word)},
+            extra={
+                media_filter.ResultExtra(
+                    data=immutabledict.immutabledict(first_word=first_word)
+                )
+            },
         )
 
 
@@ -281,12 +286,18 @@ class ReportTest(parameterized.TestCase):
         filter_registry = media_filter.Registry()
         filter_registry.register(
             "extra-without-str",
-            _ExtraInfoFilter({media_filter.ResultExtra(test="no-str")}),
+            _ExtraInfoFilter(
+                {
+                    media_filter.ResultExtra(
+                        data=immutabledict.immutabledict(test="no-str")
+                    )
+                }
+            ),
         )
         filter_registry.register(
             "extra-with-str",
             _ExtraInfoFilter(
-                {media_filter.ResultExtraString("example extra info")}
+                {media_filter.ResultExtra(human_readable="example extra info")}
             ),
         )
         filter_registry.register("first-word-is-not-no", _FirstWordIsNotNo())

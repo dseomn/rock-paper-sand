@@ -57,12 +57,9 @@ def _offer(
 def _offer_extra(
     provider: str,
     comments: tuple[str, ...],
-) -> justwatch._OfferResultExtra:
-    return justwatch._OfferResultExtra(  # pylint: disable=protected-access
-        {
-            justwatch._OfferResultExtra.PROVIDER: provider,  # pylint: disable=protected-access
-            justwatch._OfferResultExtra.COMMENTS: comments,  # pylint: disable=protected-access
-        }
+) -> media_filter.ResultExtra:
+    return justwatch._offer_result_extra(  # pylint: disable=protected-access
+        provider=provider, comments=comments
     )
 
 
@@ -716,7 +713,7 @@ class FilterTest(parameterized.TestCase):
             error.exception.__notes__,
         )
 
-    def test_extra_human_readable(self) -> None:
+    def test_extra(self) -> None:
         self._mock_api.get_node.return_value = {
             "offers": [
                 _offer(
@@ -746,8 +743,15 @@ class FilterTest(parameterized.TestCase):
         )
 
         self.assertEqual(
-            {f"Foo+ (bar, until {_TIME_IN_FUTURE_1})"},
-            {extra.human_readable() for extra in result.extra},
+            {
+                media_filter.ResultExtra(
+                    human_readable=f"Foo+ (bar, until {_TIME_IN_FUTURE_1})",
+                    data=immutabledict.immutabledict(
+                        {"justwatch.provider": "Foo+"}
+                    ),
+                )
+            },
+            result.extra,
         )
 
 

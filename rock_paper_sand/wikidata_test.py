@@ -693,15 +693,21 @@ class WikidataFilterTest(parameterized.TestCase):
             expected_result=media_filter.FilterResult(
                 True,
                 extra={
-                    media_filter.ResultExtraString(
-                        "related item: <https://www.wikidata.org/wiki/Q2>"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: <https://www.wikidata.org/wiki/Q2>"
+                        ),
                     ),
-                    media_filter.ResultExtraString(
-                        "related item: <https://www.wikidata.org/wiki/Q3>"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: <https://www.wikidata.org/wiki/Q3>"
+                        ),
                     ),
                     # Q4 is in the config, so not shown here.
-                    media_filter.ResultExtraString(
-                        "related item: <https://www.wikidata.org/wiki/Q5>"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: <https://www.wikidata.org/wiki/Q5>"
+                        ),
                     ),
                 },
             ),
@@ -740,9 +746,11 @@ class WikidataFilterTest(parameterized.TestCase):
             expected_result=media_filter.FilterResult(
                 True,
                 extra={
-                    media_filter.ResultExtraString(
-                        "loosely-related item: "
-                        "<https://www.wikidata.org/wiki/Q3>"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "loosely-related item: "
+                            "<https://www.wikidata.org/wiki/Q3>"
+                        ),
                     ),
                 },
             ),
@@ -766,10 +774,12 @@ class WikidataFilterTest(parameterized.TestCase):
             expected_result=media_filter.FilterResult(
                 True,
                 extra={
-                    media_filter.ResultExtraString(
-                        "item in config file that's not related to "
-                        "https://www.wikidata.org/wiki/Q1: "
-                        "https://www.wikidata.org/wiki/Q2"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "item in config file that's not related to "
+                            "https://www.wikidata.org/wiki/Q1: "
+                            "https://www.wikidata.org/wiki/Q2"
+                        ),
                     ),
                 },
             ),
@@ -826,9 +836,11 @@ class WikidataFilterTest(parameterized.TestCase):
             expected_result=media_filter.FilterResult(
                 True,
                 extra={
-                    media_filter.ResultExtraString(
-                        "item configured to be ignored, but not found: "
-                        "https://www.wikidata.org/wiki/Q5"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "item configured to be ignored, but not found: "
+                            "https://www.wikidata.org/wiki/Q5"
+                        ),
                     ),
                 },
             ),
@@ -958,21 +970,29 @@ class WikidataFilterTest(parameterized.TestCase):
             expected_result=media_filter.FilterResult(
                 True,
                 extra={
-                    media_filter.ResultExtraString(
-                        "related item: <https://www.wikidata.org/wiki/Q2>"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: <https://www.wikidata.org/wiki/Q2>"
+                        ),
                     ),
                     # Q21 is an integral child of Q2.
-                    media_filter.ResultExtraString(
-                        "related item: <https://www.wikidata.org/wiki/Q22>"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: <https://www.wikidata.org/wiki/Q22>"
+                        ),
                     ),
                     # Q23 is an integral child of Q2.
                     # Q24 is an integral child of Q2.
                     # Q31 is an integral child of Q3.
-                    media_filter.ResultExtraString(
-                        "related item: <https://www.wikidata.org/wiki/Q3>"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: <https://www.wikidata.org/wiki/Q3>"
+                        ),
                     ),
-                    media_filter.ResultExtraString(
-                        "related item: <https://www.wikidata.org/wiki/Q4>"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: <https://www.wikidata.org/wiki/Q4>"
+                        ),
                     ),
                     # Q41 is an integral child of Q4.
                 },
@@ -1063,14 +1083,20 @@ class WikidataFilterTest(parameterized.TestCase):
             expected_result=media_filter.FilterResult(
                 True,
                 extra={
-                    media_filter.ResultExtraString(
-                        "related item: <https://www.wikidata.org/wiki/Q2>"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: <https://www.wikidata.org/wiki/Q2>"
+                        ),
                     ),
-                    media_filter.ResultExtraString(
-                        "related item: <https://www.wikidata.org/wiki/Q3>"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: <https://www.wikidata.org/wiki/Q3>"
+                        ),
                     ),
-                    media_filter.ResultExtraString(
-                        "related item: <https://www.wikidata.org/wiki/Q4>"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: <https://www.wikidata.org/wiki/Q4>"
+                        ),
                     ),
                 },
             ),
@@ -1111,8 +1137,10 @@ class WikidataFilterTest(parameterized.TestCase):
             expected_result=media_filter.FilterResult(
                 True,
                 extra={
-                    media_filter.ResultExtraString(
-                        "related item: <https://www.wikidata.org/wiki/Q3>"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: <https://www.wikidata.org/wiki/Q3>"
+                        ),
                     ),
                 },
             ),
@@ -1152,13 +1180,17 @@ class WikidataFilterTest(parameterized.TestCase):
             expected_result=media_filter.FilterResult(
                 True,
                 extra={
-                    media_filter.ResultExtraString(
-                        "related item: film 2 (2002 film) "
-                        "<https://www.wikidata.org/wiki/Q2>"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: film 2 (2002 film) "
+                            "<https://www.wikidata.org/wiki/Q2>"
+                        ),
                     ),
-                    media_filter.ResultExtraString(
-                        "loosely-related item: film 3 (2003 film) "
-                        "<https://www.wikidata.org/wiki/Q3>"
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "loosely-related item: film 3 (2003 film) "
+                            "<https://www.wikidata.org/wiki/Q3>"
+                        ),
                     ),
                 },
             ),

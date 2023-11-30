@@ -14,13 +14,14 @@
 """Code that uses JustWatch's API."""
 
 import collections
-from collections.abc import Collection, Generator, Iterable, Mapping, Set
+from collections.abc import Collection, Generator, Iterable, Mapping, Sequence, Set  # fmt: skip
 import contextlib
 import dataclasses
 import datetime
 from typing import Any
 
 import dateutil.parser
+import immutabledict
 import requests
 import requests_cache
 
@@ -279,14 +280,18 @@ class _Offer:
     comments: tuple[str, ...]
 
 
-class _OfferResultExtra(media_filter.ResultExtra):
-    PROVIDER = "justwatch.provider"
-    COMMENTS = "justwatch._comments"
-    PUBLIC_KEYS = (PROVIDER,)
+_PROVIDER_KEY = "justwatch.provider"
 
-    def human_readable(self) -> str | None:
-        """See base class."""
-        return f"{self[self.PROVIDER]} ({', '.join(self[self.COMMENTS])})"
+
+def _offer_result_extra(
+    *,
+    provider: str,
+    comments: Sequence[str],
+) -> media_filter.ResultExtra:
+    return media_filter.ResultExtra(
+        human_readable=f"{provider} ({', '.join(comments)})",
+        data=immutabledict.immutabledict({_PROVIDER_KEY: provider}),
+    )
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -318,11 +323,9 @@ class _Availability:
                     *offer.comments,
                 )
             extra_information.add(
-                _OfferResultExtra(
-                    {
-                        _OfferResultExtra.PROVIDER: offer.provider_name,
-                        _OfferResultExtra.COMMENTS: comments,
-                    }
+                _offer_result_extra(
+                    provider=offer.provider_name,
+                    comments=comments,
                 )
             )
         return extra_information
@@ -365,7 +368,7 @@ class Filter(media_filter.CachedFilter):
         """See base class."""
         keys: set[str] = set()
         if self._should_check_availability():
-            keys.update(_OfferResultExtra.PUBLIC_KEYS)
+            keys.add(_PROVIDER_KEY)
         return keys
 
     def _iter_leaf_nodes(

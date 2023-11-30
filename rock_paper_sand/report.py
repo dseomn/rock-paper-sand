@@ -73,9 +73,9 @@ def _filter_media_item(
         extra_information.append("parent did not match, but children did")
     extra_information.extend(
         sorted(
-            extra_str
+            extra.human_readable
             for extra in item_result.extra
-            if (extra_str := extra.human_readable()) is not None
+            if extra.human_readable is not None
         )
     )
     if extra_information:
@@ -180,9 +180,9 @@ class _Section:
             if not item_result.matches:
                 continue
             groups = {
-                extra[self.proto.group_by.key]
+                extra.data[self.proto.group_by.key]
                 for extra in item_result.extra
-                if self.proto.group_by.key in extra
+                if self.proto.group_by.key in extra.data
             }
             for group in groups:
                 results[group].append(item.fully_qualified_name)

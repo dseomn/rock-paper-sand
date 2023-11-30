@@ -44,7 +44,9 @@ class _ExtraInfoFilter(media_filter.CachedFilter):
 
     def valid_extra_keys(self) -> Set[str]:
         """See base class."""
-        return frozenset(itertools.chain.from_iterable(self._extra))
+        return frozenset(
+            itertools.chain.from_iterable(extra.data for extra in self._extra)
+        )
 
     def filter_implementation(
         self, request: media_filter.FilterRequest
@@ -54,8 +56,12 @@ class _ExtraInfoFilter(media_filter.CachedFilter):
         return media_filter.FilterResult(True, extra=self._extra)
 
 
-_EXTRA_1 = media_filter.ResultExtra(test="extra-1")
-_EXTRA_2 = media_filter.ResultExtra(test="extra-2")
+_EXTRA_1 = media_filter.ResultExtra(
+    data=immutabledict.immutabledict(test="extra-1"),
+)
+_EXTRA_2 = media_filter.ResultExtra(
+    data=immutabledict.immutabledict(test="extra-2"),
+)
 
 
 class MediaFilterTest(parameterized.TestCase):
@@ -64,26 +70,6 @@ class MediaFilterTest(parameterized.TestCase):
             media_item.MediaItem.from_config(config_pb2.MediaItem(name="foo"))
         )
         self.assertEqual((request.item.id, request.now), request.cache_key())
-
-    @parameterized.named_parameters(
-        dict(
-            testcase_name="default",
-            result_extra=media_filter.ResultExtra(foo="bar"),
-            human_readable=None,
-        ),
-        dict(
-            testcase_name="string",
-            result_extra=media_filter.ResultExtraString("some-string"),
-            human_readable="some-string",
-        ),
-    )
-    def test_result_extra_human_readable(
-        self,
-        *,
-        result_extra: media_filter.ResultExtra,
-        human_readable: str | None,
-    ) -> None:
-        self.assertEqual(human_readable, result_extra.human_readable())
 
     @parameterized.named_parameters(
         dict(
@@ -290,7 +276,13 @@ class MediaFilterTest(parameterized.TestCase):
         dict(
             testcase_name="ref",
             filter_by_name=dict(
-                foo=_ExtraInfoFilter({media_filter.ResultExtra(some_key="bar")})
+                foo=_ExtraInfoFilter(
+                    {
+                        media_filter.ResultExtra(
+                            data=immutabledict.immutabledict(some_key="bar")
+                        )
+                    }
+                )
             ),
             filter_config={"ref": "foo"},
             valid_extra_keys={"some_key"},
@@ -298,7 +290,13 @@ class MediaFilterTest(parameterized.TestCase):
         dict(
             testcase_name="not",
             filter_by_name=dict(
-                foo=_ExtraInfoFilter({media_filter.ResultExtra(some_key="bar")})
+                foo=_ExtraInfoFilter(
+                    {
+                        media_filter.ResultExtra(
+                            data=immutabledict.immutabledict(some_key="bar")
+                        )
+                    }
+                )
             ),
             filter_config={"not": {"ref": "foo"}},
             valid_extra_keys={"some_key"},
@@ -306,8 +304,20 @@ class MediaFilterTest(parameterized.TestCase):
         dict(
             testcase_name="and",
             filter_by_name=dict(
-                foo=_ExtraInfoFilter({media_filter.ResultExtra(key_1="baz")}),
-                bar=_ExtraInfoFilter({media_filter.ResultExtra(key_2="baz")}),
+                foo=_ExtraInfoFilter(
+                    {
+                        media_filter.ResultExtra(
+                            data=immutabledict.immutabledict(key_1="baz")
+                        )
+                    }
+                ),
+                bar=_ExtraInfoFilter(
+                    {
+                        media_filter.ResultExtra(
+                            data=immutabledict.immutabledict(key_2="baz")
+                        )
+                    }
+                ),
             ),
             filter_config={
                 "and": {"filters": [{"ref": "foo"}, {"ref": "bar"}]}
@@ -317,8 +327,20 @@ class MediaFilterTest(parameterized.TestCase):
         dict(
             testcase_name="or",
             filter_by_name=dict(
-                foo=_ExtraInfoFilter({media_filter.ResultExtra(key_1="baz")}),
-                bar=_ExtraInfoFilter({media_filter.ResultExtra(key_2="baz")}),
+                foo=_ExtraInfoFilter(
+                    {
+                        media_filter.ResultExtra(
+                            data=immutabledict.immutabledict(key_1="baz")
+                        )
+                    }
+                ),
+                bar=_ExtraInfoFilter(
+                    {
+                        media_filter.ResultExtra(
+                            data=immutabledict.immutabledict(key_2="baz")
+                        )
+                    }
+                ),
             ),
             filter_config={"or": {"filters": [{"ref": "foo"}, {"ref": "bar"}]}},
             valid_extra_keys={"key_1", "key_2"},

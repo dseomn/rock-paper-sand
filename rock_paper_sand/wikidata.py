@@ -810,8 +810,8 @@ class Filter(media_filter.CachedFilter):
         ) is not None:
             item_description_parts.append(f"({description})")
         item_description_parts.append(f"<{item_ref}>")
-        return media_filter.ResultExtraString(
-            f"{category}: {' '.join(item_description_parts)}"
+        return media_filter.ResultExtra(
+            human_readable=f"{category}: {' '.join(item_description_parts)}",
         )
 
     def _related_media(
@@ -904,15 +904,19 @@ class Filter(media_filter.CachedFilter):
                 )
             ),
             *(
-                media_filter.ResultExtraString(
-                    "item in config file that's not related to "
-                    f"{request.item.wikidata_item}: {item}"
+                media_filter.ResultExtra(
+                    human_readable=(
+                        "item in config file that's not related to "
+                        f"{request.item.wikidata_item}: {item}"
+                    ),
                 )
                 for item in items_from_config - processed - loose
             ),
             *(
-                media_filter.ResultExtraString(
-                    f"item configured to be ignored, but not found: {item}"
+                media_filter.ResultExtra(
+                    human_readable=(
+                        f"item configured to be ignored, but not found: {item}"
+                    ),
                 )
                 for item in (
                     request.item.wikidata_ignore_items_recursive
