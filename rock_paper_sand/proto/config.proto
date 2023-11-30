@@ -125,6 +125,10 @@ message JustWatchFilter {
   bool include_done = 5;
 
   // For the conditions below that match on availability, only consider offers
+  // that do not end before this number of days.
+  optional double available_after_days = 9;
+
+  // For the conditions below that match on availability, only consider offers
   // that end before this number of days. This can be useful to filter for
   // content that's leaving streaming services in the near future, if you want
   // to prioritize watching that.

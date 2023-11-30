@@ -499,6 +499,40 @@ class FilterTest(parameterized.TestCase):
             ),
         ),
         dict(
+            testcase_name="available_after",
+            filter_config={
+                "country": "US",
+                "availableAfterDays": 1.5,
+                "anyAvailability": True,
+            },
+            item={"name": "foo", "justwatch": "tm1"},
+            api_data={
+                ("tm1", "US"): {
+                    "offers": [
+                        _offer(
+                            available_to=_TIME_IN_FUTURE_1.isoformat(),
+                        ),
+                        _offer(
+                            package_technical_name="foo",
+                            monetization_type="bar",
+                            available_to=_TIME_IN_FUTURE_2.isoformat(),
+                        ),
+                        _offer(
+                            package_technical_name="quux",
+                            monetization_type="bar",
+                        ),
+                    ],
+                }
+            },
+            expected_result=media_filter.FilterResult(
+                True,
+                extra={
+                    _offer_extra("Foo+", ("bar", f"until {_TIME_IN_FUTURE_2}")),
+                    _offer_extra("Quux+", ("bar",)),
+                },
+            ),
+        ),
+        dict(
             testcase_name="not_available_after",
             filter_config={
                 "country": "US",

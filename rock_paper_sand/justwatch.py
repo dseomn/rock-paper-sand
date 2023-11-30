@@ -390,6 +390,7 @@ class Filter(media_filter.CachedFilter):
         node: Any,
         *,
         now: datetime.datetime,
+        available_after: datetime.datetime | None,
         not_available_after: datetime.datetime | None,
     ) -> _Availability:
         availability = _Availability(total_episode_count=1)
@@ -408,6 +409,12 @@ class Filter(media_filter.CachedFilter):
             available_from = _parse_datetime(offer["availableFromTime"])
             available_to = _parse_datetime(offer["availableToTime"])
             if available_to is not None and now > available_to:
+                continue
+            if (
+                available_after is not None
+                and available_to is not None
+                and available_to <= available_after
+            ):
                 continue
             if not_available_after is not None and (
                 available_to is None or available_to > not_available_after
@@ -429,6 +436,12 @@ class Filter(media_filter.CachedFilter):
         *,
         request: media_filter.FilterRequest,
     ) -> _Availability:
+        available_after = (
+            request.now
+            + datetime.timedelta(days=self._config.available_after_days)
+            if self._config.HasField("available_after_days")
+            else None
+        )
         not_available_after = (
             request.now
             + datetime.timedelta(days=self._config.not_available_after_days)
@@ -448,6 +461,7 @@ class Filter(media_filter.CachedFilter):
                 self._leaf_node_availability(
                     leaf_node,
                     now=request.now,
+                    available_after=available_after,
                     not_available_after=not_available_after,
                 )
             )
