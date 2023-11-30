@@ -61,7 +61,9 @@ omit = [
 
 [tool.isort]
 profile = "google"
-# TODO(https://github.com/PyCQA/isort/pull/2149): Delete this.
+# TODO(https://github.com/PyCQA/isort/pull/2149): Delete line_length and
+# single_line_exclusions.
+line_length = 9999
 single_line_exclusions = [
   "collections.abc",
   "typing",
