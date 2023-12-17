@@ -58,6 +58,9 @@ filtering is one of the main focuses of this program.
     media on streaming services that you don't already have, and group the
     result by streaming service, in order to see which streaming service it
     might make sense to subscribe to.
+*   Find related media, using data from Wikidata. E.g., find out when a movie
+    you liked has a new sequel/remake, or find the book it's based on. Or find
+    all media within a media franchise or fictional universe.
 *   Print the results to the console in reports.
 *   Send email notifications when one of those reports changes.
 *   Enforce some conditions on the list of media. E.g., if you want to keep the
@@ -71,8 +74,6 @@ filtering is one of the main focuses of this program.
 *   Better support for filtering based on completeness. E.g., filtering for a TV
     show where all episodes are available, or filtering for a book series where
     the final book has already been released.
-*   Relatedly, support for filtering on incompleteness. E.g., letting you know
-    when a book you liked has a new sequel available.
 *   Integration with public libraries' APIs if possible, to automatically find
     which media can be borrowed from the library.
 
