@@ -1,0 +1,45 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Examples of checking for related media.
+
+reports:
+- name: My Favorite Report
+  sections:
+  - # Additional media related to the media already in the config file. This can
+    # be useful to find out when a sequel/remake/etc. is released, or to double
+    # check that nothing is missing from a series.
+    name: related-media
+    filter:
+      wikidata:
+        languages:
+        - en
+        relatedMedia: {}
+
+media:
+- # Movie that has a sequel, and the relatedMedia filter should let us know
+  # about that.
+  name: "Airplane! (1980)"
+  wikidata: https://www.wikidata.org/wiki/Q497256
+- # Book series, with one book missing that relatedMedia should catch.
+  name: "The Inheritance Trilogy (Jemisin)"
+  wikidata: https://www.wikidata.org/wiki/Q7742030
+  wikidataClassesIgnore:
+  - # If there are any movie adaptations of the books, ignore them.
+    https://www.wikidata.org/wiki/Q11424
+  parts:
+  - name: "The Hundred Thousand Kingdoms (2010)"
+    wikidata: https://www.wikidata.org/wiki/Q3231338
+  - name: "The Broken Kingdoms (2010)"
+    wikidata: https://www.wikidata.org/wiki/Q7720260

@@ -1,0 +1,13 @@
+My Favorite Report:
+  related-media:
+  - name: Airplane! (1980)
+    wikidata: https://www.wikidata.org/wiki/Q497256
+    extraInformation:
+    - 'related item: Airplane II: The Sequel (1982 film directed by Ken Finkleman) <https://www.wikidata.org/wiki/Q502303>'
+  - name: The Inheritance Trilogy (Jemisin)
+    wikidata: https://www.wikidata.org/wiki/Q7742030
+    extraInformation:
+    - 'related item: The Kingdom of Gods (novel by N. K. Jemisin) <https://www.wikidata.org/wiki/Q21953042>'
+    parts:
+    - 'unmatched part: The Hundred Thousand Kingdoms (2010)'
+    - 'unmatched part: The Broken Kingdoms (2010)'
