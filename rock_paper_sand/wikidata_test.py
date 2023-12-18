@@ -880,7 +880,7 @@ class WikidataFilterTest(parameterized.TestCase):
                 "Q23": {wikidata_value.Q_TELEVISION_SERIES_SEASON},
                 "Q24": {wikidata_value.Q_TELEVISION_PILOT},
                 "Q31": {wikidata_value.Q_LITERARY_WORK},
-                "Q3": {wikidata_value.Q_LITERARY_WORK},
+                "Q3": {wikidata_value.Q_COLLECTION_OF_LITERARY_WORKS},
                 "Q4": {wikidata_value.Q_FILM},
                 "Q41": {wikidata_value.Q_RELEASE_GROUP},
             },
