@@ -669,12 +669,6 @@ class Filter(media_filter.CachedFilter):
         yield (self._tv_season_classes, self._music_classes)
         yield (self._tv_season_part_classes, self._music_classes)
         yield (self._music_classes, self._music_classes)
-        yield (
-            self._api.transitive_subclasses(
-                wikidata_value.Q_COLLECTION_OF_LITERARY_WORKS
-            ),
-            self._api.transitive_subclasses(wikidata_value.Q_LITERARY_WORK),
-        )
 
     def _is_integral_child(
         self, parent: wikidata_value.ItemRef, child: wikidata_value.ItemRef
@@ -696,6 +690,9 @@ class Filter(media_filter.CachedFilter):
             child: Child.
         """
         parent_classes = self._api.entity_classes(parent)
+        parent_classes_and_forms = (
+            parent_classes | self._api.forms_of_creative_work(parent)
+        )
         child_classes = self._api.entity_classes(child)
         for (
             parent_classes_to_check,
@@ -731,6 +728,16 @@ class Filter(media_filter.CachedFilter):
             child_classes & self._tv_episode_classes
             and not child_classes & self._possible_tv_special_classes
             and parent_classes & self._tv_episode_parent_classes
+        ):
+            return True
+        if (
+            parent_classes_and_forms
+            & self._api.transitive_subclasses(
+                wikidata_value.Q_COLLECTION_OF_LITERARY_WORKS
+            )
+        ) and (
+            child_classes
+            & self._api.transitive_subclasses(wikidata_value.Q_LITERARY_WORK)
         ):
             return True
         return False
