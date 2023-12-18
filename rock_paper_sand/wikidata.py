@@ -508,6 +508,10 @@ class Filter(media_filter.CachedFilter):
         }
 
     @functools.cached_property
+    def _literary_work_classes(self) -> Set[wikidata_value.ItemRef]:
+        return self._api.transitive_subclasses(wikidata_value.Q_LITERARY_WORK)
+
+    @functools.cached_property
     def _music_classes(self) -> Set[wikidata_value.ItemRef]:
         return {
             *self._api.transitive_subclasses(wikidata_value.Q_MUSICAL_WORK),
@@ -669,10 +673,7 @@ class Filter(media_filter.CachedFilter):
         yield (self._tv_season_classes, self._music_classes)
         yield (self._tv_season_part_classes, self._music_classes)
         yield (self._music_classes, self._music_classes)
-        yield (
-            {wikidata_value.Q_LITERARY_WORK},
-            {wikidata_value.Q_LITERARY_WORK},
-        )
+        yield (self._literary_work_classes, self._literary_work_classes)
 
     def _is_integral_child(
         self, parent: wikidata_value.ItemRef, child: wikidata_value.ItemRef
