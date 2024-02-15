@@ -82,9 +82,9 @@ class Api:
         # preserved. NOTE: If this code is ever used in a long-running process,
         # this might need more work to avoid stale data.
         self._node_id_by_url_path: dict[str, str] = {}
-        self._node_by_id_by_country: (
-            dict[str, dict[str, Any]]
-        ) = collections.defaultdict(dict)
+        self._node_by_id_by_country: dict[str, dict[str, Any]] = (
+            collections.defaultdict(dict)
+        )
 
     def query(
         self,

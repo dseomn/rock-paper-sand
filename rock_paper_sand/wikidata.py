@@ -130,18 +130,18 @@ class Api:
         session: requests.Session,
     ) -> None:
         self._session = session
-        self._entity_by_ref: (
-            dict[wikidata_value.EntityRef, wikidata_value.Entity]
-        ) = {}
-        self._entity_classes: (
-            dict[wikidata_value.EntityRef, Set[wikidata_value.ItemRef]]
-        ) = {}
-        self._forms_of_creative_work: (
-            dict[wikidata_value.ItemRef, Set[wikidata_value.ItemRef]]
-        ) = {}
-        self._transitive_subclasses: (
-            dict[wikidata_value.ItemRef, Set[wikidata_value.ItemRef]]
-        ) = {}
+        self._entity_by_ref: dict[
+            wikidata_value.EntityRef, wikidata_value.Entity
+        ] = {}
+        self._entity_classes: dict[
+            wikidata_value.EntityRef, Set[wikidata_value.ItemRef]
+        ] = {}
+        self._forms_of_creative_work: dict[
+            wikidata_value.ItemRef, Set[wikidata_value.ItemRef]
+        ] = {}
+        self._transitive_subclasses: dict[
+            wikidata_value.ItemRef, Set[wikidata_value.ItemRef]
+        ] = {}
         self._related_media: dict[wikidata_value.ItemRef, RelatedMedia] = {}
 
     def entity(
@@ -268,19 +268,15 @@ class Api:
                 )
             )
             results = self.sparql(query)
-            item_classes: (
-                collections.defaultdict[
-                    wikidata_value.ItemRef, set[wikidata_value.ItemRef]
-                ]
-            ) = collections.defaultdict(set)
-            item_forms: (
-                collections.defaultdict[
-                    wikidata_value.ItemRef, set[wikidata_value.ItemRef]
-                ]
-            ) = collections.defaultdict(set)
-            items_by_relation: (
-                collections.defaultdict[str, set[wikidata_value.ItemRef]]
-            ) = collections.defaultdict(set)
+            item_classes: collections.defaultdict[
+                wikidata_value.ItemRef, set[wikidata_value.ItemRef]
+            ] = collections.defaultdict(set)
+            item_forms: collections.defaultdict[
+                wikidata_value.ItemRef, set[wikidata_value.ItemRef]
+            ] = collections.defaultdict(set)
+            items_by_relation: collections.defaultdict[
+                str, set[wikidata_value.ItemRef]
+            ] = collections.defaultdict(set)
             for result in results:
                 related_item = wikidata_value.parse_sparql_term_item(
                     result["item"]

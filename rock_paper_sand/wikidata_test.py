@@ -1206,9 +1206,9 @@ class WikidataFilterTest(parameterized.TestCase):
         api_entity_classes: Mapping[str, Set[wikidata_value.ItemRef]] = (
             immutabledict.immutabledict()
         ),
-        api_forms_of_creative_work: (
-            Mapping[str, Set[wikidata_value.ItemRef]]
-        ) = (immutabledict.immutabledict()),
+        api_forms_of_creative_work: Mapping[
+            str, Set[wikidata_value.ItemRef]
+        ] = (immutabledict.immutabledict()),
         api_related_media: Mapping[str, wikidata.RelatedMedia] = (
             immutabledict.immutabledict()
         ),
