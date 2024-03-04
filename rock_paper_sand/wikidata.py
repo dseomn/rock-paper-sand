@@ -210,7 +210,7 @@ class Api:
             subclass_of = wikidata_value.P_SUBCLASS_OF.id
             results = self.sparql(
                 "SELECT REDUCED ?class WHERE { "
-                f"?class wdt:{subclass_of}* wd:{class_ref.id}. "
+                f"?class (wdt:{subclass_of}|owl:sameAs)* wd:{class_ref.id}. "
                 "?class wikibase:sitelinks []. "
                 "}"
             )
@@ -255,13 +255,15 @@ class Api:
                     " UNION ".join(
                         (
                             "{ "
-                            f"wd:{item_ref.id} ({predicate}) ?item. "
+                            f"wd:{item_ref.id} "
+                            f"^owl:sameAs?/({predicate})/owl:sameAs? ?item. "
                             f'BIND ("{relation}" AS ?relation) '
                             "}"
                         )
                         for relation, predicate in predicate_by_relation.items()
                     ),
                     "FILTER (!wikibase:isSomeValue(?item))",
+                    "FILTER NOT EXISTS { ?item owl:sameAs ?other }",
                     f"OPTIONAL {{ ?item wdt:{instance_of} ?class. }}",
                     f"OPTIONAL {{ ?item wdt:{form} ?form. }}",
                     "}",
