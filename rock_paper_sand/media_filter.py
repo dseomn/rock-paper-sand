@@ -14,13 +14,13 @@
 """Filters for media items."""
 
 import abc
-from collections.abc import Callable, Hashable, Iterable, Mapping, Set
+from collections.abc import Callable, Hashable, Mapping, Set
 import dataclasses
 import datetime
 import functools
 import itertools
 import re
-from typing import Any
+from typing import Any, Self
 
 import immutabledict
 import jmespath
@@ -46,6 +46,10 @@ class FilterRequest:
             checks if the item is currently available for streaming, it should
             use this time to compare against the range of times that the item is
             available.
+        result_ignored_if_matches_is: Used to short-circuit logical combinations
+            without affecting results. If bool, a matching FilterResult.matches
+            value will cause the result to be ignored. If None, the result is
+            never ignored.
     """
 
     item: media_item.MediaItem
@@ -53,10 +57,19 @@ class FilterRequest:
     now: datetime.datetime = dataclasses.field(
         default_factory=lambda: datetime.datetime.now(tz=datetime.timezone.utc)
     )
+    result_ignored_if_matches_is: bool | None = None
 
     def cache_key(self) -> Hashable:
-        """Returns a key that identifies this request for caching."""
+        """Returns a key that identifies this request for caching.
+
+        WARNING: This does not include result_ignored_if_matches_is, so cached
+        filters should not use that field.
+        """
         return (self.item.id, self.now)
+
+    def replace_result_ignored_if_matches_is(new: bool | None, /) -> Self:
+        """Returns a copy with a new result_ignored_if_matches_is value."""
+        return dataclases.replace(self, result_ignored_if_matches_is=new)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -135,30 +148,105 @@ class Not(Filter):
 
     def filter(self, request: FilterRequest) -> FilterResult:
         """See base class."""
-        child_result = self._child.filter(request)
+        child_result = self._child.filter(
+            request.replace_result_ignored_if_matches_is(
+                None
+                if request.result_ignored_if_matches_is is None
+                else not request.result_ignored_if_matches_is
+            )
+        )
         return FilterResult(not child_result.matches, extra=child_result.extra)
 
 
-class BinaryLogic(Filter):
-    """Binary logic filter, i.e., "and" and "or"."""
+class BinaryLogic(Filter, abc.ABC):
+    """Binary logic filter, i.e., "and" and "or".
 
-    def __init__(
-        self, *children: Filter, op: Callable[[Iterable[bool]], bool]
-    ) -> None:
-        self._children = children
-        self._op = op
+    Attributes:
+        children: Child filters.
+    """
+
+    def __init__(self, *children: Filter) -> None:
+        self.children = children
 
     def valid_extra_keys(self) -> Set[str]:
         """See base class."""
         return frozenset(
             itertools.chain.from_iterable(
-                child.valid_extra_keys() for child in self._children
+                child.valid_extra_keys() for child in self.children
             )
         )
 
     def filter(self, request: FilterRequest) -> FilterResult:
         """See base class."""
-        results = tuple(child.filter(request) for child in self._children)
+        matches = self._default
+        extra = set()
+        if self._short_circuit_on == request.result_ignored_if_matches_is:
+            result_ignored_if_matches_is = request.result_ignored_if_matches_is
+        else:
+            result_ignored_if_matches_is = None
+        for child_num, child in enumerate(self._children):
+            if (
+                matches
+                == self._short_circuit_on
+                == request.result_ignored_if_matches_is
+            ):
+                break
+            if child_num == len(self._children) - 1:
+                child_request = request.replace_result_ignored_if_matches_is(
+                    None
+                    if request.result_ignored_if_matches_is is None
+                    else not request.result_ignored_if_matches_is
+                )
+            result = child.filter(request)
+            matches = self._op(matches, result.matches)
+            extra.update(result.extra)
+        return FilterResult(
+            self._op(result.matches for result in results),
+            extra=frozenset(
+                itertools.chain.from_iterable(
+                    result.extra for result in results
+                )
+            ),
+        )
+
+
+class And(BinaryLogic):
+    """Intersects other filters."""
+
+    def filter(self, request: FilterRequest) -> FilterResult:
+        """See base class."""
+        matches = True
+        extra = set()
+        for child_num, child in enumerate(self.children):
+            match request.result_ignored_if_matches_is:
+                case None:
+                    child_result_ignored_if_matches_is = None
+                case True if not matches:
+                    # The final result will be False regardless of the child,
+                    # and a False result is not ignored, so the child's result
+                    # is never ignored.
+                    child_result_ignored_if_matches_is = None
+                case True if child_num == len(self.children) - 1:
+                    # The final result will be the same as this (last) child's
+                    # result, so the ignored value is the same.
+                    child_result_ignored_if_matches_is = True
+                case True:
+                    # The child can't ignore True, because a subsequent child
+                    # might return False, which would make the final result
+                    # False which is not ignored.
+                    child_result_ignored_if_matches_is = None
+                case False:
+                    child_result_ignored_if_matches_is = False
+            result = child.filter(
+                request.replace_result_ignored_if_matches_is(
+                    child_result_ignored_if_matches_is
+                )
+            )
+            if not result.matches:
+                matches = False
+                if request.result_ignored_if_matches_is == False:
+                    break
+            extra.update(result.extra)
         return FilterResult(
             self._op(result.matches for result in results),
             extra=frozenset(
