@@ -727,6 +727,10 @@ class WikidataFilterTest(parameterized.TestCase):
                 "Q2": set(),
                 "Q3": set(),
             },
+            api_forms_of_creative_work={
+                "Q2": set(),
+                "Q3": set(),
+            },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
                     parents=set(),
@@ -1163,6 +1167,10 @@ class WikidataFilterTest(parameterized.TestCase):
                 "Q2": set(),
                 "Q3": set(),
             },
+            api_forms_of_creative_work={
+                "Q2": set(),
+                "Q3": set(),
+            },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
                     parents=set(),
@@ -1246,6 +1254,7 @@ class WikidataFilterTest(parameterized.TestCase):
 
     def test_too_many_related_items(self) -> None:
         self._mock_api.entity_classes.return_value = set()
+        self._mock_api.forms_of_creative_work.return_value = set()
         self._mock_api.related_media.return_value = wikidata.RelatedMedia(
             parents=set(),
             siblings={wikidata_value.ItemRef(f"Q{n}") for n in range(1001)},

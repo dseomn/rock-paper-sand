@@ -824,9 +824,11 @@ class Filter(media_filter.CachedFilter):
     def _related_item_priority(
         self, item_ref: wikidata_value.ItemRef
     ) -> _RelatedMediaPriority:
-        item_classes = self._api.entity_classes(item_ref)
+        item_classes_and_forms = self._api.entity_classes(
+            item_ref
+        ) | self._api.forms_of_creative_work(item_ref)
         for priority, priority_classes in self._priority_by_classes:
-            if item_classes & priority_classes:
+            if item_classes_and_forms & priority_classes:
                 return priority
         return _RelatedMediaPriority.LIKELY
 
