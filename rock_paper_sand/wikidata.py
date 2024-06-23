@@ -129,10 +129,14 @@ class _RelatedMediaPriority(enum.IntEnum):
         UNLIKELY: Unlikely to be processed. E.g., TV episodes are likely to be
             integral children of TV shows, so they're unlikely to be processed
             any further.
+        POSSIBLE: Might or might not be processed. E.g., short stories are
+            sometimes integral children of books that have multiple related
+            short stories.
         LIKELY: Likely to be processed, because none of the above applies.
     """
 
     UNLIKELY = enum.auto()
+    POSSIBLE = enum.auto()
     LIKELY = enum.auto()
 
 
@@ -651,6 +655,15 @@ class Filter(media_filter.CachedFilter):
                     ),
                 },
             ),
+            (
+                _RelatedMediaPriority.POSSIBLE,
+                {
+                    *self._api.transitive_subclasses(wikidata_value.Q_NOVELLA),
+                    *self._api.transitive_subclasses(
+                        wikidata_value.Q_SHORT_STORY
+                    ),
+                },
+            ),
         )
 
     def _is_ignored(
@@ -863,6 +876,7 @@ class Filter(media_filter.CachedFilter):
             _RelatedMediaPriority, set[wikidata_value.ItemRef]
         ] = {
             _RelatedMediaPriority.UNLIKELY: set(),
+            _RelatedMediaPriority.POSSIBLE: set(),
             _RelatedMediaPriority.LIKELY: {request.item.wikidata_item},
         }
         processed: set[wikidata_value.ItemRef] = set()
