@@ -14,10 +14,11 @@
 """Code that uses Wikidata's APIs."""
 
 import collections
-from collections.abc import Generator, Iterable, Set
+from collections.abc import Generator, Iterable, Sequence, Set
 import contextlib
 import dataclasses
 import datetime
+import enum
 import functools
 import itertools
 import logging
@@ -119,6 +120,20 @@ _LOOSE_PROPERTIES = (
     wikidata_value.P_MODIFIED_VERSION_OF,
     wikidata_value.P_PLOT_EXPANDED_IN,
 )
+
+
+class _RelatedMediaPriority(enum.IntEnum):
+    """How likely an item is to be processed for related media.
+
+    Attributes:
+        UNLIKELY: Unlikely to be processed. E.g., TV episodes are likely to be
+            integral children of TV shows, so they're unlikely to be processed
+            any further.
+        LIKELY: Likely to be processed, because none of the above applies.
+    """
+
+    UNLIKELY = enum.auto()
+    LIKELY = enum.auto()
 
 
 class Api:
@@ -372,6 +387,15 @@ def _release_status(
     return config_pb2.WikidataFilter.ReleaseStatus.RELEASE_STATUS_UNSPECIFIED
 
 
+def _pop_unprocessed(
+    unprocessed: dict[_RelatedMediaPriority, set[wikidata_value.ItemRef]],
+) -> wikidata_value.ItemRef:
+    for priority in sorted(_RelatedMediaPriority, reverse=True):
+        if unprocessed[priority]:
+            return unprocessed[priority].pop()
+    raise KeyError("pop from empty unprocessed")
+
+
 class Filter(media_filter.CachedFilter):
     """Filter based on Wikidata APIs."""
 
@@ -607,24 +631,27 @@ class Filter(media_filter.CachedFilter):
         }
 
     @functools.cached_property
-    def _unlikely_to_be_processed_classes(self) -> Set[wikidata_value.ItemRef]:
-        """Returns classes that are unlikely to be processed for related media.
-
-        E.g., TV episodes are likely to be integral children of TV shows, so
-        they're unlikely to be processed any further.
-        """
-        return {
-            *self._tv_season_classes,
-            *self._tv_season_part_classes,
-            *self._tv_episode_classes,
-            *self._tv_episode_segment_classes,
-            *self._api.transitive_subclasses(
-                wikidata_value.Q_WEB_SERIES_SEASON
+    def _priority_by_classes(
+        self,
+    ) -> Sequence[tuple[_RelatedMediaPriority, Set[wikidata_value.ItemRef]]]:
+        """Returns priorities and classes that should be assigned to them."""
+        return (
+            (
+                _RelatedMediaPriority.UNLIKELY,
+                {
+                    *self._tv_season_classes,
+                    *self._tv_season_part_classes,
+                    *self._tv_episode_classes,
+                    *self._tv_episode_segment_classes,
+                    *self._api.transitive_subclasses(
+                        wikidata_value.Q_WEB_SERIES_SEASON
+                    ),
+                    *self._api.transitive_subclasses(
+                        wikidata_value.Q_WEB_SERIES_EPISODE
+                    ),
+                },
             ),
-            *self._api.transitive_subclasses(
-                wikidata_value.Q_WEB_SERIES_EPISODE
-            ),
-        }
+        )
 
     def _is_ignored(
         self,
@@ -781,6 +808,15 @@ class Filter(media_filter.CachedFilter):
             and not parent_forms & self._anthology_classes
         )
 
+    def _related_item_priority(
+        self, item_ref: wikidata_value.ItemRef
+    ) -> _RelatedMediaPriority:
+        item_classes = self._api.entity_classes(item_ref)
+        for priority, priority_classes in self._priority_by_classes:
+            if item_classes & priority_classes:
+                return priority
+        return _RelatedMediaPriority.LIKELY
+
     def _update_unprocessed(
         self,
         iterable: Iterable[wikidata_value.ItemRef],
@@ -788,20 +824,13 @@ class Filter(media_filter.CachedFilter):
         *,
         current: wikidata_value.ItemRef,
         reached_from: dict[wikidata_value.ItemRef, wikidata_value.ItemRef],
-        unprocessed: set[wikidata_value.ItemRef],
-        unprocessed_unlikely: set[wikidata_value.ItemRef],
+        unprocessed: dict[_RelatedMediaPriority, set[wikidata_value.ItemRef]],
     ) -> None:
         for item_ref in iterable:
             if item_ref not in reached_from:
                 logging.debug("%s reached from %s", item_ref, current)
                 reached_from[item_ref] = current
-            if (
-                self._api.entity_classes(item_ref)
-                & self._unlikely_to_be_processed_classes
-            ):
-                unprocessed_unlikely.add(item_ref)
-            else:
-                unprocessed.add(item_ref)
+            unprocessed[self._related_item_priority(item_ref)].add(item_ref)
 
     def _related_item_result_extra(
         self,
@@ -830,8 +859,12 @@ class Filter(media_filter.CachedFilter):
         assert request.item.wikidata_item is not None  # Already checked.
         reached_from: dict[wikidata_value.ItemRef, wikidata_value.ItemRef] = {}
         ignored_from_config: set[wikidata_value.ItemRef] = set()
-        unprocessed: set[wikidata_value.ItemRef] = {request.item.wikidata_item}
-        unprocessed_unlikely: set[wikidata_value.ItemRef] = set()
+        unprocessed: dict[
+            _RelatedMediaPriority, set[wikidata_value.ItemRef]
+        ] = {
+            _RelatedMediaPriority.UNLIKELY: set(),
+            _RelatedMediaPriority.LIKELY: {request.item.wikidata_item},
+        }
         processed: set[wikidata_value.ItemRef] = set()
         loose: set[wikidata_value.ItemRef] = set()
         integral_children: set[wikidata_value.ItemRef] = set()
@@ -843,8 +876,16 @@ class Filter(media_filter.CachedFilter):
                 request
             ),
         )
-        while unprocessed or unprocessed_unlikely:
-            if len(unprocessed) + len(processed) > 1000:
+        while any(unprocessed.values()):
+            if (
+                sum(
+                    len(items)
+                    for priority, items in unprocessed.items()
+                    if priority > _RelatedMediaPriority.UNLIKELY
+                )
+                + len(processed)
+                > 1000
+            ):
                 raise ValueError(
                     "Too many related media items reached from "
                     f"{request.item.wikidata_item}:\n"
@@ -853,9 +894,7 @@ class Filter(media_filter.CachedFilter):
                         for key, value in reached_from.items()
                     )
                 )
-            current = (
-                unprocessed.pop() if unprocessed else unprocessed_unlikely.pop()
-            )
+            current = _pop_unprocessed(unprocessed)
             processed.add(current)
             related = self._api.related_media(current)
             integral_children.update(self._integral_children(current, related))
@@ -864,7 +903,6 @@ class Filter(media_filter.CachedFilter):
                 current=current,
                 reached_from=reached_from,
                 unprocessed=unprocessed,
-                unprocessed_unlikely=unprocessed_unlikely,
             )
             update_unprocessed(
                 parent
@@ -897,8 +935,8 @@ class Filter(media_filter.CachedFilter):
                 and loose_item not in processed
                 and not is_ignored(loose_item)
             )
-            unprocessed -= integral_children
-            unprocessed_unlikely -= integral_children
+            for unprocessed_set in unprocessed.values():
+                unprocessed_set -= integral_children
         return {
             *(
                 self._related_item_result_extra("related item", item)
