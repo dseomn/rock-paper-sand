@@ -1150,6 +1150,48 @@ class WikidataFilterTest(parameterized.TestCase):
             ),
         ),
         dict(
+            testcase_name="related_media_includes_integral_child_of_collection",
+            filter_config={"relatedMedia": {}},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_entities={
+                "Q21": {"labels": {}, "descriptions": {}},
+            },
+            api_entity_classes={
+                "Q1": set(),
+                "Q2": {wikidata_value.Q_FILM, wikidata_value.Q_ANTHOLOGY_FILM},
+                "Q21": {wikidata_value.Q_FILM},
+            },
+            api_forms_of_creative_work={
+                "Q1": set(),
+                "Q2": set(),
+                "Q21": set(),
+            },
+            api_related_media={
+                "Q1": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings={wikidata_value.ItemRef("Q21")},
+                    children=set(),
+                    loose=set(),
+                ),
+                "Q21": wikidata.RelatedMedia(
+                    parents={wikidata_value.ItemRef("Q2")},
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
+            },
+            expected_result=media_filter.FilterResult(
+                True,
+                extra={
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: <https://www.wikidata.org/wiki/Q21>"
+                        ),
+                    ),
+                },
+            ),
+        ),
+        dict(
             testcase_name="related_media_includes_label_and_description",
             filter_config={"languages": ["en"], "relatedMedia": {}},
             item={"name": "foo", "wikidata": "Q1"},

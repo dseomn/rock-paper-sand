@@ -685,6 +685,33 @@ class Filter(media_filter.CachedFilter):
             or item_classes & ignored_classes_from_request
         )
 
+    def _should_cross_parent_child_border(
+        self, parent: wikidata_value.ItemRef, child: wikidata_value.ItemRef
+    ) -> bool:
+        """Returns whether to cross the parent-child border for related media.
+
+        Some parent-child pairs cross the border between generally unrelated
+        sets of media. E.g., somebody interested in watching a series of
+        anthology films might want to know all the films in the series. But
+        there could be many items related to stories in the individual
+        anthologies, and those items don't have much of a connection to the
+        series of anthologies that the user is interested in. Or from the other
+        side, if the user is interested in a book that was adapted into a part
+        of an anthology movie, they might be interested in that part of the
+        anthology movie, but not necessarily in the entire anthology series.
+
+        Args:
+            parent: Parent.
+            child: Child.
+        """
+        del child  # Unused.
+        parent_classes = self._api.entity_classes(parent)
+        parent_forms = self._api.forms_of_creative_work(parent)
+        return (
+            not parent_classes & self._anthology_classes
+            and not parent_forms & self._anthology_classes
+        )
+
     def _integral_child_classes(
         self,
     ) -> Iterable[
@@ -727,6 +754,8 @@ class Filter(media_filter.CachedFilter):
             parent: Parent.
             child: Child.
         """
+        if not self._should_cross_parent_child_border(parent, child):
+            return False
         parent_classes = self._api.entity_classes(parent)
         parent_classes_and_forms = (
             parent_classes | self._api.forms_of_creative_work(parent)
@@ -792,33 +821,6 @@ class Filter(media_filter.CachedFilter):
             child
             for child in related.children
             if self._is_integral_child(item_ref, child)
-        )
-
-    def _should_cross_parent_child_border(
-        self, parent: wikidata_value.ItemRef, child: wikidata_value.ItemRef
-    ) -> bool:
-        """Returns whether to cross the parent-child border for related media.
-
-        Some parent-child pairs cross the border between generally unrelated
-        sets of media. E.g., somebody interested in watching a series of
-        anthology films might want to know all the films in the series. But
-        there could be many items related to stories in the individual
-        anthologies, and those items don't have much of a connection to the
-        series of anthologies that the user is interested in. Or from the other
-        side, if the user is interested in a book that was adapted into a part
-        of an anthology movie, they might be interested in that part of the
-        anthology movie, but not necessarily in the entire anthology series.
-
-        Args:
-            parent: Parent.
-            child: Child.
-        """
-        del child  # Unused.
-        parent_classes = self._api.entity_classes(parent)
-        parent_forms = self._api.forms_of_creative_work(parent)
-        return (
-            not parent_classes & self._anthology_classes
-            and not parent_forms & self._anthology_classes
         )
 
     def _related_item_priority(
