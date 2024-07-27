@@ -481,10 +481,7 @@ class ReportTest(parameterized.TestCase):
                 *expected_message_parts,
             ),
             tuple(
-                (
-                    part.get_filename(),
-                    typing.cast(email.message.MIMEPart, part).get_content(),
-                )
+                (part.get_filename(), part.get_content())
                 for part in message.iter_parts()
             ),
         )
