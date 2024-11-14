@@ -430,13 +430,13 @@ class WikidataValueTest(parameterized.TestCase):
             error_regex=r"non-time",
         ),
         dict(
-            testcase_name="somevalue_with_qualifiers",
+            testcase_name="somevalue_with_unsupported_qualifiers",
             statement={
                 "mainsnak": {"snaktype": "somevalue", "datatype": "time"},
                 "qualifiers": {"P1": []},
             },
             error_class=NotImplementedError,
-            error_regex=r"somevalue time with qualifiers",
+            error_regex=r"somevalue time with unsupported qualifiers",
         ),
         dict(
             testcase_name="invalid_snaktype",
@@ -467,7 +467,10 @@ class WikidataValueTest(parameterized.TestCase):
             ("2000-01-01T00:00:00+00:00", "2000-01-01T23:59:59.999999+00:00"),
         ),
         (
-            {"mainsnak": {"snaktype": "somevalue", "datatype": "time"}},
+            {
+                "mainsnak": {"snaktype": "somevalue", "datatype": "time"},
+                "qualifiers": {wikidata_value.P_PLACE_OF_PUBLICATION.id: []},
+            },
             (None, None),
         ),
         (

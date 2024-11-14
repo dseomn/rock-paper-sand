@@ -207,6 +207,7 @@ P_MEDIA_FRANCHISE = _p("https://www.wikidata.org/wiki/Property:P8345")
 P_MODIFIED_VERSION_OF = _p("https://www.wikidata.org/wiki/Property:P5059")
 P_PART_OF = _p("https://www.wikidata.org/wiki/Property:P361")
 P_PART_OF_THE_SERIES = _p("https://www.wikidata.org/wiki/Property:P179")
+P_PLACE_OF_PUBLICATION = _p("https://www.wikidata.org/wiki/Property:P291")
 P_PLOT_EXPANDED_IN = _p("https://www.wikidata.org/wiki/Property:P5940")
 P_PUBLICATION_DATE = _p("https://www.wikidata.org/wiki/Property:P577")
 P_SEASON = _p("https://www.wikidata.org/wiki/Property:P4908")
@@ -381,10 +382,13 @@ class Statement:
             case "value":
                 return mainsnak.time_value()
             case "somevalue":
-                if self.json.get("qualifiers", {}):
+                noop_qualifiers = {
+                    P_PLACE_OF_PUBLICATION.id,
+                }
+                if self.json.get("qualifiers", {}).keys() - noop_qualifiers:
                     raise NotImplementedError(
-                        "Cannot parse somevalue time with qualifiers: "
-                        f"{self.json}"
+                        "Cannot parse somevalue time with unsupported "
+                        f"qualifiers: {self.json}"
                     )
                 else:
                     return (None, None)
