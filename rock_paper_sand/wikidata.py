@@ -635,6 +635,12 @@ class Filter(media_filter.CachedFilter):
         }
 
     @functools.cached_property
+    def _video_part_classes(self) -> Set[wikidata_value.ItemRef]:
+        return {
+            *self._api.transitive_subclasses(wikidata_value.Q_SCENE),
+        }
+
+    @functools.cached_property
     def _priority_by_classes(
         self,
     ) -> Sequence[tuple[_RelatedMediaPriority, Set[wikidata_value.ItemRef]]]:
@@ -647,6 +653,7 @@ class Filter(media_filter.CachedFilter):
                     *self._tv_season_part_classes,
                     *self._tv_episode_classes,
                     *self._tv_episode_segment_classes,
+                    *self._video_part_classes,
                     *self._api.transitive_subclasses(
                         wikidata_value.Q_WEB_SERIES_SEASON
                     ),
@@ -729,6 +736,7 @@ class Filter(media_filter.CachedFilter):
         )
         yield (self._web_series_classes, self._web_series_child_classes)
         yield (self._video_classes, self._video_classes)
+        yield (self._video_classes, self._video_part_classes)
         yield (self._video_classes, self._music_classes)
         yield (self._tv_show_classes, self._music_classes)
         yield (self._tv_season_classes, self._music_classes)
