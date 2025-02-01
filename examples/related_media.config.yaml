@@ -24,6 +24,7 @@ reports:
     filter:
       wikidata:
         languages:
+        - mul
         - en
         relatedMedia: {}
 
