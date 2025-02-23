@@ -463,7 +463,7 @@ class ReportTest(parameterized.TestCase):
         message = typing.cast(
             email.message.EmailMessage,
             email.parser.BytesParser(
-                # TODO(https://github.com/python/typeshed/issues/13273): Remove
+                # TODO(https://github.com/python/typeshed/issues/13531): Remove
                 # type ignore.
                 policy=email.policy.default  # type: ignore[arg-type]
             ).parsebytes(mock_subprocess_run.mock_calls[0].kwargs["input"]),
