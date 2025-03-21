@@ -14,6 +14,7 @@
 """Multi-level sets."""
 
 from collections.abc import Collection
+import typing
 from typing import NewType, Self
 
 # Something like a season/episode number. E.g., season 2 would be (2,) and
@@ -101,7 +102,12 @@ class MultiLevelSet:
                 f"Invalid multi level set: {set_str!r}"
             ) from parse_error
 
-    def __contains__(self, number: MultiLevelNumber) -> bool:
+    def __contains__(self, item: object) -> bool:
+        if not isinstance(item, tuple) or not all(
+            isinstance(x, int) for x in item
+        ):
+            return False
+        number = typing.cast(MultiLevelNumber, item)
         for start, end in self._ranges:
             if _ge_start(number, start=start) and _le_end(number, end=end):
                 return True

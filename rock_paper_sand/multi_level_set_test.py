@@ -205,6 +205,14 @@ class MultiLevelSetTest(parameterized.TestCase):
         )
 
     @parameterized.parameters(
+        ("foo",),
+        ((1, "foo"),),
+    )
+    def test_contains_other_type_returns_false(self, item: object) -> None:
+        test_set = multi_level_set.MultiLevelSet.from_string("all")
+        self.assertNotIn(item, test_set)
+
+    @parameterized.parameters(
         ".",
         "-",
         ",",
