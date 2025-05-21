@@ -18,12 +18,12 @@ requires = [
   # TODO(https://github.com/jelmer/setuptools-protobuf/issues/30): Remove
   # version requirement.
   "setuptools-protobuf[mypy] != 0.1.11",
+  "setuptools-scm",
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "rock-paper-sand"
-version = "0"
 requires-python = ">=3.11"
 dependencies = [
   "absl-py",
@@ -37,6 +37,7 @@ dependencies = [
   "requests-cache",
   "urllib3",
 ]
+dynamic = ["version"]
 
 [project.optional-dependencies]
 test = [
@@ -89,3 +90,7 @@ addopts = """\
 
 [tool.setuptools.packages.find]
 include = ["rock_paper_sand", "rock_paper_sand.*"]
+
+[tool.setuptools_scm]
+local_scheme = "node-and-timestamp"
+version_scheme = "no-guess-dev"
