@@ -22,6 +22,7 @@ from typing import Any, Self
 
 from google.protobuf import json_format
 import jsonschema.validators
+import referencing.jsonschema
 import requests
 import yaml
 
@@ -162,7 +163,10 @@ class Config:
         )
         validator_class = jsonschema.validators.validator_for(schema)
         validator_class.check_schema(schema)
-        validator = validator_class(schema)
+        validator = validator_class(
+            schema,
+            registry=referencing.jsonschema.EMPTY_REGISTRY,
+        )
         errors = {}
         for item in media_item.iter_all_items(self.media):
             if item.custom_data is None:

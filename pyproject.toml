@@ -33,6 +33,7 @@ dependencies = [
   "protobuf",
   "python-dateutil",
   "pyyaml",
+  "referencing",
   "requests",
   "requests-cache",
   "urllib3",
