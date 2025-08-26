@@ -21,7 +21,6 @@ import email.policy
 import json
 import subprocess
 import textwrap
-import typing
 from typing import Any
 from unittest import mock
 
@@ -460,14 +459,9 @@ class ReportTest(parameterized.TestCase):
             check=True,
             input=mock.ANY,
         )
-        message = typing.cast(
-            email.message.EmailMessage,
-            email.parser.BytesParser(
-                # TODO(https://github.com/python/typeshed/issues/13531): Remove
-                # type ignore.
-                policy=email.policy.default  # type: ignore[arg-type]
-            ).parsebytes(mock_subprocess_run.mock_calls[0].kwargs["input"]),
-        )
+        message = email.parser.BytesParser(
+            policy=email.policy.default,
+        ).parsebytes(mock_subprocess_run.mock_calls[0].kwargs["input"])
         self.assertIn("some-report-name", message["Subject"])
         self.assertEqual("alice@example.com", message["To"])
         self.assertEqual(
