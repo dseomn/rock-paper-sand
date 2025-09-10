@@ -24,7 +24,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rock-paper-sand"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
   "absl-py",
   "immutabledict",
