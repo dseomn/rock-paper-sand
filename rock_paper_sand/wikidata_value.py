@@ -20,6 +20,7 @@ import abc
 from collections.abc import Collection, Mapping, Sequence
 import dataclasses
 import datetime
+import enum
 import re
 from typing import Any, Self
 
@@ -144,6 +145,7 @@ Q_FICTIONAL_ENTITY = _i("https://www.wikidata.org/wiki/Q14897293")
 Q_FICTIONAL_UNIVERSE = _i("https://www.wikidata.org/wiki/Q559618")
 Q_FILM = _i("https://www.wikidata.org/wiki/Q11424")
 Q_GREGORIAN_CALENDAR = _i("https://www.wikidata.org/wiki/Q12138")
+Q_JULIAN_CALENDAR = _i("https://www.wikidata.org/wiki/Q11184")
 Q_LIST = _i("https://www.wikidata.org/wiki/Q12139612")
 Q_LITERARY_WORK = _i("https://www.wikidata.org/wiki/Q7725634")
 Q_MUSICAL_WORK = _i("https://www.wikidata.org/wiki/Q2188189")
@@ -153,6 +155,7 @@ Q_PARATEXT = _i("https://www.wikidata.org/wiki/Q853520")
 Q_PART_OF_TELEVISION_SEASON = _i("https://www.wikidata.org/wiki/Q93992677")
 Q_PLACEHOLDER_NAME = _i("https://www.wikidata.org/wiki/Q1318274")
 Q_PROLEPTIC_GREGORIAN_CALENDAR = _i("https://www.wikidata.org/wiki/Q1985727")
+Q_PROLEPTIC_JULIAN_CALENDAR = _i("https://www.wikidata.org/wiki/Q1985786")
 Q_RELEASE_GROUP = _i("https://www.wikidata.org/wiki/Q108346082")
 Q_SCENE = _i("https://www.wikidata.org/wiki/Q282939")
 Q_SEGMENT_OF_A_TELEVISION_EPISODE = _i(
@@ -223,6 +226,12 @@ P_TAKES_PLACE_IN_FICTIONAL_UNIVERSE = _p(
 del _p
 
 
+class PseudoDatetime(enum.Enum):
+    """Constants to represent generic points in time."""
+
+    PAST = enum.auto()
+
+
 def _language_keyed_string(
     mapping: Mapping[str, Any],
     languages: Sequence[str],
@@ -279,7 +288,11 @@ class Snak:
             )
         return self.json["datavalue"]["value"]
 
-    def time_value(self) -> tuple[datetime.datetime, datetime.datetime]:
+    def time_value(
+        self,
+    ) -> tuple[
+        datetime.datetime | PseudoDatetime, datetime.datetime | PseudoDatetime
+    ]:
         """Returns (earliest possible time, latest possible time)."""
         if self.json["snaktype"] != "value":
             raise NotImplementedError(
@@ -293,13 +306,6 @@ class Snak:
                 f"Cannot parse non-time snak as a time: {self.json}"
             )
         value = self.json["datavalue"]["value"]
-        if value["calendarmodel"] not in (
-            Q_GREGORIAN_CALENDAR.uri,
-            Q_PROLEPTIC_GREGORIAN_CALENDAR.uri,
-        ):
-            raise NotImplementedError(
-                f"Cannot parse non-Gregorian time: {self.json}"
-            )
         if value["timezone"] != 0:
             raise NotImplementedError(f"Cannot parse non-UTC time: {self.json}")
         try:
@@ -325,6 +331,30 @@ class Snak:
         if match is None:
             raise ValueError(f"Cannot parse time: {self.json}")
         year, month, day, hour, minute, second = map(int, match.groups())
+        if value["calendarmodel"] in (
+            Q_JULIAN_CALENDAR.uri,
+            Q_PROLEPTIC_JULIAN_CALENDAR.uri,
+        ):
+            # https://en.wikipedia.org/wiki/Julian_calendar#Replacement_by_the_Gregorian_calendar
+            # says "The Gregorian calendar has replaced the Julian as the civil
+            # calendar in all countries which had been using it – Greece being
+            # the last to do so, in 1923", the lowest precision (see above) is
+            # 100 years, and 1923 + 100 is still in the past. This keeps things
+            # simple to avoid needing to fully parse Julian dates.
+            if year < 1923:
+                return (PseudoDatetime.PAST, PseudoDatetime.PAST)
+            else:
+                raise NotImplementedError(
+                    f"Cannot parse recent Julian time: {self.json}"
+                )
+        elif value["calendarmodel"] not in (
+            Q_GREGORIAN_CALENDAR.uri,
+            Q_PROLEPTIC_GREGORIAN_CALENDAR.uri,
+        ):
+            raise NotImplementedError(
+                "Cannot parse time with calendar model "
+                f"{value["calendarmodel"]!r}: {self.json}"
+            )
         base = datetime.datetime(
             year=year,
             month=month or 1,
@@ -368,7 +398,10 @@ class Statement:
 
     def time_value(
         self,
-    ) -> tuple[datetime.datetime | None, datetime.datetime | None]:
+    ) -> tuple[
+        datetime.datetime | PseudoDatetime | None,
+        datetime.datetime | PseudoDatetime | None,
+    ]:
         """Returns the statement as time values.
 
         Returns:
