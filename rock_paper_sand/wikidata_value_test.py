@@ -15,6 +15,7 @@
 # pylint: disable=missing-module-docstring
 
 from collections.abc import Callable, Collection, Mapping, Sequence
+import datetime
 from typing import Any
 
 from absl.testing import absltest
@@ -30,6 +31,7 @@ _PRECISION_DAY = 11
 def _snak_time(
     time: str,
     *,
+    calendarmodel: str = wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri,
     before: int = 0,
     after: int = 0,
     precision: int = _PRECISION_DAY,
@@ -40,9 +42,7 @@ def _snak_time(
         "datavalue": {
             "type": "time",
             "value": {
-                "calendarmodel": (
-                    wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
-                ),
+                "calendarmodel": calendarmodel,
                 "timezone": 0,
                 "before": before,
                 "after": after,
@@ -260,21 +260,6 @@ class WikidataValueTest(parameterized.TestCase):
             error_regex=r"non-time",
         ),
         dict(
-            testcase_name="not_gregorian",
-            snak={
-                "snaktype": "value",
-                "datatype": "time",
-                "datavalue": {
-                    "type": "time",
-                    "value": {
-                        "calendarmodel": "http://www.wikidata.org/entity/Q1",
-                    },
-                },
-            },
-            error_class=NotImplementedError,
-            error_regex=r"non-Gregorian",
-        ),
-        dict(
             testcase_name="not_utc",
             snak={
                 "snaktype": "value",
@@ -335,6 +320,48 @@ class WikidataValueTest(parameterized.TestCase):
             error_class=ValueError,
             error_regex=r"Cannot parse time",
         ),
+        dict(
+            testcase_name="recent_julian",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": (
+                            wikidata_value.Q_PROLEPTIC_JULIAN_CALENDAR.uri
+                        ),
+                        "timezone": 0,
+                        "before": 0,
+                        "after": 0,
+                        "precision": 11,
+                        "time": "+2000-01-01T00:00:00Z",
+                    },
+                },
+            },
+            error_class=NotImplementedError,
+            error_regex=r"recent Julian",
+        ),
+        dict(
+            testcase_name="unknown_calendar_model",
+            snak={
+                "snaktype": "value",
+                "datatype": "time",
+                "datavalue": {
+                    "type": "time",
+                    "value": {
+                        "calendarmodel": "http://www.wikidata.org/entity/Q1",
+                        "timezone": 0,
+                        "before": 0,
+                        "after": 0,
+                        "precision": 11,
+                        "time": "+1979-10-12T00:00:00Z",
+                    },
+                },
+            },
+            error_class=NotImplementedError,
+            error_regex=r"calendar model",
+        ),
     )
     def test_snak_time_value_error(
         self,
@@ -347,6 +374,16 @@ class WikidataValueTest(parameterized.TestCase):
             wikidata_value.Snak(json=snak).time_value()
 
     @parameterized.parameters(
+        (
+            _snak_time(
+                "+0100-01-01T00:00:00Z",
+                calendarmodel=wikidata_value.Q_PROLEPTIC_JULIAN_CALENDAR.uri,
+            ),
+            (
+                wikidata_value.PseudoDatetime.PAST,
+                wikidata_value.PseudoDatetime.PAST,
+            ),
+        ),
         (
             _snak_time("+1979-10-12T00:00:00Z", precision=_PRECISION_DAY),
             ("1979-10-12T00:00:00+00:00", "1979-10-12T23:59:59.999999+00:00"),
@@ -378,12 +415,19 @@ class WikidataValueTest(parameterized.TestCase):
     def test_snak_time_value(
         self,
         snak: Any,
-        values: tuple[str, str],
+        values: tuple[
+            str | wikidata_value.PseudoDatetime,
+            str | wikidata_value.PseudoDatetime,
+        ],
     ) -> None:
         self.assertSequenceEqual(
             values,
             tuple(
-                value.isoformat()
+                (
+                    value.isoformat()
+                    if isinstance(value, datetime.datetime)
+                    else value
+                )
                 for value in wikidata_value.Snak(json=snak).time_value()
             ),
         )
@@ -486,7 +530,11 @@ class WikidataValueTest(parameterized.TestCase):
         self.assertSequenceEqual(
             values,
             tuple(
-                (None if value is None else value.isoformat())
+                (
+                    value.isoformat()
+                    if isinstance(value, datetime.datetime)
+                    else value
+                )
                 for value in wikidata_value.Statement(
                     json=statement
                 ).time_value()

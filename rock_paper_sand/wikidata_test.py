@@ -59,16 +59,18 @@ def _snak_string(value: str) -> Any:
     }
 
 
-def _snak_time(time: str) -> Any:
+def _snak_time(
+    time: str,
+    *,
+    calendarmodel: str = wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri,
+) -> Any:
     return {
         "snaktype": "value",
         "datatype": "time",
         "datavalue": {
             "type": "time",
             "value": {
-                "calendarmodel": (
-                    wikidata_value.Q_PROLEPTIC_GREGORIAN_CALENDAR.uri
-                ),
+                "calendarmodel": calendarmodel,
                 "timezone": 0,
                 "before": 0,
                 "after": 0,
@@ -77,6 +79,12 @@ def _snak_time(time: str) -> Any:
             },
         },
     }
+
+
+_SNAK_TIME_IN_PAST_AS_PSEUDO_DATETIME = _snak_time(
+    "+0100-01-01T00:00:00Z",
+    calendarmodel=wikidata_value.Q_PROLEPTIC_JULIAN_CALENDAR.uri,
+)
 
 
 def _sparql_item(item_id: str) -> Any:
@@ -597,6 +605,26 @@ class WikidataFilterTest(parameterized.TestCase):
                             {
                                 "rank": "normal",
                                 "mainsnak": _snak_time(_TIME_IN_PAST_1),
+                            },
+                        ],
+                    }
+                }
+            },
+            expected_result=media_filter.FilterResult(True),
+        ),
+        dict(
+            testcase_name="release_statuses_after_release_pseudo_datetime",
+            filter_config={"releaseStatuses": ["RELEASED"]},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_entities={
+                "Q1": {
+                    "claims": {
+                        wikidata_value.P_PUBLICATION_DATE.id: [
+                            {
+                                "rank": "normal",
+                                "mainsnak": (
+                                    _SNAK_TIME_IN_PAST_AS_PSEUDO_DATETIME
+                                ),
                             },
                         ],
                     }

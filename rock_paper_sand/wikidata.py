@@ -346,6 +346,22 @@ def _is_positive_integer(value: str) -> bool:
     return int_value > 0
 
 
+def _replace_pseudo_datetimes(
+    values: Iterable[datetime.datetime | wikidata_value.PseudoDatetime | None],
+) -> Iterable[datetime.datetime | None]:
+    """Yields values with pseudo datetimes replaced by placeholders."""
+    for value in values:
+        match value:
+            case datetime.datetime() | None:
+                yield value
+            case wikidata_value.PseudoDatetime.PAST:
+                yield datetime.datetime(
+                    1, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc
+                )
+            case _:
+                typing.assert_never(value)
+
+
 def _release_status(
     item: wikidata_value.Entity,
     *,
@@ -353,13 +369,13 @@ def _release_status(
 ) -> config_pb2.WikidataFilter.ReleaseStatus.ValueType:
     start = _min(
         (
-            _min(statement.time_value())
+            _min(_replace_pseudo_datetimes(statement.time_value()))
             for statement in item.truthy_statements(wikidata_value.P_START_TIME)
         )
     )
     end = _max(
         (
-            _max(statement.time_value())
+            _max(_replace_pseudo_datetimes(statement.time_value()))
             for statement in item.truthy_statements(wikidata_value.P_END_TIME)
         )
     )
@@ -378,7 +394,7 @@ def _release_status(
     ):
         released = _min(
             (
-                _min(statement.time_value())
+                _min(_replace_pseudo_datetimes(statement.time_value()))
                 for statement in item.truthy_statements(prop)
             )
         )
