@@ -353,7 +353,7 @@ class Snak:
         ):
             raise NotImplementedError(
                 "Cannot parse time with calendar model "
-                f"{value["calendarmodel"]!r}: {self.json}"
+                f"{value['calendarmodel']!r}: {self.json}"
             )
         base = datetime.datetime(
             year=year,
