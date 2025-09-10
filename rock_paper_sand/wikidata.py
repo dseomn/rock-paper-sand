@@ -677,6 +677,7 @@ class Filter(media_filter.CachedFilter):
             (
                 _RelatedMediaPriority.UNLIKELY,
                 {
+                    *self._api.transitive_subclasses(wikidata_value.Q_CHAPTER),
                     *self._tv_season_classes,
                     *self._tv_season_part_classes,
                     *self._tv_episode_classes,
@@ -753,6 +754,10 @@ class Filter(media_filter.CachedFilter):
         tuple[Set[wikidata_value.ItemRef], Set[wikidata_value.ItemRef]]
     ]:
         """Yields (parent, child) classes that indicate an integral child."""
+        yield (
+            self._api.transitive_subclasses(wikidata_value.Q_LITERARY_WORK),
+            self._api.transitive_subclasses(wikidata_value.Q_CHAPTER),
+        )
         yield (self._tv_show_classes, self._tv_season_classes)
         yield (
             self._tv_season_part_parent_classes,
