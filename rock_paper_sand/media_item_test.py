@@ -61,12 +61,12 @@ class MediaItemTest(parameterized.TestCase):
 
         self.assertEqual(
             media_item.MediaItem(
-                id=mock.ANY,
+                id=mock.ANY,  # type: ignore[arg-type]
                 debug_description="unknown media item with name 'some-name'",
                 proto=proto,
                 fully_qualified_name="some-name",
                 custom_data={"a": "b"},
-                done=mock.ANY,
+                done=mock.ANY,  # type: ignore[arg-type]
                 wikidata_item=wikidata_value.ItemRef("Q1"),
                 all_wikidata_items={wikidata_value.ItemRef("Q1")},
                 all_wikidata_items_recursive={
@@ -92,14 +92,14 @@ class MediaItemTest(parameterized.TestCase):
                 has_parent=False,
                 parts=(
                     media_item.MediaItem(
-                        id=mock.ANY,
+                        id=mock.ANY,  # type: ignore[arg-type]
                         debug_description=(
                             "unknown media item with name 'some-part'"
                         ),
                         proto=config_pb2.MediaItem(name="some-part"),
                         fully_qualified_name="some-name: some-part",
                         custom_data=None,
-                        done=mock.ANY,
+                        done=mock.ANY,  # type: ignore[arg-type]
                         wikidata_item=None,
                         all_wikidata_items=frozenset(),
                         all_wikidata_items_recursive=frozenset(),
@@ -110,14 +110,14 @@ class MediaItemTest(parameterized.TestCase):
                         parts=(),
                     ),
                     media_item.MediaItem(
-                        id=mock.ANY,
+                        id=mock.ANY,  # type: ignore[arg-type]
                         debug_description=(
                             "unknown media item with name 'other-part'"
                         ),
                         proto=other_part_proto,
                         fully_qualified_name="some-name: other-part",
                         custom_data=None,
-                        done=mock.ANY,
+                        done=mock.ANY,  # type: ignore[arg-type]
                         wikidata_item=wikidata_value.ItemRef("Q2"),
                         all_wikidata_items={
                             wikidata_value.ItemRef("Q2"),
