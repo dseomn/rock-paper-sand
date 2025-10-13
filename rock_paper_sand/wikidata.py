@@ -550,10 +550,10 @@ class Filter(media_filter.CachedFilter):
         }
 
     @functools.cached_property
-    def _multi_part_episode_classes(self) -> Set[wikidata_value.ItemRef]:
+    def _composite_episode_classes(self) -> Set[wikidata_value.ItemRef]:
         """Classes for multi-part episodes of unspecified parent type."""
         return self._api.transitive_subclasses(
-            wikidata_value.Q_TWO_PART_EPISODE
+            wikidata_value.Q_COMPOSITE_EPISODE
         )
 
     @functools.cached_property
@@ -591,7 +591,7 @@ class Filter(media_filter.CachedFilter):
     @functools.cached_property
     def _tv_episode_classes(self) -> Set[wikidata_value.ItemRef]:
         return {
-            *self._multi_part_episode_classes,
+            *self._composite_episode_classes,
             *self._api.transitive_subclasses(
                 wikidata_value.Q_TELEVISION_SERIES_EPISODE
             ),
@@ -602,7 +602,7 @@ class Filter(media_filter.CachedFilter):
         return {
             *self._tv_season_part_parent_classes,
             *self._tv_season_part_classes,
-            *self._multi_part_episode_classes,
+            *self._composite_episode_classes,
         }
 
     @functools.cached_property
@@ -643,7 +643,7 @@ class Filter(media_filter.CachedFilter):
             *self._api.transitive_subclasses(
                 wikidata_value.Q_WEB_SERIES_SEASON
             ),
-            *self._multi_part_episode_classes,
+            *self._composite_episode_classes,
             *self._api.transitive_subclasses(
                 wikidata_value.Q_WEB_SERIES_EPISODE
             ),
