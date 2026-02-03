@@ -1011,7 +1011,7 @@ class Filter(media_filter.CachedFilter):
                 media_filter.ResultExtra(
                     human_readable=(
                         "item in config file that's not related to "
-                        f"{request.item.wikidata_item}: {item}"
+                        f"<{request.item.wikidata_item}>: <{item}>"
                     ),
                 )
                 for item in items_from_config - processed - loose

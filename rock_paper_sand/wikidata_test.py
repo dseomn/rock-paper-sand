@@ -809,8 +809,8 @@ class WikidataFilterTest(parameterized.TestCase):
                     media_filter.ResultExtra(
                         human_readable=(
                             "item in config file that's not related to "
-                            "https://www.wikidata.org/wiki/Q1: "
-                            "https://www.wikidata.org/wiki/Q2"
+                            "<https://www.wikidata.org/wiki/Q1>: "
+                            "<https://www.wikidata.org/wiki/Q2>"
                         ),
                     ),
                 },
