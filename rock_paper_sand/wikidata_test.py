@@ -900,6 +900,7 @@ class WikidataFilterTest(parameterized.TestCase):
                 },
                 "Q3": {"labels": {}, "descriptions": {}},
                 "Q4": {"labels": {}, "descriptions": {}},
+                "Q5": {"labels": {}, "descriptions": {}},
             },
             api_entity_classes={
                 "Q1": set(),
@@ -915,6 +916,8 @@ class WikidataFilterTest(parameterized.TestCase):
                 "Q3": {wikidata_value.Q_COLLECTION_OF_LITERARY_WORKS},
                 "Q4": {wikidata_value.Q_FILM},
                 "Q41": {wikidata_value.Q_RELEASE_GROUP},
+                "Q5": {wikidata_value.Q_MUSICAL_WORK},
+                "Q51": {wikidata_value.Q_MUSICAL_WORK},
             },
             api_forms_of_creative_work={
                 "Q1": set(),
@@ -927,6 +930,8 @@ class WikidataFilterTest(parameterized.TestCase):
                 "Q3": set(),
                 "Q4": set(),
                 "Q41": set(),
+                "Q5": set(),
+                "Q51": set(),
             },
             api_related_media={
                 "Q1": wikidata.RelatedMedia(
@@ -936,6 +941,7 @@ class WikidataFilterTest(parameterized.TestCase):
                         wikidata_value.ItemRef("Q2"),
                         wikidata_value.ItemRef("Q31"),
                         wikidata_value.ItemRef("Q4"),
+                        wikidata_value.ItemRef("Q5"),
                     },
                     loose=set(),
                 ),
@@ -998,6 +1004,18 @@ class WikidataFilterTest(parameterized.TestCase):
                     children=set(),
                     loose=set(),
                 ),
+                "Q5": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children={wikidata_value.ItemRef("Q51")},
+                    loose=set(),
+                ),
+                "Q51": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
             },
             expected_result=media_filter.FilterResult(
                 True,
@@ -1027,6 +1045,12 @@ class WikidataFilterTest(parameterized.TestCase):
                         ),
                     ),
                     # Q41 is an integral child of Q4.
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: <https://www.wikidata.org/wiki/Q5>"
+                        ),
+                    ),
+                    # Q51 is an integral child of Q5.
                 },
             ),
         ),
@@ -1128,6 +1152,49 @@ class WikidataFilterTest(parameterized.TestCase):
                     media_filter.ResultExtra(
                         human_readable=(
                             "related item: <https://www.wikidata.org/wiki/Q4>"
+                        ),
+                    ),
+                },
+            ),
+        ),
+        dict(
+            testcase_name="related_media_does_not_ignore_music_group_child",
+            filter_config={"relatedMedia": {}},
+            item={"name": "foo", "wikidata": "Q1"},
+            api_entities={
+                "Q11": {"labels": {}, "descriptions": {}},
+            },
+            api_entity_classes={
+                "Q1": {
+                    wikidata_value.Q_GROUP_OF_MUSICAL_WORKS,
+                    wikidata_value.Q_MUSICAL_WORK,
+                },
+                "Q11": {wikidata_value.Q_MUSICAL_WORK},
+            },
+            api_forms_of_creative_work={
+                "Q1": set(),
+                "Q11": set(),
+            },
+            api_related_media={
+                "Q1": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children={wikidata_value.ItemRef("Q11")},
+                    loose=set(),
+                ),
+                "Q11": wikidata.RelatedMedia(
+                    parents=set(),
+                    siblings=set(),
+                    children=set(),
+                    loose=set(),
+                ),
+            },
+            expected_result=media_filter.FilterResult(
+                True,
+                extra={
+                    media_filter.ResultExtra(
+                        human_readable=(
+                            "related item: <https://www.wikidata.org/wiki/Q11>"
                         ),
                     ),
                 },

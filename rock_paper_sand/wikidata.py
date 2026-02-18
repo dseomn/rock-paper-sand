@@ -774,7 +774,6 @@ class Filter(media_filter.CachedFilter):
         yield (self._tv_show_classes, self._music_classes)
         yield (self._tv_season_classes, self._music_classes)
         yield (self._tv_season_part_classes, self._music_classes)
-        yield (self._music_classes, self._music_classes)
 
     def _is_integral_child(
         self, parent: wikidata_value.ItemRef, child: wikidata_value.ItemRef
@@ -846,6 +845,15 @@ class Filter(media_filter.CachedFilter):
         ) and (
             child_classes
             & self._api.transitive_subclasses(wikidata_value.Q_LITERARY_WORK)
+        ):
+            return True
+        if (
+            parent_classes & self._music_classes
+            and not parent_classes
+            & self._api.transitive_subclasses(
+                wikidata_value.Q_GROUP_OF_MUSICAL_WORKS
+            )
+            and child_classes & self._music_classes
         ):
             return True
         return False
