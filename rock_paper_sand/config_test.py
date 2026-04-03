@@ -112,8 +112,7 @@ class ConfigTest(parameterized.TestCase):
                 "media": [{"name": "b"}, {"name": "aa"}, {"name": "Az"}],
             },
             expected_results={
-                "sort": textwrap.dedent(
-                    """\
+                "sort": textwrap.dedent("""\
                     --- media-names
                     +++ media-names-sorted
                     @@ -1,3 +1,3 @@
@@ -122,8 +121,7 @@ class ConfigTest(parameterized.TestCase):
                      - b
                     -- aa
                     -- Az
-                    """
-                ),
+                """),
             },
         ),
         dict(
@@ -133,8 +131,7 @@ class ConfigTest(parameterized.TestCase):
                 "media": [{"name": "Az"}, {"name": "aa"}, {"name": "AA"}],
             },
             expected_results={
-                "sort": textwrap.dedent(
-                    """\
+                "sort": textwrap.dedent("""\
                     --- media-names
                     +++ media-names-sorted
                     @@ -1,3 +1,3 @@
@@ -143,8 +140,7 @@ class ConfigTest(parameterized.TestCase):
                      - Az
                     -- aa
                     -- AA
-                    """
-                ),
+                """),
             },
         ),
         dict(

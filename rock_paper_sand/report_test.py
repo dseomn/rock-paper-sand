@@ -370,15 +370,13 @@ class ReportTest(parameterized.TestCase):
             expected_message_parts=(
                 (
                     "changed.diff",
-                    textwrap.dedent(
-                        """\
+                    textwrap.dedent("""\
                         --- changed.yaml.old
                         +++ changed.yaml
                         @@ -1 +1 @@
                         -- foo
                         +- not-foo
-                        """
-                    ),
+                    """),
                 ),
                 ("unchanged.yaml", "- foo\n"),
                 ("changed.yaml", "- not-foo\n"),
