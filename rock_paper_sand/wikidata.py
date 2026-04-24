@@ -186,14 +186,15 @@ class Api:
 
     def sparql(self, query: str) -> Any:
         """Returns results from a SPARQL query."""
-        logging.debug("SPARQL query:\n%s", query)
-        response = self._session.get(
-            "https://query.wikidata.org/sparql",
-            params=[("query", query)],
-            headers={"Accept": "application/sparql-results+json"},
-        )
-        response.raise_for_status()
-        return response.json()["results"]["bindings"]
+        with exceptions.add_note(f"With SPARQL query:\n{query}"):
+            logging.debug("SPARQL query:\n%s", query)
+            response = self._session.get(
+                "https://query.wikidata.org/sparql",
+                params=[("query", query)],
+                headers={"Accept": "application/sparql-results+json"},
+            )
+            response.raise_for_status()
+            return response.json()["results"]["bindings"]
 
     def entity_classes(
         self, entity_ref: wikidata_value.EntityRef
