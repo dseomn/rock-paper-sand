@@ -388,7 +388,8 @@ class MediaFilterTest(parameterized.TestCase):
             media_filter.Filter, spec_set=True, instance=True
         )
         factory = mock.Mock(spec_set=(), return_value=mock_filter)
-        registry = media_filter.Registry(**{f"{name}_factory": factory})
+        # TODO(https://github.com/pylint-dev/pylint/issues/9983): Remove disable
+        registry = media_filter.Registry(**{f"{name}_factory": factory})  # fmt: skip; pylint: disable=unexpected-keyword-arg
         filter_config = json_format.ParseDict({name: {}}, config_pb2.Filter())
 
         returned_filter = registry.parse(filter_config)
@@ -398,7 +399,8 @@ class MediaFilterTest(parameterized.TestCase):
 
     @parameterized.parameters("wikidata", "justwatch")
     def test_factory_filter_unsupported(self, name: str) -> None:
-        registry = media_filter.Registry(**{f"{name}_factory": None})
+        # TODO(https://github.com/pylint-dev/pylint/issues/9983): Remove disable
+        registry = media_filter.Registry(**{f"{name}_factory": None})  # fmt: skip; pylint: disable=unexpected-keyword-arg
         with self.assertRaisesRegex(ValueError, "no callback"):
             registry.parse(
                 json_format.ParseDict({name: {}}, config_pb2.Filter())
